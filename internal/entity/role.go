@@ -29,7 +29,7 @@ type Role struct {
 	Name        RoleName  `gorm:"primaryKey;type:varchar(32);comment:角色名称" json:"name"`
 	DisplayName string    `gorm:"not null;type:varchar(64);comment:角色显示名称" json:"display_name"`
 	Description string    `gorm:"not null;type:varchar(255);comment:角色描述" json:"description"`
-	CreatedAt   time.Time `gorm:"not null;type:timestamptz;autoUpdateTime:milli;comment:创建时间" json:"created_at"`
+	CreatedAt   time.Time `gorm:"not null;type:timestamptz;autoCreateTime:milli;comment:创建时间" json:"-"`
 }
 
 // BeforeCreate GORM 钩子，创建前验证角色名称格式。
