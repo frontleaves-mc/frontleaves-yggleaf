@@ -1,6 +1,8 @@
 package startup
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -18,9 +20,9 @@ var migrateTables = []interface{}{
 	&entity.GameProfile{},
 }
 
-func (r *Reg) databaseInit() {
+func (r *reg) databaseInit(ctx context.Context) (any, error) {
 	log := xLog.WithName(xLog.NamedINIT)
-	log.Debug(r.Context, "正在连接数据库...")
+	log.Debug(ctx, "正在连接数据库...")
 
 	// Dsn Build
 	pgDsnBuilder := strings.Builder{}
@@ -50,14 +52,14 @@ func (r *Reg) databaseInit() {
 		}),
 	})
 	if err != nil {
-		log.SugarPanic(r.Context, "连接数据库失败", "gorm_err", err.Error())
+		return nil, fmt.Errorf("连接数据库失败: %w", err)
 	}
 
 	// 数据表自动迁移
 	err = db.AutoMigrate(migrateTables...)
 	if err != nil {
-		log.SugarPanic(r.Context, "数据表自动迁移失败", "gorm_err", err.Error())
+		return nil, fmt.Errorf("数据表自动迁移失败: %w", err)
 	}
-	log.Info(r.Context, "数据库连接成功")
-	r.DB = db
+	log.Info(ctx, "数据库连接成功")
+	return db, nil
 }

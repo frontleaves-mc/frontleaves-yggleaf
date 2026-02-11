@@ -1,6 +1,8 @@
 package startup
 
 import (
+	"context"
+
 	xLog "github.com/bamboo-services/bamboo-base-go/log"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/app/startup/prepare"
 )
@@ -11,9 +13,11 @@ import (
 // 通常包括数据缓存填充、配置同步或第三方服务预热等逻辑。
 //
 // 注意: 确保在数据库与缓存初始化完成后调用此方法，以避免关键依赖未准备好。
-func (r *Reg) businessDataPrepare() {
+func (r *reg) businessDataPrepare(ctx context.Context) (any, error) {
 	log := xLog.WithName(xLog.NamedINIT)
 
 	// 数据预加载
-	prepare.New(log, r.DB, r.Context).Prepare()
+	prepare.New(log, ctx).Prepare()
+
+	return nil, nil
 }

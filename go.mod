@@ -2,9 +2,15 @@ module github.com/frontleaves-mc/frontleaves-yggleaf
 
 go 1.25.3
 
+replace (
+	github.com/phalanx/beacon-sso-sdk v1.0.0 => /Users/xiaolfeng/ProgramProjects/Cooperate/phalanx/beacon-sso-sdk
+	github.com/bamboo-services/bamboo-base-go v1.0.0-202602051602 => /Users/xiaolfeng/ProgramProjects/Cooperate/bamboo-service/bamboo-base
+)
+
 require (
-	github.com/bamboo-services/bamboo-base-go v1.0.0-202601220035
+	github.com/bamboo-services/bamboo-base-go v1.0.0-202602051602
 	github.com/gin-gonic/gin v1.11.0
+	github.com/phalanx/beacon-sso-sdk v1.0.0
 	github.com/redis/go-redis/v9 v9.14.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
@@ -32,6 +38,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.30.1 // indirect
+	github.com/go-resty/resty/v2 v2.17.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -55,15 +62,15 @@ require (
 	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
-	go.uber.org/mock v0.6.0 // indirect
 	golang.org/x/arch v0.23.0 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/mod v0.31.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
-	golang.org/x/tools v0.40.0 // indirect
+	golang.org/x/tools v0.41.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

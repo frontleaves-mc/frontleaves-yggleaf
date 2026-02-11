@@ -18,12 +18,11 @@ import (
 )
 
 func main() {
-	reg := xReg.Register()
-	start := startup.Register(reg)
+	reg := xReg.Register(startup.Init())
 	log := xLog.WithName(xLog.NamedMAIN)
 
 	// 创建上下文和取消函数
-	ctx, cancel := context.WithCancel(reg.Context)
+	ctx, cancel := context.WithCancel(reg.Init.Ctx)
 	defer cancel()
 
 	// 等待中断信号
@@ -31,7 +30,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// 注册路由器
-	route.NewRoute(reg, start, reg.Context)
+	route.NewRoute(reg)
 
 	// 创建 HttpServer
 	getHost := xEnv.GetEnvString(xEnv.Host, "localhost")
@@ -50,9 +49,9 @@ func main() {
 	// 启动 HTTP 服务
 	go func() {
 		defer engineSync.Done()
-		log.Info(reg.Context, "服务器已成功启动", slog.String("addr", "http(s)://"+server.Addr))
+		log.Info(reg.Init.Ctx, "服务器已成功启动", slog.String("addr", "http(s)://"+server.Addr))
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error(reg.Context, err.Error())
+			log.Error(reg.Init.Ctx, err.Error())
 		}
 	}()
 
@@ -60,13 +59,13 @@ func main() {
 	go func() {
 		<-sigChan
 		cancel() // 取消上下文，触发所有组件的优雅关闭
-		log.Warn(reg.Context, "正在关闭 HTTP 服务器...")
+		log.Warn(reg.Init.Ctx, "正在关闭 HTTP 服务器...")
 		if err := server.Shutdown(ctx); err != nil {
-			log.Error(reg.Context, err.Error())
+			log.Error(reg.Init.Ctx, err.Error())
 		}
 	}()
 
 	engineSync.Wait()
-	log.Info(reg.Context, "所有服务已安全退出")
+	log.Info(reg.Init.Ctx, "所有服务已安全退出")
 	return
 }

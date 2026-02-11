@@ -27,7 +27,7 @@ func (p *Prepare) prepareRole() {
 	})
 	p.db.Model(&entity.Role{}).Where("name = ?", entity.RolePlayer).Save(&entity.Role{
 		Name:        entity.RolePlayer,
-		DisplayName: "商户",
+		DisplayName: "玩家",
 		Description: "玩家，拥有基本使用权限",
 	})
 }

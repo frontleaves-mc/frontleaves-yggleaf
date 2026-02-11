@@ -4,6 +4,7 @@ import (
 	"context"
 
 	xLog "github.com/bamboo-services/bamboo-base-go/log"
+	xCtxUtil "github.com/bamboo-services/bamboo-base-go/utility/ctxutil"
 	"gorm.io/gorm"
 )
 
@@ -13,10 +14,10 @@ type Prepare struct {
 	ctx context.Context      // 上下文实例
 }
 
-func New(log *xLog.LogNamedLogger, db *gorm.DB, ctx context.Context) *Prepare {
+func New(log *xLog.LogNamedLogger, ctx context.Context) *Prepare {
 	return &Prepare{
 		log: log,
-		db:  db,
+		db:  xCtxUtil.MustGetDB(ctx),
 		ctx: ctx,
 	}
 }

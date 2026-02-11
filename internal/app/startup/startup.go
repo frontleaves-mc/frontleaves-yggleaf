@@ -3,39 +3,35 @@ package startup
 import (
 	"context"
 
-	xReg "github.com/bamboo-services/bamboo-base-go/register"
-	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
+	xCtx "github.com/bamboo-services/bamboo-base-go/context"
+	xRegNode "github.com/bamboo-services/bamboo-base-go/register/node"
+	bSdkStartup "github.com/phalanx/beacon-sso-sdk/startup"
 )
 
-// Reg 表示应用程序的核心注册结构，包含所有初始化后的组件实例。
-type Reg struct {
-	Context context.Context // 上下文，用于控制取消和超时
-	Serve   *gin.Engine     // Gin 引擎实例
-	DB      *gorm.DB        // GORM 数据库实例
-	RDB     *redis.Client   // Redis 客户端实例
+// reg 表示应用程序的核心注册结构，包含所有初始化后的组件实例。
+type reg struct {
+	ctx context.Context
 }
 
-// newRegister 创建一个新的注册结构实例
-func newRegister(reg *xReg.Reg) *Reg {
-	return &Reg{
-		Context: reg.Context,
-		Serve:   reg.Serve,
+// newInit 创建一个新的注册结构实例
+func newInit() *reg {
+	return &reg{
+		ctx: context.Background(),
 	}
 }
 
-func Register(reg *xReg.Reg) *Reg {
-	businessReg := newRegister(reg)
+func Init() (context.Context, []xRegNode.RegNodeList) {
+	businessReg := newInit()
+	var regNode []xRegNode.RegNodeList
 
 	// 初始化注册
-	businessReg.databaseInit()
-	businessReg.nosqlInit()
+	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.DatabaseKey, Node: businessReg.databaseInit})
+	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.RedisClientKey, Node: businessReg.nosqlInit})
+	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.Nil, Node: businessReg.nosqlInit})
+	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.Exec, Node: businessReg.businessDataPrepare})
 
-	businessReg.businessContextInit()
+	// 初始化 OAuth2
+	regNode = append(regNode, bSdkStartup.NewOAuthConfig()...)
 
-	// 初始化数据
-	businessReg.businessDataPrepare()
-
-	return businessReg
+	return businessReg.ctx, regNode
 }
