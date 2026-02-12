@@ -13,11 +13,11 @@ import (
 // @Tags         用户接口
 // @Accept       json
 // @Produce      json
-// @Success      200   {object}  xBase.BaseResponse	"登录成功"
-// @Failure      400   {object}  xBase.BaseResponse          						"请求体格式不正确"
-// @Failure      401   {object}  xBase.BaseResponse         						"用户名或密码错误"
-// @Failure      403   {object}  xBase.BaseResponse          						"用户已禁用或账户已锁定"
-// @Failure      404   {object}  xBase.BaseResponse          						"用户不存在"
+// @Success      200   {object}  xBase.BaseResponse{data=entity.User}	"登录成功"
+// @Failure      400   {object}  xBase.BaseResponse          			"请求体格式不正确"
+// @Failure      401   {object}  xBase.BaseResponse         			"用户名或密码错误"
+// @Failure      403   {object}  xBase.BaseResponse          			"用户已禁用或账户已锁定"
+// @Failure      404   {object}  xBase.BaseResponse          			"用户不存在"
 // @Router       /api/v1/user/info [GET]
 func (h *UserHandler) UserCurrent(ctx *gin.Context) {
 	h.log.Info(ctx, "UserCurrent - 获取用户信息")

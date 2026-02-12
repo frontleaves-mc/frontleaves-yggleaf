@@ -34,7 +34,7 @@ func main() {
 
 	// 创建 HttpServer
 	getHost := xEnv.GetEnvString(xEnv.Host, "localhost")
-	getPort := xEnv.GetEnvString(xEnv.Port, "5566")
+	getPort := xEnv.GetEnvString(xEnv.Port, "5577")
 	server := &http.Server{
 		Addr:    getHost + ":" + getPort, // 使用配置文件中指定的端口
 		Handler: reg.Serve,

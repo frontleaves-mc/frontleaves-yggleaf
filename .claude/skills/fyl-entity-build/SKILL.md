@@ -41,6 +41,7 @@ fyl-entity-build 创建一个 Player 实体，包含 UUID、Name、Level 字段�
 
 4. **生成代码**
     - 输出到 `internal/entity/<snake_case>.go`
+    - 所有字段行必须追加行尾注释（`// 中文说明`）
     - 提醒 Gene 常量定义
 
 ---
@@ -128,19 +129,36 @@ questions:
 
 ---
 
+## 字段行尾注释规范（新增）
+
+生成实体时，所有字段都必须遵循以下格式：
+
+```go
+FieldName FieldType `gorm:"...;comment:字段说明" json:"field_name"` // 字段说明
+```
+
+### 强制规则
+
+1. **MUST**: 结构体中每一行字段定义都要有行尾注释（包括普通字段、外键字段、切片关联字段）。
+2. **MUST**: 行尾注释语义必须和字段含义一致，建议与 `gorm comment` 保持一致。
+3. **MUST**: 行尾注释使用中文，格式统一为 `// 中文说明`。
+4. **DO NOT**: 省略行尾注释，即使字段名已经很清晰。
+
+---
+
 ## 外键关系模板
 
 ### belongs_to（多对一）
 
 ```go
-UserID xSnowflake.SnowflakeID `gorm:"not null;index:idx_user_id;comment:关联用户ID" json:"user_id"`
-User   User                   `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"`
+UserID xSnowflake.SnowflakeID `gorm:"not null;index:idx_user_id;comment:关联用户ID" json:"user_id"` // 关联用户ID
+User   User                   `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"` // 关联用户
 ```
 
 ### has_many（一对多）
 
 ```go
-GameProfiles []GameProfile `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;comment:游戏档案关联" json:"game_profiles,omitempty"`
+GameProfiles []GameProfile `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;comment:游戏档案关联" json:"game_profiles,omitempty"` // 游戏档案关联
 ```
 
 ---
@@ -196,16 +214,16 @@ import (
 // Player 玩家实体，包含 UUID、名称、等级等游戏内信息。
 type Player struct {
 	xModels.BaseEntity                        // 嵌入基础实体字段
-	UserID             xSnowflake.SnowflakeID `gorm:"not null;index:idx_user_id;comment:关联用户ID" json:"user_id"`
-	UUID               string                 `gorm:"unique;not null;type:varchar(36);comment:Minecraft UUID" json:"uuid"`
-	Name               string                 `gorm:"not null;type:varchar(32);comment:游戏内玩家名" json:"name"`
-	Level              int                    `gorm:"not null;default:1;comment:玩家等级" json:"level"`
-	LastSeen           *time.Time             `gorm:"type:timestamptz;comment:最后在线时间" json:"last_seen,omitempty"`
+	UserID             xSnowflake.SnowflakeID `gorm:"not null;index:idx_user_id;comment:关联用户ID" json:"user_id"` // 关联用户ID
+	UUID               string                 `gorm:"unique;not null;type:varchar(36);comment:Minecraft UUID" json:"uuid"` // Minecraft UUID
+	Name               string                 `gorm:"not null;type:varchar(32);comment:游戏内玩家名" json:"name"` // 游戏内玩家名
+	Level              int                    `gorm:"not null;default:1;comment:玩家等级" json:"level"` // 玩家等级
+	LastSeen           *time.Time             `gorm:"type:timestamptz;comment:最后在线时间" json:"last_seen,omitempty"` // 最后在线时间
 
 	// ----------
 	//  外键约束
 	// ----------
-	User User `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"`
+	User User `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"` // 关联用户
 }
 
 // GetGene 返回 xSnowflake.Gene，用于标识该实体在 ID 生成时使用的基因类型。
@@ -219,7 +237,7 @@ func (_ *Player) GetGene() xSnowflake.Gene {
 
 ```go
 const (
-GeneForGameProfile xSnowflake.Gene = 32
+GeneForGameProfile xSnowflake.Gene = 32 // 游戏档案
 GeneForPlayer      xSnowflake.Gene = 64 // 新增
 )
 ```
@@ -230,10 +248,11 @@ GeneForPlayer      xSnowflake.Gene = 64 // 新增
 
 1. **Gene 常量**: 自定义 Gene 需要在 `internal/constant/gene_number.go` 中定义
 2. **外键删除策略**: 默认使用 `OnDelete:CASCADE`
-3. **指针类型**: 可空字段自动添加 `omitempty` JSON 标签
-4. **敏感字段**: 密码等使用 `json:"-"` 隐藏
-5. **不确定时**: 使用 AskUserQuestion 询问用户，不要擅自猜测
-6. **新表时刻**: 若创建全新的表，需要写入 internal/startup/startup_database.go 的 AutoMigrate
+3. **字段行尾注释**: 所有字段定义必须追加 `// 中文说明`，不可省略
+4. **指针类型**: 可空字段自动添加 `omitempty` JSON 标签
+5. **敏感字段**: 密码等使用 `json:"-"` 隐藏
+6. **不确定时**: 使用 AskUserQuestion 询问用户，不要擅自猜测
+7. **新表时刻**: 若创建全新的表，需要写入 internal/startup/startup_database.go 的 AutoMigrate
 
 ---
 

@@ -21,7 +21,19 @@
                     "200": {
                         "description": "登录成功",
                         "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/entity.User"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -53,6 +65,120 @@
         }
     },
     "definitions": {
+        "entity.GameProfile": {
+            "type": "object",
+            "properties": {
+                "cape_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skin_url": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "description": "----------\n 外键约束\n----------",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.Role": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "$ref": "#/definitions/entity.RoleName"
+                }
+            }
+        },
+        "entity.RoleName": {
+            "type": "string",
+            "enum": [
+                "SUPER_ADMIN",
+                "ADMIN",
+                "PLAYER"
+            ],
+            "x-enum-comments": {
+                "RoleAdmin": "管理员角色名称",
+                "RolePlayer": "普通玩家角色名称",
+                "RoleSuperAdmin": "超级管理员角色名称"
+            },
+            "x-enum-descriptions": [
+                "超级管理员角色名称",
+                "管理员角色名称",
+                "普通玩家角色名称"
+            ],
+            "x-enum-varnames": [
+                "RoleSuperAdmin",
+                "RoleAdmin",
+                "RolePlayer"
+            ]
+        },
+        "entity.User": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "game_profiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.GameProfile"
+                    }
+                },
+                "has_ban": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "jailed_at": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "description": "----------\n 外键约束\n----------",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.Role"
+                        }
+                    ]
+                },
+                "role_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "xBase.BaseResponse": {
             "type": "object",
             "properties": {

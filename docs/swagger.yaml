@@ -1,4 +1,85 @@
 definitions:
+  entity.GameProfile:
+    properties:
+      cape_url:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      skin_url:
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        type: integer
+      uuid:
+        type: string
+    type: object
+  entity.Role:
+    properties:
+      description:
+        type: string
+      display_name:
+        type: string
+      name:
+        $ref: '#/definitions/entity.RoleName'
+    type: object
+  entity.RoleName:
+    enum:
+    - SUPER_ADMIN
+    - ADMIN
+    - PLAYER
+    type: string
+    x-enum-comments:
+      RoleAdmin: 管理员角色名称
+      RolePlayer: 普通玩家角色名称
+      RoleSuperAdmin: 超级管理员角色名称
+    x-enum-descriptions:
+    - 超级管理员角色名称
+    - 管理员角色名称
+    - 普通玩家角色名称
+    x-enum-varnames:
+    - RoleSuperAdmin
+    - RoleAdmin
+    - RolePlayer
+  entity.User:
+    properties:
+      email:
+        type: string
+      game_profiles:
+        items:
+          $ref: '#/definitions/entity.GameProfile'
+        type: array
+      has_ban:
+        type: boolean
+      id:
+        type: integer
+      jailed_at:
+        type: string
+      phone:
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/entity.Role'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      role_name:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
   xBase.BaseResponse:
     properties:
       code:
@@ -29,7 +110,12 @@ paths:
         "200":
           description: 登录成功
           schema:
-            $ref: '#/definitions/xBase.BaseResponse'
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.User'
+              type: object
         "400":
           description: 请求体格式不正确
           schema:
