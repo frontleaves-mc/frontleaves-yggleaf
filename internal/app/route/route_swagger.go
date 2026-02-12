@@ -22,8 +22,8 @@ import (
 //   - r: Gin 路由组实例，用于注册 Swagger 路由。
 func swaggerRegister(r gin.IRouter) {
 	docs.SwaggerInfo.BasePath = "/api/v1"
-	docs.SwaggerInfo.Title = "烽火登录"
-	docs.SwaggerInfo.Description = "锋楪技术（深圳）有限公司登录系统"
+	docs.SwaggerInfo.Title = "FrontLeavesYggleaf"
+	docs.SwaggerInfo.Description = "锋楪技术（深圳）有限公司我的世界用户中心"
 	docs.SwaggerInfo.Version = "v1.0.0"
 	docs.SwaggerInfo.Host = xEnv.GetEnvString(xEnv.Host, "localhost") + ":" + xEnv.GetEnvString(xEnv.Port, "5566")
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}

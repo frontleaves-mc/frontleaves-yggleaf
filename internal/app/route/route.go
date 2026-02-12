@@ -59,6 +59,6 @@ func NewRoute(reg *xReg.Reg) {
 
 		oauthRoute.OAuthRouter(apiRouter)
 
-		r.authRouter(apiRouter)
+		r.userRouter(apiRouter)
 	}
 }
