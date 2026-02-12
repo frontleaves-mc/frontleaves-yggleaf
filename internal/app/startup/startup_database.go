@@ -18,6 +18,8 @@ var migrateTables = []interface{}{
 	&entity.Role{},
 	&entity.User{},
 	&entity.GameProfile{},
+	&entity.GameProfileQuota{},
+	&entity.GameProfileQuotaLog{},
 }
 
 func (r *reg) databaseInit(ctx context.Context) (any, error) {
