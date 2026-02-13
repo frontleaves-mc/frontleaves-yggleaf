@@ -1,5 +1,5 @@
 ---
-name: fyl-entity-build
+name: entity-build
 description: 根据口头描述快速生成符合项目规范的 Go Entity 代码。当用户说"创建一个实体"、"添加 entity"、"新建数据模型"或类似请求时自动激活。
 argument-hint: [ entity-name ]
 allowed-tools: Read, Write, Edit, AskUserQuestion

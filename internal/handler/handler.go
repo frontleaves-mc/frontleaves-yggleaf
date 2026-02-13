@@ -12,8 +12,9 @@ import (
 //
 // 该类型封装了应用程序的核心业务规则和数据处理流程，充当 Handler 与数据访问层之间的桥梁。
 type service struct {
-	userLogic  *logic.UserLogic
-	oauthLogic *bSdkLogic.BusinessLogic
+	userLogic        *logic.UserLogic
+	gameProfileLogic *logic.GameProfileLogic
+	oauthLogic       *bSdkLogic.BusinessLogic
 }
 
 // handler HTTP 请求处理器的基类结构体
@@ -62,8 +63,9 @@ func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
 		name: handlerName,
 		log:  xLog.WithName(xLog.NamedCONT, handlerName),
 		service: &service{
-			userLogic:  logic.NewUserLogic(ctx),
-			oauthLogic: bSdkLogic.NewBusiness(ctx),
+			userLogic:        logic.NewUserLogic(ctx),
+			gameProfileLogic: logic.NewGameProfileLogic(ctx),
+			oauthLogic:       bSdkLogic.NewBusiness(ctx),
 		},
 	}
 }
@@ -74,3 +76,5 @@ func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
 
 // UserHandler 用户接口
 type UserHandler handler
+
+type GameProfileHandler handler

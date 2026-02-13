@@ -60,5 +60,6 @@ func NewRoute(reg *xReg.Reg) {
 		oauthRoute.OAuthRouter(apiRouter)
 
 		r.userRouter(apiRouter)
+		r.gameProfileRouter(apiRouter)
 	}
 }

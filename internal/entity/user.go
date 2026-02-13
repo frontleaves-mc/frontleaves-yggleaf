@@ -13,7 +13,7 @@ type User struct {
 	Username           string     `gorm:"not null;type:varchar(255);comment:用户用户名" json:"username"`               // 用户用户名
 	Email              *string    `gorm:"type:varchar(255);comment:用户邮箱;index:idx_email" json:"email"`            // 用户邮箱
 	Phone              *string    `gorm:"type:varchar(32);comment:用户手机号;index:idx_phone" json:"phone"`            // 用户手机号
-	RoleName           *string    `gorm:"type:varchar(32);comment:关联角色名称" json:"role_name"`                       // 关联角色名称
+	RoleName           *string    `gorm:"not null;type:varchar(32);comment:关联角色名称" json:"role_name"`              // 关联角色名称
 	GamePassword       string     `gorm:"not null;type:varchar(255);comment:游戏账户密码" json:"-"`                     // 游戏账户密码
 	HasBan             bool       `gorm:"not null;type:boolean;default:false;comment:用户是否被封禁禁止登录" json:"has_ban"` // 用户是否被封禁禁止登录
 	JailedAt           *time.Time `gorm:"type:timestamptz;comment:用户被监禁的时间" json:"jailed_at"`                     // 用户被监禁的时间

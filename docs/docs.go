@@ -15,9 +15,162 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/game-profile": {
+            "post": {
+                "description": "根据当前登录用户创建游戏档案，UUID 由系统按 UUIDv7 自动生成",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "游戏档案接口"
+                ],
+                "summary": "[玩家] 创建游戏档案",
+                "parameters": [
+                    {
+                        "description": "创建游戏档案请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.AddGameProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/entity.GameProfile"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "资源冲突",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "资源耗尽",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/game-profile/{profile_id}/username": {
+            "patch": {
+                "description": "根据档案 ID 修改游戏档案用户名",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "游戏档案接口"
+                ],
+                "summary": "[玩家] 修改用户名",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "游戏档案 ID",
+                        "name": "profile_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "修改用户名请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.ChangeUsernameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "修改成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/entity.GameProfile"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "资源冲突",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/info": {
             "get": {
-                "description": "根据 AT 获取用户信息",
+                "description": "根据 AT 获取用户信息，获取到本程序的用户信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +180,7 @@ const docTemplate = `{
                 "tags": [
                     "用户接口"
                 ],
-                "summary": "[用户] 用户信息",
+                "summary": "[玩家] 用户信息",
                 "responses": {
                     "200": {
                         "description": "登录成功",
@@ -80,15 +233,18 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "cape_url": {
+                    "description": "披风URL",
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "name": {
+                    "description": "游戏内用户名",
                     "type": "string"
                 },
                 "skin_url": {
+                    "description": "皮肤URL",
                     "type": "string"
                 },
                 "updated_at": {
@@ -103,9 +259,11 @@ const docTemplate = `{
                     ]
                 },
                 "user_id": {
+                    "description": "关联用户ID",
                     "type": "integer"
                 },
                 "uuid": {
+                    "description": "Minecraft UUID",
                     "type": "string"
                 }
             }
@@ -114,13 +272,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
+                    "description": "角色描述",
                     "type": "string"
                 },
                 "display_name": {
+                    "description": "角色显示名称",
                     "type": "string"
                 },
                 "name": {
-                    "$ref": "#/definitions/entity.RoleName"
+                    "description": "角色名称",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.RoleName"
+                        }
+                    ]
                 }
             }
         },
@@ -151,24 +316,29 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
+                    "description": "用户邮箱",
                     "type": "string"
                 },
                 "game_profiles": {
+                    "description": "游戏档案关联",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/entity.GameProfile"
                     }
                 },
                 "has_ban": {
+                    "description": "用户是否被封禁禁止登录",
                     "type": "boolean"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "jailed_at": {
+                    "description": "用户被监禁的时间",
                     "type": "string"
                 },
                 "phone": {
+                    "description": "用户手机号",
                     "type": "string"
                 },
                 "role": {
@@ -180,12 +350,36 @@ const docTemplate = `{
                     ]
                 },
                 "role_name": {
+                    "description": "关联角色名称",
                     "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
                 },
                 "username": {
+                    "description": "用户用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "user.AddGameProfileRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.ChangeUsernameRequest": {
+            "type": "object",
+            "required": [
+                "new_name"
+            ],
+            "properties": {
+                "new_name": {
                     "type": "string"
                 }
             }

@@ -7,10 +7,10 @@ import (
 )
 
 func (r *route) userRouter(route gin.IRouter) {
+	userHandler := handler.NewHandler[handler.UserHandler](r.context, "UserHandler")
+
 	userGroup := route.Group("/user")
 	userGroup.Use(bSdkMiddle.CheckAuth(r.context))
-
-	userHandler := handler.NewHandler[handler.UserHandler](r.context, "UserHandler")
 
 	{
 		userGroup.GET("/info", userHandler.UserCurrent)
