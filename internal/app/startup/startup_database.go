@@ -18,6 +18,9 @@ var migrateTables = []interface{}{
 	&entity.Role{},
 	&entity.User{},
 	&entity.GameProfile{},
+	&entity.SkinLibrary{},
+	&entity.CapeLibrary{},
+	&entity.LibraryQuota{},
 	&entity.GameProfileQuota{},
 	&entity.GameProfileQuotaLog{},
 }

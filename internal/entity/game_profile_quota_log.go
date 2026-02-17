@@ -19,11 +19,15 @@ type GameProfileQuotaLog struct {
 	AfterUsed      int32                   `gorm:"not null;comment:变更后已使用额度" json:"after_used"`
 	BeforeTotal    int32                   `gorm:"not null;comment:变更前总额度" json:"before_total"`
 	AfterTotal     int32                   `gorm:"not null;comment:变更后总额度" json:"after_total"`
-	IdempotencyKey string                  `gorm:"not null;type:varchar(64);uniqueIndex:uk_game_profile_quota_log_idempotency_key;comment:幂等键" json:"idempotency_key"`
+	IdempotencyKey string                  `gorm:"not null;type:varchar(255);uniqueIndex:uk_game_profile_quota_log_idempotency_key;comment:幂等键" json:"idempotency_key"`
 	RefProfileID   *xSnowflake.SnowflakeID `gorm:"type:bigint;index:idx_game_profile_quota_log_ref_profile_id;comment:关联游戏档案ID" json:"ref_profile_id,omitempty"`
 	Remark         *string                 `gorm:"type:varchar(255);comment:备注" json:"remark,omitempty"`
-	User           User                    `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"`
-	RefProfile     *GameProfile            `gorm:"foreignKey:RefProfileID;references:ID;constraint:OnDelete:SET NULL;comment:关联游戏档案" json:"ref_profile,omitempty"`
+
+	// ----------
+	//  外键约束
+	// ----------
+	User       User         `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"`
+	RefProfile *GameProfile `gorm:"foreignKey:RefProfileID;references:ID;constraint:OnDelete:SET NULL;comment:关联游戏档案" json:"ref_profile,omitempty"`
 }
 
 func (_ *GameProfileQuotaLog) GetGene() xSnowflake.Gene {
