@@ -11,7 +11,7 @@ require (
 	github.com/bamboo-services/bamboo-base-go v1.0.0-202602231507
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
-	github.com/phalanx-labs/beacon-bucket-sdk v1.0.0-202602231725
+	github.com/phalanx-labs/beacon-bucket-sdk v1.0.0-202602240037
 	github.com/phalanx/beacon-sso-sdk v1.0.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/swaggo/files v1.0.1

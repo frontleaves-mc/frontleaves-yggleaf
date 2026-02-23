@@ -24,7 +24,7 @@ type SkinLibrary struct {
 	Name               string                  `gorm:"not null;type:varchar(64);comment:皮肤名称" json:"name"`                                                 // 皮肤名称
 	Texture            int64                   `gorm:"not null;type:bigint;comment:皮肤纹理文件ID(雪花算法)" json:"texture"`                                         // 皮肤纹理文件ID(雪花算法)
 	TextureHash        string                  `gorm:"not null;type:char(64);uniqueIndex:uk_skin_library_texture_hash;comment:皮肤纹理哈希" json:"texture_hash"` // 皮肤纹理哈希
-	Model              ModelType               `gorm:"not null;type:tinyint;default:1;comment:皮肤模型(1=classic,2=slim)" json:"model"`                        // 皮肤模型(1=classic,2=slim)
+	Model              ModelType               `gorm:"not null;type:smallint;default:1;comment:皮肤模型(1=classic,2=slim)" json:"model"`                       // 皮肤模型(1=classic,2=slim)
 	IsPublic           bool                    `gorm:"not null;type:boolean;default:false;index:idx_skin_library_is_public;comment:是否公开" json:"is_public"` // 是否公开
 
 	// ----------

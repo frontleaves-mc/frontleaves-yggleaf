@@ -14,6 +14,7 @@ import (
 type service struct {
 	userLogic        *logic.UserLogic
 	gameProfileLogic *logic.GameProfileLogic
+	libraryLogic     *logic.LibraryLogic
 	oauthLogic       *bSdkLogic.BusinessLogic
 }
 
@@ -65,6 +66,7 @@ func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
 		service: &service{
 			userLogic:        logic.NewUserLogic(ctx),
 			gameProfileLogic: logic.NewGameProfileLogic(ctx),
+			libraryLogic:     logic.NewLibraryLogic(ctx),
 			oauthLogic:       bSdkLogic.NewBusiness(ctx),
 		},
 	}
@@ -77,4 +79,8 @@ func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
 // UserHandler 用户接口
 type UserHandler handler
 
+// GameProfileHandler 游戏档案接口
 type GameProfileHandler handler
+
+// LibraryHandler 资源库接口
+type LibraryHandler handler

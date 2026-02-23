@@ -61,5 +61,6 @@ func NewRoute(reg *xReg.Reg) {
 
 		r.userRouter(apiRouter)
 		r.gameProfileRouter(apiRouter)
+		r.libraryRouter(apiRouter)
 	}
 }
