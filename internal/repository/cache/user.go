@@ -39,7 +39,7 @@ type UserCache xCache.Cache
 // Get 从缓存中获取指定字段的值
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //   - field: 要获取的字段名。
 //
@@ -68,7 +68,7 @@ func (c *UserCache) Get(ctx context.Context, key string, field string) (*string,
 // Set 设置指定字段的值
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //   - field: 要设置的字段名。
 //   - value: 字段值的指针。
@@ -95,7 +95,7 @@ func (c *UserCache) Set(ctx context.Context, key string, field string, value *st
 // GetAll 获取哈希表中的所有字段和值
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //
 // 返回值:
@@ -112,7 +112,7 @@ func (c *UserCache) GetAll(ctx context.Context, key string) (map[string]string, 
 // GetAllStruct 获取哈希表中的所有字段和值，并映射为用户实体
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //
 // 返回值:
@@ -137,7 +137,7 @@ func (c *UserCache) GetAllStruct(ctx context.Context, key string) (*entity.User,
 // SetAll 批量设置多个字段的值
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //   - fields: 字段名到值指针的映射。
 //
@@ -171,7 +171,7 @@ func (c *UserCache) SetAll(ctx context.Context, key string, fields map[string]*s
 // SetAllStruct 批量设置用户实体的缓存字段
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //   - value: 用户实体指针。
 //
@@ -199,7 +199,7 @@ func (c *UserCache) SetAllStruct(ctx context.Context, key string, value *entity.
 // Exists 检查指定字段是否存在
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //   - field: 要检查的字段名。
 //
@@ -220,7 +220,7 @@ func (c *UserCache) Exists(ctx context.Context, key string, field string) (bool,
 // Remove 从缓存中移除指定的字段
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //   - fields: 要移除的字段名列表。
 //
@@ -240,7 +240,7 @@ func (c *UserCache) Remove(ctx context.Context, key string, fields ...string) er
 // Delete 删除用户缓存数据
 //
 // 参数:
-//   - ctx: 上下文对象，用于传递请求上下文。
+//   - context: 上下文对象，用于传递请求上下文。
 //   - key: 用户缓存键。
 //
 // 返回值:

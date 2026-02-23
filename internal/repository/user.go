@@ -55,7 +55,7 @@ func NewUserRepo(db *gorm.DB, rdb *redis.Client) *UserRepo {
 // 若数据库命中则更新缓存并返回。缓存更新失败仅记录日志，不影响业务返回。
 //
 // 参数:
-//   - ctx: Gin 上下文对象，用于传递请求范围的数据与控制流程。
+//   - context: Gin 上下文对象，用于传递请求范围的数据与控制流程。
 //   - id: 用户雪花 ID。
 //
 // 返回值:
@@ -96,7 +96,7 @@ func (r *UserRepo) Get(ctx *gin.Context, id string) (*entity.User, bool, *xError
 // 缓存更新失败仅记录日志，不影响业务返回。
 //
 // 参数:
-//   - ctx: Gin 上下文对象，用于传递请求范围的数据与控制流程。
+//   - context: Gin 上下文对象，用于传递请求范围的数据与控制流程。
 //   - user: 要创建或更新的用户实体。
 //
 // 返回值:

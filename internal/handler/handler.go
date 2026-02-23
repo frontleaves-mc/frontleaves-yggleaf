@@ -45,7 +45,7 @@ type IHandler interface {
 // 该函数利用泛型约束 T IHandler，确保 T 必须实现了 IHandler 接口。
 //
 // 该函数主要执行以下初始化逻辑：
-// 1. 依赖注入: 从传入的上下文 (ctx) 中提取并注入数据库连接 (*gorm.DB) 和 Redis 客户端 (*redis.Client)。
+// 1. 依赖注入: 从传入的上下文 (context) 中提取并注入数据库连接 (*gorm.DB) 和 Redis 客户端 (*redis.Client)。
 // 2. 日志组件: 初始化并绑定一个名为 "CONT" 的日志记录器，用于链路追踪和问题排查。
 // 3. 服务层聚合: 内部实例化核心业务逻辑层 service，并将其挂载到 Handler 中，形成标准的 Handler -> Service 架构。
 //
@@ -53,7 +53,7 @@ type IHandler interface {
 //   - T IHandler: 目标处理器类型，必须基于 handler 结构体或其别名，并实现了 IHandler 接口。
 //
 // 参数:
-//   - ctx context.Context: 应用上下文，必须包含由 xCtxUtil 管理的数据库和 Redis 连接实例。
+//   - context context.Context: 应用上下文，必须包含由 xCtxUtil 管理的数据库和 Redis 连接实例。
 //
 // 返回值:
 //   - *T: 初始化完成的处理器实例指针。若上下文缺少必要依赖（如 db 或 rdb），该函数内部调用的
