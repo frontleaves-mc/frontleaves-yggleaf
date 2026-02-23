@@ -229,12 +229,59 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "entity.CapeLibrary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "is_public": {
+                    "description": "是否公开",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "披风名称",
+                    "type": "string"
+                },
+                "texture_hash": {
+                    "description": "披风纹理哈希",
+                    "type": "string"
+                },
+                "texture_url": {
+                    "description": "披风纹理URL",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "description": "----------\n 外键约束\n----------",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "description": "关联用户ID(为空代表系统内置披风)",
+                    "type": "integer"
+                }
+            }
+        },
         "entity.GameProfile": {
             "type": "object",
             "properties": {
-                "cape_url": {
-                    "description": "披风URL",
-                    "type": "string"
+                "cape_library": {
+                    "description": "关联披风库",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.CapeLibrary"
+                        }
+                    ]
+                },
+                "cape_library_id": {
+                    "description": "关联披风库ID",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -243,9 +290,17 @@ const docTemplate = `{
                     "description": "游戏内用户名",
                     "type": "string"
                 },
-                "skin_url": {
-                    "description": "皮肤URL",
-                    "type": "string"
+                "skin_library": {
+                    "description": "关联皮肤库",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.SkinLibrary"
+                        }
+                    ]
+                },
+                "skin_library_id": {
+                    "description": "关联皮肤库ID",
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
@@ -265,6 +320,41 @@ const docTemplate = `{
                 "uuid": {
                     "description": "Minecraft UUID",
                     "type": "string"
+                }
+            }
+        },
+        "entity.LibraryQuota": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "resource_type": {
+                    "description": "资源类型(skin_library/cape_library)",
+                    "type": "string"
+                },
+                "total": {
+                    "description": "总额度",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "used": {
+                    "description": "已使用额度",
+                    "type": "integer"
+                },
+                "user": {
+                    "description": "----------\n 外键约束\n----------",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "description": "关联用户ID",
+                    "type": "integer"
                 }
             }
         },
@@ -312,9 +402,59 @@ const docTemplate = `{
                 "RolePlayer"
             ]
         },
+        "entity.SkinLibrary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "is_public": {
+                    "description": "是否公开",
+                    "type": "boolean"
+                },
+                "model": {
+                    "description": "皮肤模型(classic/slim)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "皮肤名称",
+                    "type": "string"
+                },
+                "texture_hash": {
+                    "description": "皮肤纹理哈希",
+                    "type": "string"
+                },
+                "texture_url": {
+                    "description": "皮肤纹理URL",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "description": "----------\n 外键约束\n----------",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "description": "关联用户ID(为空代表系统内置皮肤)",
+                    "type": "integer"
+                }
+            }
+        },
         "entity.User": {
             "type": "object",
             "properties": {
+                "cape_libraries": {
+                    "description": "披风库关联",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.CapeLibrary"
+                    }
+                },
                 "email": {
                     "description": "用户邮箱",
                     "type": "string"
@@ -337,6 +477,13 @@ const docTemplate = `{
                     "description": "用户被监禁的时间",
                     "type": "string"
                 },
+                "library_quotas": {
+                    "description": "资源库配额关联",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.LibraryQuota"
+                    }
+                },
                 "phone": {
                     "description": "用户手机号",
                     "type": "string"
@@ -352,6 +499,13 @@ const docTemplate = `{
                 "role_name": {
                     "description": "关联角色名称",
                     "type": "string"
+                },
+                "skin_libraries": {
+                    "description": "皮肤库关联",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.SkinLibrary"
+                    }
                 },
                 "updated_at": {
                     "type": "string"

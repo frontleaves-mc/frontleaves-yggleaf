@@ -1,17 +1,54 @@
 definitions:
+  entity.CapeLibrary:
+    properties:
+      id:
+        type: integer
+      is_public:
+        description: 是否公开
+        type: boolean
+      name:
+        description: 披风名称
+        type: string
+      texture_hash:
+        description: 披风纹理哈希
+        type: string
+      texture_url:
+        description: 披风纹理URL
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID(为空代表系统内置披风)
+        type: integer
+    type: object
   entity.GameProfile:
     properties:
-      cape_url:
-        description: 披风URL
-        type: string
+      cape_library:
+        allOf:
+        - $ref: '#/definitions/entity.CapeLibrary'
+        description: 关联披风库
+      cape_library_id:
+        description: 关联披风库ID
+        type: integer
       id:
         type: integer
       name:
         description: 游戏内用户名
         type: string
-      skin_url:
-        description: 皮肤URL
-        type: string
+      skin_library:
+        allOf:
+        - $ref: '#/definitions/entity.SkinLibrary'
+        description: 关联皮肤库
+      skin_library_id:
+        description: 关联皮肤库ID
+        type: integer
       updated_at:
         type: string
       user:
@@ -27,6 +64,32 @@ definitions:
       uuid:
         description: Minecraft UUID
         type: string
+    type: object
+  entity.LibraryQuota:
+    properties:
+      id:
+        type: integer
+      resource_type:
+        description: 资源类型(skin_library/cape_library)
+        type: string
+      total:
+        description: 总额度
+        type: integer
+      updated_at:
+        type: string
+      used:
+        description: 已使用额度
+        type: integer
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID
+        type: integer
     type: object
   entity.Role:
     properties:
@@ -59,8 +122,45 @@ definitions:
     - RoleSuperAdmin
     - RoleAdmin
     - RolePlayer
+  entity.SkinLibrary:
+    properties:
+      id:
+        type: integer
+      is_public:
+        description: 是否公开
+        type: boolean
+      model:
+        description: 皮肤模型(classic/slim)
+        type: string
+      name:
+        description: 皮肤名称
+        type: string
+      texture_hash:
+        description: 皮肤纹理哈希
+        type: string
+      texture_url:
+        description: 皮肤纹理URL
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID(为空代表系统内置皮肤)
+        type: integer
+    type: object
   entity.User:
     properties:
+      cape_libraries:
+        description: 披风库关联
+        items:
+          $ref: '#/definitions/entity.CapeLibrary'
+        type: array
       email:
         description: 用户邮箱
         type: string
@@ -77,6 +177,11 @@ definitions:
       jailed_at:
         description: 用户被监禁的时间
         type: string
+      library_quotas:
+        description: 资源库配额关联
+        items:
+          $ref: '#/definitions/entity.LibraryQuota'
+        type: array
       phone:
         description: 用户手机号
         type: string
@@ -90,6 +195,11 @@ definitions:
       role_name:
         description: 关联角色名称
         type: string
+      skin_libraries:
+        description: 皮肤库关联
+        items:
+          $ref: '#/definitions/entity.SkinLibrary'
+        type: array
       updated_at:
         type: string
       username:

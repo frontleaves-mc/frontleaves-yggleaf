@@ -5,6 +5,7 @@ import (
 
 	xCtx "github.com/bamboo-services/bamboo-base-go/context"
 	xRegNode "github.com/bamboo-services/bamboo-base-go/register/node"
+	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	bSdkStartup "github.com/phalanx/beacon-sso-sdk/startup"
 )
 
@@ -27,7 +28,7 @@ func Init() (context.Context, []xRegNode.RegNodeList) {
 	// 初始化注册
 	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.DatabaseKey, Node: businessReg.databaseInit})
 	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.RedisClientKey, Node: businessReg.nosqlInit})
-	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.Nil, Node: businessReg.nosqlInit})
+	regNode = append(regNode, xRegNode.RegNodeList{Key: bConst.CtxBucketKey, Node: businessReg.bucketInit})
 	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.Exec, Node: businessReg.businessDataPrepare})
 
 	// 初始化 OAuth2

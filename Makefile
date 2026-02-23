@@ -5,7 +5,9 @@ SWAG_FLAGS = --parseDependency
 BUILD_SCRIPT = script/build-docker.sh
 SCRIPT_DIR = script
 
-.PHONY: swag run dev build docker upload help
+.DEFAULT_GOAL := help
+
+.PHONY: help swag run dev
 
 # 显示帮助信息
 help:
