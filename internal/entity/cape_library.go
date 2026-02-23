@@ -11,7 +11,7 @@ type CapeLibrary struct {
 	xModels.BaseEntity                         // 嵌入基础实体字段
 	UserID             *xSnowflake.SnowflakeID `gorm:"type:bigint;index:idx_cape_library_user_id;comment:关联用户ID(为空代表系统内置披风)" json:"user_id,omitempty"`     // 关联用户ID(为空代表系统内置披风)
 	Name               string                  `gorm:"not null;type:varchar(64);comment:披风名称" json:"name"`                                                 // 披风名称
-	TextureURL         string                  `gorm:"not null;type:varchar(512);comment:披风纹理URL" json:"texture_url"`                                      // 披风纹理URL
+	Texture            int64                   `gorm:"not null;type:bigint;comment:披风纹理文件ID(雪花算法)" json:"texture"`                                         // 披风纹理文件ID(雪花算法)
 	TextureHash        string                  `gorm:"not null;type:char(64);uniqueIndex:uk_cape_library_texture_hash;comment:披风纹理哈希" json:"texture_hash"` // 披风纹理哈希
 	IsPublic           bool                    `gorm:"not null;type:boolean;default:false;index:idx_cape_library_is_public;comment:是否公开" json:"is_public"` // 是否公开
 
