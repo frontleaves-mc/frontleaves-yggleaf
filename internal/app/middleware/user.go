@@ -3,14 +3,14 @@ package middleware
 import (
 	"context"
 
-	xHttp "github.com/bamboo-services/bamboo-base-go/http"
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
-	xResult "github.com/bamboo-services/bamboo-base-go/result"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	xHttp "github.com/bamboo-services/bamboo-base-go/major/http"
+	xResult "github.com/bamboo-services/bamboo-base-go/major/result"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/logic"
 	"github.com/gin-gonic/gin"
-	bSdkLogic "github.com/phalanx/beacon-sso-sdk/logic"
+	bSdkLogic "github.com/phalanx-labs/beacon-sso-sdk/logic"
 )
 
 // User 中间件用于注入用户身份信息到 Gin 的上下文中。

@@ -3,8 +3,8 @@ package entity
 import (
 	"time"
 
-	xModels "github.com/bamboo-services/bamboo-base-go/models"
-	xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
+	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
+	xModels "github.com/bamboo-services/bamboo-base-go/major/models"
 )
 
 // User 用户实体，包含账号验证、安全状态及关联游戏档案信息。

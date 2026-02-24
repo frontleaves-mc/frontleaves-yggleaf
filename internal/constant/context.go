@@ -1,6 +1,6 @@
 package bConst
 
-import xCtx "github.com/bamboo-services/bamboo-base-go/context"
+import xCtx "github.com/bamboo-services/bamboo-base-go/defined/context"
 
 const (
 	CtxBucketKey   xCtx.ContextKey = "business_bucket"   // 是用于在上下文中存储业务桶键的上下文键

@@ -3,8 +3,8 @@ package prepare
 import (
 	"context"
 
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
-	xCtxUtil "github.com/bamboo-services/bamboo-base-go/utility/ctxutil"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	xCtxUtil "github.com/bamboo-services/bamboo-base-go/common/utility/context"
 	"gorm.io/gorm"
 )
 

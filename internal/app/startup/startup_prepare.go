@@ -3,7 +3,7 @@ package startup
 import (
 	"context"
 
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/app/startup/prepare"
 )
 

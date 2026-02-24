@@ -1,13 +1,13 @@
 package handler
 
 import (
-	xError "github.com/bamboo-services/bamboo-base-go/error"
-	xResult "github.com/bamboo-services/bamboo-base-go/result"
-	xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
-	xUtil "github.com/bamboo-services/bamboo-base-go/utility"
+	xError "github.com/bamboo-services/bamboo-base-go/common/error"
+	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
+	xUtil "github.com/bamboo-services/bamboo-base-go/common/utility"
+	xResult "github.com/bamboo-services/bamboo-base-go/major/result"
 	apiUser "github.com/frontleaves-mc/frontleaves-yggleaf/api/user"
 	"github.com/gin-gonic/gin"
-	bSdkUtil "github.com/phalanx/beacon-sso-sdk/utility"
+	bSdkUtil "github.com/phalanx-labs/beacon-sso-sdk/utility"
 )
 
 // AddGameProfile 创建当前用户的游戏档案
@@ -28,7 +28,7 @@ import (
 func (h *GameProfileHandler) AddGameProfile(ctx *gin.Context) {
 	h.log.Info(ctx, "AddGameProfile - 创建游戏档案")
 
-	req := xUtil.BindData(ctx, &apiUser.AddGameProfileRequest{})
+	req := xUtil.Bind(ctx, &apiUser.AddGameProfileRequest{}).Data()
 	if req == nil {
 		return
 	}
@@ -78,7 +78,7 @@ func (h *GameProfileHandler) ChangeUsername(ctx *gin.Context) {
 		return
 	}
 
-	req := xUtil.BindData(ctx, &apiUser.ChangeUsernameRequest{})
+	req := xUtil.Bind(ctx, &apiUser.ChangeUsernameRequest{}).Data()
 	if req == nil {
 		return
 	}

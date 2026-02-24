@@ -1,6 +1,6 @@
 package bConst
 
-import xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
+import xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 
 const (
 	GeneForGameProfile         xSnowflake.Gene = 32 // 应用

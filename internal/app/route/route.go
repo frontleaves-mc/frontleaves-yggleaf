@@ -3,12 +3,12 @@ package route
 import (
 	"context"
 
-	xEnv "github.com/bamboo-services/bamboo-base-go/env"
-	xMiddle "github.com/bamboo-services/bamboo-base-go/middleware"
-	xReg "github.com/bamboo-services/bamboo-base-go/register"
-	xRoute "github.com/bamboo-services/bamboo-base-go/route"
+	xEnv "github.com/bamboo-services/bamboo-base-go/defined/env"
+	xMiddle "github.com/bamboo-services/bamboo-base-go/major/middleware"
+	xReg "github.com/bamboo-services/bamboo-base-go/major/register"
+	xRoute "github.com/bamboo-services/bamboo-base-go/major/route"
 	"github.com/gin-gonic/gin"
-	bSdkRoute "github.com/phalanx/beacon-sso-sdk/route"
+	bSdkRoute "github.com/phalanx-labs/beacon-sso-sdk/route"
 )
 
 // route 代表 HTTP 路由配置的核心结构体。

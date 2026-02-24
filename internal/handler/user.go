@@ -1,9 +1,9 @@
 package handler
 
 import (
-	xResult "github.com/bamboo-services/bamboo-base-go/result"
+	xResult "github.com/bamboo-services/bamboo-base-go/major/result"
 	"github.com/gin-gonic/gin"
-	bSdkUtil "github.com/phalanx/beacon-sso-sdk/utility"
+	bSdkUtil "github.com/phalanx-labs/beacon-sso-sdk/utility"
 )
 
 // UserCurrent 获取用户的信息

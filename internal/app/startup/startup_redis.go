@@ -3,8 +3,8 @@ package startup
 import (
 	"context"
 
-	xEnv "github.com/bamboo-services/bamboo-base-go/env"
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	xEnv "github.com/bamboo-services/bamboo-base-go/defined/env"
 	"github.com/redis/go-redis/v9"
 )
 

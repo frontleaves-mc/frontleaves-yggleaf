@@ -206,8 +206,8 @@ package entity
 import (
 	"time"
 
-	xModels "github.com/bamboo-services/bamboo-base-go/models"
-	xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
+	xModels "github.com/bamboo-services/bamboo-base-go/major/models"
+	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 )
 

@@ -3,14 +3,14 @@ package handler
 import (
 	"strconv"
 
-	xError "github.com/bamboo-services/bamboo-base-go/error"
-	xResult "github.com/bamboo-services/bamboo-base-go/result"
-	xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
-	xUtil "github.com/bamboo-services/bamboo-base-go/utility"
+	xError "github.com/bamboo-services/bamboo-base-go/common/error"
+	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
+	xUtil "github.com/bamboo-services/bamboo-base-go/common/utility"
+	xResult "github.com/bamboo-services/bamboo-base-go/major/result"
 	apiLibrary "github.com/frontleaves-mc/frontleaves-yggleaf/api/library"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/gin-gonic/gin"
-	bSdkUtil "github.com/phalanx/beacon-sso-sdk/utility"
+	bSdkUtil "github.com/phalanx-labs/beacon-sso-sdk/utility"
 )
 
 const (
@@ -38,7 +38,7 @@ const (
 func (h *LibraryHandler) CreateSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "CreateSkin - 创建皮肤")
 
-	req := xUtil.BindData(ctx, &apiLibrary.CreateSkinRequest{})
+	req := xUtil.Bind(ctx, &apiLibrary.CreateSkinRequest{}).Data()
 	if req == nil {
 		return
 	}
@@ -140,7 +140,7 @@ func (h *LibraryHandler) UpdateSkin(ctx *gin.Context) {
 		return
 	}
 
-	req := xUtil.BindData(ctx, &apiLibrary.UpdateSkinRequest{})
+	req := xUtil.Bind(ctx, &apiLibrary.UpdateSkinRequest{}).Data()
 	if req == nil {
 		return
 	}
@@ -229,7 +229,7 @@ func (h *LibraryHandler) DeleteSkin(ctx *gin.Context) {
 func (h *LibraryHandler) CreateCape(ctx *gin.Context) {
 	h.log.Info(ctx, "CreateCape - 创建披风")
 
-	req := xUtil.BindData(ctx, &apiLibrary.CreateCapeRequest{})
+	req := xUtil.Bind(ctx, &apiLibrary.CreateCapeRequest{}).Data()
 	if req == nil {
 		return
 	}
@@ -331,7 +331,7 @@ func (h *LibraryHandler) UpdateCape(ctx *gin.Context) {
 		return
 	}
 
-	req := xUtil.BindData(ctx, &apiLibrary.UpdateCapeRequest{})
+	req := xUtil.Bind(ctx, &apiLibrary.UpdateCapeRequest{}).Data()
 	if req == nil {
 		return
 	}

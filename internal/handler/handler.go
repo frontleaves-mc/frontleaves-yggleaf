@@ -3,9 +3,9 @@ package handler
 import (
 	"context"
 
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/logic"
-	bSdkLogic "github.com/phalanx/beacon-sso-sdk/logic"
+	bSdkLogic "github.com/phalanx-labs/beacon-sso-sdk/logic"
 )
 
 // service 核心业务逻辑处理层

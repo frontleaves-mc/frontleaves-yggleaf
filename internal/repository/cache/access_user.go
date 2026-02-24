@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	xCache "github.com/bamboo-services/bamboo-base-go/cache"
+	xCache "github.com/bamboo-services/bamboo-base-go/major/cache"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/redis/go-redis/v9"

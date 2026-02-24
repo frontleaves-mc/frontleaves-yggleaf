@@ -2,17 +2,14 @@ module github.com/frontleaves-mc/frontleaves-yggleaf
 
 go 1.25.3
 
-replace (
-	github.com/bamboo-services/bamboo-base-go => /Users/xiaolfeng/ProgramProjects/Cooperate/bamboo-service/bamboo-base
-	github.com/phalanx/beacon-sso-sdk => /Users/xiaolfeng/ProgramProjects/Cooperate/phalanx/beacon-sso-sdk
-)
-
 require (
-	github.com/bamboo-services/bamboo-base-go v1.0.0-202602231507
+	github.com/bamboo-services/bamboo-base-go/common v1.0.0-202602241923
+	github.com/bamboo-services/bamboo-base-go/defined v1.0.0-202602241921
+	github.com/bamboo-services/bamboo-base-go/major v1.0.0-202602241924
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
-	github.com/phalanx-labs/beacon-bucket-sdk v1.0.0-202602240037
-	github.com/phalanx/beacon-sso-sdk v1.0.0
+	github.com/phalanx-labs/beacon-bucket-sdk v1.0.0-202602241840
+	github.com/phalanx-labs/beacon-sso-sdk v1.0.0-202602241905
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
@@ -24,7 +21,7 @@ require (
 require (
 	connectrpc.com/connect v1.19.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/bamboo-services/bamboo-base-go/plugins/grpc v0.0.0-20260223070729-4ba628d69849 // indirect
+	github.com/bamboo-services/bamboo-base-go/plugins/grpc v1.0.0-202602241831 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect

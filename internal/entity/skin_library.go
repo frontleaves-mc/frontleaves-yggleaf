@@ -3,8 +3,8 @@ package entity
 import (
 	"errors"
 
-	xModels "github.com/bamboo-services/bamboo-base-go/models"
-	xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
+	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
+	xModels "github.com/bamboo-services/bamboo-base-go/major/models"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	"gorm.io/gorm"
 )

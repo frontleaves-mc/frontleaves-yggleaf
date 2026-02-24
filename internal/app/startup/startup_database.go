@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
-	xEnv "github.com/bamboo-services/bamboo-base-go/env"
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	xEnv "github.com/bamboo-services/bamboo-base-go/defined/env"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

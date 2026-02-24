@@ -4,7 +4,7 @@ import (
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/app/middleware"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/handler"
 	"github.com/gin-gonic/gin"
-	bSdkMiddle "github.com/phalanx/beacon-sso-sdk/middleware"
+	bSdkMiddle "github.com/phalanx-labs/beacon-sso-sdk/middleware"
 )
 
 func (r *route) gameProfileRouter(route gin.IRouter) {

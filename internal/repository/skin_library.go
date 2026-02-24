@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	xError "github.com/bamboo-services/bamboo-base-go/error"
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
-	xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
+	xError "github.com/bamboo-services/bamboo-base-go/common/error"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

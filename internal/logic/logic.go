@@ -1,7 +1,7 @@
 package logic
 
 import (
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )

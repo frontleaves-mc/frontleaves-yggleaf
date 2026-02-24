@@ -3,16 +3,16 @@ package logic
 import (
 	"context"
 
-	xError "github.com/bamboo-services/bamboo-base-go/error"
-	xLog "github.com/bamboo-services/bamboo-base-go/log"
-	xModels "github.com/bamboo-services/bamboo-base-go/models"
-	xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
-	xUtil "github.com/bamboo-services/bamboo-base-go/utility"
-	xCtxUtil "github.com/bamboo-services/bamboo-base-go/utility/ctxutil"
+	xError "github.com/bamboo-services/bamboo-base-go/common/error"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
+	xUtil "github.com/bamboo-services/bamboo-base-go/common/utility"
+	xCtxUtil "github.com/bamboo-services/bamboo-base-go/common/utility/context"
+	xModels "github.com/bamboo-services/bamboo-base-go/major/models"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
 	"github.com/gin-gonic/gin"
-	bSdkModels "github.com/phalanx/beacon-sso-sdk/models"
+	bSdkModels "github.com/phalanx-labs/beacon-sso-sdk/models"
 )
 
 // userRepo 用户数据访问适配器

@@ -3,10 +3,10 @@ package startup
 import (
 	"context"
 
-	xCtx "github.com/bamboo-services/bamboo-base-go/context"
-	xRegNode "github.com/bamboo-services/bamboo-base-go/register/node"
+	xCtx "github.com/bamboo-services/bamboo-base-go/defined/context"
+	xRegNode "github.com/bamboo-services/bamboo-base-go/major/register/node"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
-	bSdkStartup "github.com/phalanx/beacon-sso-sdk/startup"
+	bSdkStartup "github.com/phalanx-labs/beacon-sso-sdk/startup"
 )
 
 // reg 表示应用程序的核心注册结构，包含所有初始化后的组件实例。
