@@ -1,6 +1,7 @@
 package route
 
 import (
+	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/app/middleware"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/handler"
 	"github.com/gin-gonic/gin"
 	bSdkMiddle "github.com/phalanx/beacon-sso-sdk/middleware"
@@ -11,6 +12,7 @@ func (r *route) libraryRouter(route gin.IRouter) {
 
 	libraryGroup := route.Group("/library")
 	libraryGroup.Use(bSdkMiddle.CheckAuth(r.context))
+	libraryGroup.Use(middleware.User(r.context))
 
 	{
 		// 皮肤相关接口

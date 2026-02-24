@@ -17,6 +17,7 @@ import (
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
 	bCtx "github.com/frontleaves-mc/frontleaves-yggleaf/pkg/context"
 	"github.com/gin-gonic/gin"
+	bBucket "github.com/phalanx-labs/beacon-bucket-sdk"
 	bBucketApi "github.com/phalanx-labs/beacon-bucket-sdk/api"
 	"gorm.io/gorm"
 )
@@ -34,10 +35,15 @@ type libraryRepo struct {
 	quotaRepo *repository.LibraryQuotaRepo
 }
 
+type libraryHelper struct {
+	bucket *bBucket.BucketClient
+}
+
 // LibraryLogic 资源库业务逻辑层
 type LibraryLogic struct {
 	logic
-	repo libraryRepo
+	repo   libraryRepo
+	helper libraryHelper
 }
 
 // NewLibraryLogic 创建 LibraryLogic 实例
@@ -54,6 +60,9 @@ func NewLibraryLogic(ctx context.Context) *LibraryLogic {
 			skinRepo:  repository.NewSkinLibraryRepo(db),
 			capeRepo:  repository.NewCapeLibraryRepo(db),
 			quotaRepo: repository.NewLibraryQuotaRepo(db),
+		},
+		helper: libraryHelper{
+			bucket: bCtx.MustGetBucket(ctx),
 		},
 	}
 }
@@ -650,7 +659,18 @@ func (l *LibraryLogic) validateCapeName(ctx *gin.Context, name string) (string, 
 }
 
 func (l *LibraryLogic) decodeBase64Texture(ctx *gin.Context, texture string) ([]byte, *xError.Error) {
-	data, err := base64.StdEncoding.DecodeString(texture)
+	// 处理 MIME 类型的 base64 数据 (如: data:image/png;base64,iVBORw0KGgo...)
+	base64Data := texture
+	if strings.HasPrefix(texture, "data:") {
+		// 查找 base64, 的位置
+		idx := strings.Index(texture, "base64,")
+		if idx == -1 {
+			return nil, xError.NewError(ctx, xError.ParameterError, "无效的 base64 MIME 格式：缺少 base64, 标记", true)
+		}
+		base64Data = texture[idx+len("base64,"):]
+	}
+
+	data, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
 		return nil, xError.NewError(ctx, xError.ParameterError, "无效的 base64 纹理数据", true, err)
 	}

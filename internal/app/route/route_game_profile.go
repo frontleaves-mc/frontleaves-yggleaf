@@ -1,6 +1,7 @@
 package route
 
 import (
+	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/app/middleware"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/handler"
 	"github.com/gin-gonic/gin"
 	bSdkMiddle "github.com/phalanx/beacon-sso-sdk/middleware"
@@ -11,6 +12,7 @@ func (r *route) gameProfileRouter(route gin.IRouter) {
 
 	gameProfileGroup := route.Group("/game-profile")
 	gameProfileGroup.Use(bSdkMiddle.CheckAuth(r.context))
+	gameProfileGroup.Use(middleware.User(r.context))
 
 	{
 		gameProfileGroup.POST("", gameProfileHandler.AddGameProfile)

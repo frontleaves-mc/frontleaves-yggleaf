@@ -8,15 +8,13 @@ import (
 	"time"
 
 	xCache "github.com/bamboo-services/bamboo-base-go/cache"
-	xEnv "github.com/bamboo-services/bamboo-base-go/env"
 	xSnowflake "github.com/bamboo-services/bamboo-base-go/snowflake"
+	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/redis/go-redis/v9"
 )
 
 const (
-	userCacheKeyPattern   = "user:entity:%s" // 用户实体缓存键模板
-	userCacheKeyPrefix    = "fyl:"           // 用户实体缓存键默认前缀
 	userCacheTimeLayout   = time.RFC3339Nano // 时间字段序列化格式
 	userCacheFieldID      = "id"
 	userCacheFieldUpdated = "updated_at"
@@ -55,7 +53,7 @@ func (c *UserCache) Get(ctx context.Context, key string, field string) (*string,
 		return nil, false, fmt.Errorf("字段为空")
 	}
 
-	value, err := c.RDB.HGet(ctx, c.buildKey(key), field).Result()
+	value, err := c.RDB.HGet(ctx, bConst.CacheUserinfo.Get(key).String(), field).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, false, nil
@@ -86,10 +84,10 @@ func (c *UserCache) Set(ctx context.Context, key string, field string, value *st
 		return fmt.Errorf("缓存值为空")
 	}
 
-	if err := c.RDB.HSet(ctx, c.buildKey(key), field, *value).Err(); err != nil {
+	if err := c.RDB.HSet(ctx, bConst.CacheUserinfo.Get(key).String(), field, *value).Err(); err != nil {
 		return err
 	}
-	return c.RDB.Expire(ctx, c.buildKey(key), c.TTL).Err()
+	return c.RDB.Expire(ctx, bConst.CacheUserinfo.Get(key).String(), c.TTL).Err()
 }
 
 // GetAll 获取哈希表中的所有字段和值
@@ -106,7 +104,7 @@ func (c *UserCache) GetAll(ctx context.Context, key string) (map[string]string, 
 		return nil, fmt.Errorf("用户标识为空")
 	}
 
-	return c.RDB.HGetAll(ctx, c.buildKey(key)).Result()
+	return c.RDB.HGetAll(ctx, bConst.CacheUserinfo.Get(key).String()).Result()
 }
 
 // GetAllStruct 获取哈希表中的所有字段和值，并映射为用户实体
@@ -123,7 +121,7 @@ func (c *UserCache) GetAllStruct(ctx context.Context, key string) (*entity.User,
 		return nil, fmt.Errorf("用户标识为空")
 	}
 
-	result, err := c.RDB.HGetAll(ctx, c.buildKey(key)).Result()
+	result, err := c.RDB.HGetAll(ctx, bConst.CacheUserinfo.Get(key).String()).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -162,10 +160,10 @@ func (c *UserCache) SetAll(ctx context.Context, key string, fields map[string]*s
 		values[field] = *value
 	}
 
-	if err := c.RDB.HSet(ctx, c.buildKey(key), values).Err(); err != nil {
+	if err := c.RDB.HSet(ctx, bConst.CacheUserinfo.Get(key).String(), values).Err(); err != nil {
 		return err
 	}
-	return c.RDB.Expire(ctx, c.buildKey(key), c.TTL).Err()
+	return c.RDB.Expire(ctx, bConst.CacheUserinfo.Get(key).String(), c.TTL).Err()
 }
 
 // SetAllStruct 批量设置用户实体的缓存字段
@@ -190,10 +188,10 @@ func (c *UserCache) SetAllStruct(ctx context.Context, key string, value *entity.
 		return nil
 	}
 
-	if err := c.RDB.HSet(ctx, c.buildKey(key), fields).Err(); err != nil {
+	if err := c.RDB.HSet(ctx, bConst.CacheUserinfo.Get(key).String(), fields).Err(); err != nil {
 		return err
 	}
-	return c.RDB.Expire(ctx, c.buildKey(key), c.TTL).Err()
+	return c.RDB.Expire(ctx, bConst.CacheUserinfo.Get(key).String(), c.TTL).Err()
 }
 
 // Exists 检查指定字段是否存在
@@ -214,7 +212,7 @@ func (c *UserCache) Exists(ctx context.Context, key string, field string) (bool,
 		return false, fmt.Errorf("字段为空")
 	}
 
-	return c.RDB.HExists(ctx, c.buildKey(key), field).Result()
+	return c.RDB.HExists(ctx, bConst.CacheUserinfo.Get(key).String(), field).Result()
 }
 
 // Remove 从缓存中移除指定的字段
@@ -234,7 +232,7 @@ func (c *UserCache) Remove(ctx context.Context, key string, fields ...string) er
 		return nil
 	}
 
-	return c.RDB.HDel(ctx, c.buildKey(key), fields...).Err()
+	return c.RDB.HDel(ctx, bConst.CacheUserinfo.Get(key).String(), fields...).Err()
 }
 
 // Delete 删除用户缓存数据
@@ -250,12 +248,7 @@ func (c *UserCache) Delete(ctx context.Context, key string) error {
 		return fmt.Errorf("用户标识为空")
 	}
 
-	return c.RDB.Del(ctx, c.buildKey(key)).Err()
-}
-
-func (c *UserCache) buildKey(key string) string {
-	prefix := xEnv.GetEnvString(xEnv.NoSqlPrefix, userCacheKeyPrefix)
-	return fmt.Sprintf(prefix+userCacheKeyPattern, key)
+	return c.RDB.Del(ctx, bConst.CacheUserinfo.Get(key).String()).Err()
 }
 
 func buildUserFields(user *entity.User) map[string]any {
