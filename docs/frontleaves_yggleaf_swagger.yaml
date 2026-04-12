@@ -1,0 +1,885 @@
+definitions:
+  entity.CapeLibrary:
+    properties:
+      id:
+        type: integer
+      is_public:
+        description: 是否公开
+        type: boolean
+      name:
+        description: 披风名称
+        type: string
+      texture:
+        description: 披风纹理文件ID(雪花算法)
+        type: integer
+      texture_hash:
+        description: 披风纹理哈希
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID(为空代表系统内置披风)
+        type: integer
+    type: object
+  entity.GameProfile:
+    properties:
+      cape_library:
+        allOf:
+        - $ref: '#/definitions/entity.CapeLibrary'
+        description: 关联披风库
+      cape_library_id:
+        description: 关联披风库ID
+        type: integer
+      id:
+        type: integer
+      name:
+        description: 游戏内用户名
+        type: string
+      skin_library:
+        allOf:
+        - $ref: '#/definitions/entity.SkinLibrary'
+        description: 关联皮肤库
+      skin_library_id:
+        description: 关联皮肤库ID
+        type: integer
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID
+        type: integer
+      uuid:
+        description: Minecraft UUID
+        type: string
+    type: object
+  entity.LibraryQuota:
+    properties:
+      capes_private_total:
+        description: 披风配额
+        type: integer
+      capes_private_used:
+        description: 私有披风已使用额度
+        type: integer
+      capes_public_total:
+        description: 公开披风总额度
+        type: integer
+      capes_public_used:
+        description: 公开披风已使用额度
+        type: integer
+      id:
+        type: integer
+      skins_private_total:
+        description: 皮肤配额
+        type: integer
+      skins_private_used:
+        description: 私有皮肤已使用额度
+        type: integer
+      skins_public_total:
+        description: 公开皮肤总额度
+        type: integer
+      skins_public_used:
+        description: 公开皮肤已使用额度
+        type: integer
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID
+        type: integer
+    type: object
+  entity.ModelType:
+    enum:
+    - 1
+    - 2
+    format: int32
+    type: integer
+    x-enum-comments:
+      ModelTypeClassic: 经典皮肤模型 (Steve)
+      ModelTypeSlim: 纤细皮肤模型 (Alex)
+    x-enum-descriptions:
+    - 经典皮肤模型 (Steve)
+    - 纤细皮肤模型 (Alex)
+    x-enum-varnames:
+    - ModelTypeClassic
+    - ModelTypeSlim
+  entity.Role:
+    properties:
+      description:
+        description: 角色描述
+        type: string
+      display_name:
+        description: 角色显示名称
+        type: string
+      name:
+        allOf:
+        - $ref: '#/definitions/entity.RoleName'
+        description: 角色名称
+    type: object
+  entity.RoleName:
+    enum:
+    - SUPER_ADMIN
+    - ADMIN
+    - PLAYER
+    type: string
+    x-enum-comments:
+      RoleAdmin: 管理员角色名称
+      RolePlayer: 普通玩家角色名称
+      RoleSuperAdmin: 超级管理员角色名称
+    x-enum-descriptions:
+    - 超级管理员角色名称
+    - 管理员角色名称
+    - 普通玩家角色名称
+    x-enum-varnames:
+    - RoleSuperAdmin
+    - RoleAdmin
+    - RolePlayer
+  entity.SkinLibrary:
+    properties:
+      id:
+        type: integer
+      is_public:
+        description: 是否公开
+        type: boolean
+      model:
+        allOf:
+        - $ref: '#/definitions/entity.ModelType'
+        description: 皮肤模型(1=classic,2=slim)
+      name:
+        description: 皮肤名称
+        type: string
+      texture:
+        description: 皮肤纹理文件ID(雪花算法)
+        type: integer
+      texture_hash:
+        description: 皮肤纹理哈希
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID(为空代表系统内置皮肤)
+        type: integer
+    type: object
+  entity.User:
+    properties:
+      cape_libraries:
+        description: 披风库关联
+        items:
+          $ref: '#/definitions/entity.CapeLibrary'
+        type: array
+      email:
+        description: 用户邮箱
+        type: string
+      game_profiles:
+        description: 游戏档案关联
+        items:
+          $ref: '#/definitions/entity.GameProfile'
+        type: array
+      has_ban:
+        description: 用户是否被封禁禁止登录
+        type: boolean
+      id:
+        type: integer
+      jailed_at:
+        description: 用户被监禁的时间
+        type: string
+      library_quotas:
+        description: 资源库配额关联
+        items:
+          $ref: '#/definitions/entity.LibraryQuota'
+        type: array
+      phone:
+        description: 用户手机号
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/entity.Role'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      role_name:
+        description: 关联角色名称
+        type: string
+      skin_libraries:
+        description: 皮肤库关联
+        items:
+          $ref: '#/definitions/entity.SkinLibrary'
+        type: array
+      updated_at:
+        type: string
+      username:
+        description: 用户用户名
+        type: string
+    type: object
+  library.CapeListResponse:
+    properties:
+      items:
+        description: 披风列表
+        items:
+          $ref: '#/definitions/library.CapeResponse'
+        type: array
+      total:
+        description: 总数
+        type: integer
+    type: object
+  library.CapeResponse:
+    properties:
+      id:
+        type: integer
+      is_public:
+        description: 是否公开
+        type: boolean
+      name:
+        description: 披风名称
+        type: string
+      texture:
+        description: 披风纹理文件ID(雪花算法)
+        type: integer
+      texture_hash:
+        description: 披风纹理哈希
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID(为空代表系统内置披风)
+        type: integer
+    type: object
+  library.CreateCapeRequest:
+    properties:
+      name:
+        description: 披风名称
+        type: string
+      texture:
+        description: 披风纹理文件 base64
+        type: string
+    required:
+    - name
+    - texture
+    type: object
+  library.CreateSkinRequest:
+    properties:
+      model:
+        description: 皮肤模型 (1=classic, 2=slim)
+        enum:
+        - 1
+        - 2
+        type: integer
+      name:
+        description: 皮肤名称
+        type: string
+      texture:
+        description: 皮肤纹理文件 base64
+        type: string
+    required:
+    - model
+    - name
+    - texture
+    type: object
+  library.SkinListResponse:
+    properties:
+      items:
+        description: 皮肤列表
+        items:
+          $ref: '#/definitions/library.SkinResponse'
+        type: array
+      total:
+        description: 总数
+        type: integer
+    type: object
+  library.SkinResponse:
+    properties:
+      id:
+        type: integer
+      is_public:
+        description: 是否公开
+        type: boolean
+      model:
+        allOf:
+        - $ref: '#/definitions/entity.ModelType'
+        description: 皮肤模型(1=classic,2=slim)
+      name:
+        description: 皮肤名称
+        type: string
+      texture:
+        description: 皮肤纹理文件ID(雪花算法)
+        type: integer
+      texture_hash:
+        description: 皮肤纹理哈希
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID(为空代表系统内置皮肤)
+        type: integer
+    type: object
+  library.UpdateCapeRequest:
+    properties:
+      is_public:
+        description: 是否公开（可选）
+        type: boolean
+      name:
+        description: 披风名称（可选）
+        type: string
+    type: object
+  library.UpdateSkinRequest:
+    properties:
+      is_public:
+        description: 是否公开（可选）
+        type: boolean
+      name:
+        description: 皮肤名称（可选）
+        type: string
+    type: object
+  user.AddGameProfileRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  user.ChangeUsernameRequest:
+    properties:
+      new_name:
+        type: string
+    required:
+    - new_name
+    type: object
+  xBase.BaseResponse:
+    properties:
+      code:
+        type: integer
+      context:
+        type: string
+      data: {}
+      error_message:
+        type: string
+      message:
+        type: string
+      output:
+        type: string
+      overhead:
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /game-profile:
+    post:
+      consumes:
+      - application/json
+      description: 根据当前登录用户创建游戏档案，UUID 由系统按 UUIDv7 自动生成
+      parameters:
+      - description: 创建游戏档案请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.AddGameProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.GameProfile'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "409":
+          description: 资源冲突
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "503":
+          description: 资源耗尽
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 创建游戏档案'
+      tags:
+      - 游戏档案接口
+  /game-profile/{profile_id}/username:
+    patch:
+      consumes:
+      - application/json
+      description: 根据档案 ID 修改游戏档案用户名
+      parameters:
+      - description: 游戏档案 ID
+        in: path
+        name: profile_id
+        required: true
+        type: string
+      - description: 修改用户名请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.ChangeUsernameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.GameProfile'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "409":
+          description: 资源冲突
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 修改用户名'
+      tags:
+      - 游戏档案接口
+  /library/capes:
+    get:
+      consumes:
+      - application/json
+      description: 根据模式获取披风列表，mode=market 获取所有公开披风，mode=mine 获取当前用户的披风
+      parameters:
+      - default: mine
+        description: 列表模式：market(市场) / mine(我的)
+        in: query
+        name: mode
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/library.CapeListResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 获取披风列表'
+      tags:
+      - 资源库接口
+    post:
+      consumes:
+      - application/json
+      description: 上传并创建一个新的披风资源，纹理文件以 base64 编码传输
+      parameters:
+      - description: 创建披风请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/library.CreateCapeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.CapeLibrary'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "409":
+          description: 资源冲突
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "503":
+          description: 配额耗尽
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 创建披风'
+      tags:
+      - 资源库接口
+  /library/capes/{cape_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定披风，只能删除自己创建的披风
+      parameters:
+      - description: 披风 ID
+        in: path
+        name: cape_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 删除披风'
+      tags:
+      - 资源库接口
+    patch:
+      consumes:
+      - application/json
+      description: 修改指定披风的名称或公开状态，只能修改自己创建的披风
+      parameters:
+      - description: 披风 ID
+        in: path
+        name: cape_id
+        required: true
+        type: string
+      - description: 更新披风请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/library.UpdateCapeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.CapeLibrary'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "503":
+          description: 配额耗尽
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 更新披风'
+      tags:
+      - 资源库接口
+  /library/skins:
+    get:
+      consumes:
+      - application/json
+      description: 根据模式获取皮肤列表，mode=market 获取所有公开皮肤，mode=mine 获取当前用户的皮肤
+      parameters:
+      - default: mine
+        description: 列表模式：market(市场) / mine(我的)
+        in: query
+        name: mode
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/library.SkinListResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 获取皮肤列表'
+      tags:
+      - 资源库接口
+    post:
+      consumes:
+      - application/json
+      description: 上传并创建一个新的皮肤资源，纹理文件以 base64 编码传输
+      parameters:
+      - description: 创建皮肤请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/library.CreateSkinRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.SkinLibrary'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "409":
+          description: 资源冲突
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "503":
+          description: 配额耗尽
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 创建皮肤'
+      tags:
+      - 资源库接口
+  /library/skins/{skin_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定皮肤，只能删除自己创建的皮肤
+      parameters:
+      - description: 皮肤 ID
+        in: path
+        name: skin_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 删除皮肤'
+      tags:
+      - 资源库接口
+    patch:
+      consumes:
+      - application/json
+      description: 修改指定皮肤的名称或公开状态，只能修改自己创建的皮肤
+      parameters:
+      - description: 皮肤 ID
+        in: path
+        name: skin_id
+        required: true
+        type: string
+      - description: 更新皮肤请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/library.UpdateSkinRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.SkinLibrary'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "503":
+          description: 配额耗尽
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 更新皮肤'
+      tags:
+      - 资源库接口
+  /user/info:
+    get:
+      consumes:
+      - application/json
+      description: 根据 AT 获取用户信息，获取到本程序的用户信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.User'
+              type: object
+        "400":
+          description: 请求体格式不正确
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 用户名或密码错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 用户已禁用或账户已锁定
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 用户信息'
+      tags:
+      - 用户接口
+swagger: "2.0"
