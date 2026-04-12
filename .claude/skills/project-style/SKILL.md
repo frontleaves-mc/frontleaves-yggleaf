@@ -1,6 +1,6 @@
 ---
 name: project-style
-description: 统一项目多层架构写作风格，明确 handler、logic、repository（含 cache）职责边界与协作规则，避免跨层越界。
+description: 统一项目多层架构写作风格，明确 handler、logic、repository（含 txn、cache）职责边界与协作规则，避免跨层越界。
 argument-hint: [ topic-or-module ]
 allowed-tools: Read, Write, Edit, AskUserQuestion
 ---
@@ -20,7 +20,8 @@ allowed-tools: Read, Write, Edit, AskUserQuestion
 - `handler`（接口/传输层）
 - `logic`（业务编排层）
 - `repository`（数据访问层）
-- `repository/cache`（缓存读写与失效策略）
+  - `repository/txn`（事务协调子层）
+  - `repository/cache`（缓存读写与失效策略子层）
 
 ---
 
@@ -30,22 +31,26 @@ allowed-tools: Read, Write, Edit, AskUserQuestion
 HTTP / RPC Request
    -> handler
    -> logic
-   -> repository (+ cache)
+   -> repository/txn (事务协调，可选，仅多表写入场景)
+   -> repository
    -> DB / Redis / External Service
 ```
 
 ### 依赖方向（只能向下）
 
 - `handler` -> `logic`
-- `logic` -> `repository`
+- `logic` -> `repository`（含 `repository/txn`）
+- `repository/txn` -> `repository`
 - `repository` -> `cache/client/db`
 
 禁止反向依赖与旁路依赖：
 
-- `handler` 直接调用 `repository`（禁止）
+- `handler` 直接调用 `repository`/`repository/txn`（禁止）
 - `handler` 直接操作 `cache`（禁止）
 - `logic` 直接解析 HTTP 参数（禁止）
+- `logic` 直接操作数据库事务/Transaction（禁止，必须通过 `repository/txn` 子包）
 - `repository` 承载业务决策（禁止）
+- `repository/txn` 承载纯业务校验（禁止，校验属于 logic 层）
 
 ---
 
@@ -88,6 +93,8 @@ HTTP / RPC Request
 - HTTP 参数提取、响应序列化。
 - SQL/Redis 语句细节。
 - 框架耦合代码（Gin Context、GORM Session 细节）外泄到方法签名。
+- **数据库事务管理（Transaction 开启/提交/回滚）—— 必须委托给 `txn` 层。**
+- **直接操作 `*gorm.DB` 执行事务。**
 
 **写作要点：**
 
@@ -97,7 +104,37 @@ HTTP / RPC Request
 
 ---
 
-## 3) repository 层（数据访问层）
+## 2.5) repository/txn 子层（事务协调层）
+
+**定位：** 位于 `logic` 与 `repository` 之间，作为 `repository` 包的子包，专门处理涉及多表写入的复合事务场景。与 `repository/cache` 同级，同属 repository 下的功能子层。
+
+**负责：**
+
+- 聚合多个 `repository` 实例，在单个数据库事务内完成跨表原子操作。
+- 管理事务边界（开启 Transaction、提交、回滚）。
+- 封装语义化的复合操作接口（如 `CreateSkinWithQuota`、`AddProfileWithQuota`）。
+- 保证多步操作的原子性：任一步骤失败则整体回滚。
+
+**不负责：**
+
+- 业务校验（参数合法性、权限判断等属于 `logic` 层）。
+- HTTP/RPC 协议转换。
+- 外部服务调用（如 Bucket 上传）—— 此类操作应在 `logic` 层完成后再进入事务。
+- 单表 CRUD（直接由 `repository` 处理即可，无需经过 `txn`）。
+
+**写作要点：**
+
+- 每个方法对应一个完整的业务用例（如"创建皮肤并扣减配额"），而非通用模板。
+- 方法签名使用 `context.Context` 作为上下文，不耦合 Gin Context。
+- 事务内调用 `repository` 的原子方法时传入 `tx *gorm.DB` 参数。
+- **外部服务调用必须在事务外完成**，避免长事务占用数据库连接。
+- 错误返回使用项目统一的 `*xError.Error` 类型。
+
+**何时需要新建 TxnRepo：**
+
+当一个业务用例需要同时写 入**两张或以上**的表，且这些写入必须原子成功或整体回滚时，应在 `repository/txn` 子包中创建对应的事务协调仓储。单表操作或纯读操作无需经过此层。
+
+---
 
 **负责：**
 
@@ -142,12 +179,15 @@ HTTP / RPC Request
 
 ## 越界禁止清单（Hard Rules）
 
-1. **MUST**: handler 只能依赖 logic，不得直接依赖 repository/cache。
-2. **MUST**: logic 只能通过 repository 接触数据源，不得拼接 SQL/Redis 命令。
-3. **MUST**: repository 不承载业务分支，不做“是否允许”的业务判断。
-4. **MUST**: cache 只做性能优化，不得成为业务正确性的唯一来源。
-5. **NEVER**: 在下层返回上层协议对象（例如 repository 返回 HTTP 状态码）。
-6. **NEVER**: 跨层复用“顺手函数”破坏边界（例如 handler 调 util 直连 DB）。
+1. **MUST**: handler 只能依赖 logic，不得直接依赖 repository/txn/cache。
+2. **MUST**: logic 只能通过 repository（含 repository/txn）接触数据源，不得拼接 SQL/Redis 命令。
+3. **MUST**: logic 不得直接使用 `gorm.Transaction` 或操作 `*gorm.DB` 开启事务（必须通过 `repository/txn` 子包）。
+4. **MUST**: repository/txn 内部不承载纯业务校验（参数校验、权限判断属于 logic 层）。
+5. **MUST**: repository 不承载业务分支，不做”是否允许”的业务判断。
+6. **MUST**: cache 只做性能优化，不得成为业务正确性的唯一来源。
+7. **NEVER**: 在下层返回上层协议对象（例如 repository 返回 HTTP 状态码）。
+8. **NEVER**: 跨层复用”顺手函数”破坏边界（例如 handler 调 util 直连 DB）。
+9. **NEVER**: 在事务内调用外部服务（如 Bucket 上传），避免长事务占用连接。
 
 ---
 
@@ -161,6 +201,9 @@ internal/
     user_logic.go
   repository/
     user_repository.go
+    txn/
+      game_profile.go      # 游戏档案事务协调
+      library.go            # 资源库事务协调（皮肤/披风）
     cache/
       user_cache_repository.go
   model/
@@ -171,8 +214,9 @@ internal/
 说明：
 
 - `handler`：协议适配与响应格式。
-- `logic`：业务用例。
-- `repository`：持久化与查询。
+- `logic`：业务用例编排，纯逻辑校验。
+- `repository/txn`：多表写入的事务协调，事务边界管理（与 cache 同级）。
+- `repository`：单表持久化与查询。
 - `repository/cache`：缓存实现细节。
 
 ---
@@ -237,7 +281,8 @@ func (h *UserHandler) Ban(ctx *gin.Context) {
 ## 评审检查清单（PR Checklist）
 
 - [ ] handler 仅做协议适配，无业务规则分支。
-- [ ] logic 完整表达业务用例，不含 transport/db 框架泄漏。
+- [ ] logic 完整表达业务用例，不含 transport/db 框架泄漏，**不直接操作事务**。
+- [ ] repository/txn 仅做多表事务协调，**不含纯业务校验**，事务内无外部服务调用。
 - [ ] repository 仅做数据访问，不承载业务决策。
 - [ ] cache 策略与失效点明确，失败可降级。
 - [ ] 依赖方向单向向下，无跨层旁路调用。
@@ -248,8 +293,8 @@ func (h *UserHandler) Ban(ctx *gin.Context) {
 
 当以下信息不清晰时必须询问：
 
-1. 该需求属于“新增用例”还是“扩展现有用例”？
-2. 事务边界放在 logic 还是 repository（项目约定）？
+1. 该需求属于”新增用例”还是”扩展现有用例”？
+2. 是否涉及多表写入需要事务协调（是否需要在 `repository/txn` 子包新建 TxnRepo）？
 3. 缓存策略采用 cache-aside 还是 read-through？
 4. 错误语义是否有统一业务错误码体系？
 
@@ -257,4 +302,4 @@ func (h *UserHandler) Ban(ctx *gin.Context) {
 
 ## 一句话原则
 
-> handler 负责“说人话（协议）”，logic 负责“做决策（业务）”，repository 负责“拿数据（存储）”，cache 负责“提性能（加速）”。
+> handler 负责”说人话（协议）”，logic 负责”做决策（业务）”，txn 负责”管事务（原子性）”，repository 负责”拿数据（存储）”，cache 负责”提性能（加速）”。
