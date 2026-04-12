@@ -24,7 +24,7 @@ help:
 
 # 提取出的 Swagger 生成目标
 swag:
-	$(SWAG_CMD) init -g $(MAIN_FILE) $(SWAG_FLAGS)
+	$(SWAG_CMD) init --instanceName frontleaves_yggleaf -g $(MAIN_FILE) --parseDependency
 
 # 提取出的运行目标
 run:

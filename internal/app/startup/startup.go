@@ -32,7 +32,7 @@ func Init() (context.Context, []xRegNode.RegNodeList) {
 	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.Exec, Node: businessReg.businessDataPrepare})
 
 	// 初始化 OAuth2
-	regNode = append(regNode, bSdkStartup.NewOAuthConfig()...)
+	regNode = append(regNode, bSdkStartup.NewStartupConfig()...)
 
 	return businessReg.ctx, regNode
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
-	xHttp "github.com/bamboo-services/bamboo-base-go/major/http"
+	xHttp "github.com/bamboo-services/bamboo-base-go/defined/http"
 	xResult "github.com/bamboo-services/bamboo-base-go/major/result"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"

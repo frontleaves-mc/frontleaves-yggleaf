@@ -47,11 +47,11 @@ func NewRoute(reg *xReg.Reg) {
 
 	// Swagger Register
 	if xEnv.GetEnvBool(xEnv.Debug, false) {
-		swaggerRegister(r.engine)
+		swaggerRegister()(r.engine)
 	}
 
 	// 注册 OAuth2 Router
-	oauthRoute := bSdkRoute.NewOAuthRoute(r.context)
+	oauthRoute := bSdkRoute.NewRoute(r.context)
 
 	// 路由初始化注册
 	{

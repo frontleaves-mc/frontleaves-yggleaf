@@ -34,7 +34,7 @@ const (
 // @Failure     401   {object}  xBase.BaseResponse                               "未授权"
 // @Failure     409   {object}  xBase.BaseResponse                               "资源冲突"
 // @Failure     503   {object}  xBase.BaseResponse                               "配额耗尽"
-// @Router      /api/v1/library/skins [POST]
+// @Router      /library/skins [POST]
 func (h *LibraryHandler) CreateSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "CreateSkin - 创建皮肤")
 
@@ -77,7 +77,7 @@ func (h *LibraryHandler) CreateSkin(ctx *gin.Context) {
 // @Success     200   {object}  xBase.BaseResponse{data=apiLibrary.SkinListResponse} "获取成功"
 // @Failure     400   {object}  xBase.BaseResponse                                       "请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse                                       "未授权"
-// @Router      /api/v1/library/skins [GET]
+// @Router      /library/skins [GET]
 func (h *LibraryHandler) ListSkins(ctx *gin.Context) {
 	h.log.Info(ctx, "ListSkins - 获取皮肤列表")
 
@@ -130,7 +130,7 @@ func (h *LibraryHandler) ListSkins(ctx *gin.Context) {
 // @Failure     403   {object}  xBase.BaseResponse                               "无权限"
 // @Failure     404   {object}  xBase.BaseResponse                               "资源不存在"
 // @Failure     503   {object}  xBase.BaseResponse                               "配额耗尽"
-// @Router      /api/v1/library/skins/{skin_id} [PATCH]
+// @Router      /library/skins/{skin_id} [PATCH]
 func (h *LibraryHandler) UpdateSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "UpdateSkin - 更新皮肤")
 
@@ -179,7 +179,7 @@ func (h *LibraryHandler) UpdateSkin(ctx *gin.Context) {
 // @Failure     401   {object}  xBase.BaseResponse "未授权"
 // @Failure     403   {object}  xBase.BaseResponse "无权限"
 // @Failure     404   {object}  xBase.BaseResponse "资源不存在"
-// @Router      /api/v1/library/skins/{skin_id} [DELETE]
+// @Router      /library/skins/{skin_id} [DELETE]
 func (h *LibraryHandler) DeleteSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "DeleteSkin - 删除皮肤")
 
@@ -225,7 +225,7 @@ func (h *LibraryHandler) DeleteSkin(ctx *gin.Context) {
 // @Failure     401   {object}  xBase.BaseResponse                               "未授权"
 // @Failure     409   {object}  xBase.BaseResponse                               "资源冲突"
 // @Failure     503   {object}  xBase.BaseResponse                               "配额耗尽"
-// @Router      /api/v1/library/capes [POST]
+// @Router      /library/capes [POST]
 func (h *LibraryHandler) CreateCape(ctx *gin.Context) {
 	h.log.Info(ctx, "CreateCape - 创建披风")
 
@@ -268,7 +268,7 @@ func (h *LibraryHandler) CreateCape(ctx *gin.Context) {
 // @Success     200   {object}  xBase.BaseResponse{data=apiLibrary.CapeListResponse} "获取成功"
 // @Failure     400   {object}  xBase.BaseResponse                                       "请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse                                       "未授权"
-// @Router      /api/v1/library/capes [GET]
+// @Router      /library/capes [GET]
 func (h *LibraryHandler) ListCapes(ctx *gin.Context) {
 	h.log.Info(ctx, "ListCapes - 获取披风列表")
 
@@ -321,7 +321,7 @@ func (h *LibraryHandler) ListCapes(ctx *gin.Context) {
 // @Failure     403   {object}  xBase.BaseResponse                               "无权限"
 // @Failure     404   {object}  xBase.BaseResponse                               "资源不存在"
 // @Failure     503   {object}  xBase.BaseResponse                               "配额耗尽"
-// @Router      /api/v1/library/capes/{cape_id} [PATCH]
+// @Router      /library/capes/{cape_id} [PATCH]
 func (h *LibraryHandler) UpdateCape(ctx *gin.Context) {
 	h.log.Info(ctx, "UpdateCape - 更新披风")
 
@@ -370,7 +370,7 @@ func (h *LibraryHandler) UpdateCape(ctx *gin.Context) {
 // @Failure     401   {object}  xBase.BaseResponse "未授权"
 // @Failure     403   {object}  xBase.BaseResponse "无权限"
 // @Failure     404   {object}  xBase.BaseResponse "资源不存在"
-// @Router      /api/v1/library/capes/{cape_id} [DELETE]
+// @Router      /library/capes/{cape_id} [DELETE]
 func (h *LibraryHandler) DeleteCape(ctx *gin.Context) {
 	h.log.Info(ctx, "DeleteCape - 删除披风")
 

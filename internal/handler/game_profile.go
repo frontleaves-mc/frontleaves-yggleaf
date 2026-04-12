@@ -24,7 +24,7 @@ import (
 // @Failure     404   {object}  xBase.BaseResponse                               "资源不存在"
 // @Failure     409   {object}  xBase.BaseResponse                               "资源冲突"
 // @Failure     503   {object}  xBase.BaseResponse                               "资源耗尽"
-// @Router      /api/v1/game-profile [POST]
+// @Router      /game-profile [POST]
 func (h *GameProfileHandler) AddGameProfile(ctx *gin.Context) {
 	h.log.Info(ctx, "AddGameProfile - 创建游戏档案")
 
@@ -68,7 +68,7 @@ func (h *GameProfileHandler) AddGameProfile(ctx *gin.Context) {
 // @Failure     401   {object}  xBase.BaseResponse                               "未授权"
 // @Failure     404   {object}  xBase.BaseResponse                               "资源不存在"
 // @Failure     409   {object}  xBase.BaseResponse                               "资源冲突"
-// @Router      /api/v1/game-profile/{profile_id}/username [PATCH]
+// @Router      /game-profile/{profile_id}/username [PATCH]
 func (h *GameProfileHandler) ChangeUsername(ctx *gin.Context) {
 	h.log.Info(ctx, "ChangeUsername - 修改游戏档案用户名")
 
