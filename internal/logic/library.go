@@ -17,7 +17,6 @@ import (
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
 	repotxn "github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository/txn"
 	bCtx "github.com/frontleaves-mc/frontleaves-yggleaf/pkg/context"
-	"github.com/gin-gonic/gin"
 	bBucket "github.com/phalanx-labs/beacon-bucket-sdk"
 	bBucketApi "github.com/phalanx-labs/beacon-bucket-sdk/api"
 )
@@ -124,7 +123,7 @@ func NewLibraryLogic(ctx context.Context) *LibraryLogic {
 // 返回值:
 //   - *entity.SkinLibrary: 创建成功的皮肤实体；若纹理哈希已存在且属于当前用户则直接返回已有记录。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *LibraryLogic) CreateSkin(ctx *gin.Context, userID xSnowflake.SnowflakeID, req *apiLibrary.CreateSkinRequest) (*entity.SkinLibrary, *xError.Error) {
+func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.SnowflakeID, req *apiLibrary.CreateSkinRequest) (*entity.SkinLibrary, *xError.Error) {
 	l.log.Info(ctx, "CreateSkin - 创建皮肤")
 
 	if userID.IsZero() {
@@ -168,7 +167,7 @@ func (l *LibraryLogic) CreateSkin(ctx *gin.Context, userID xSnowflake.SnowflakeI
 	}
 
 	// 委托 Repository 层在事务内完成创建与配额操作
-	return l.repo.txn.CreateSkinWithQuota(ctx.Request.Context(), skin)
+	return l.repo.txn.CreateSkinWithQuota(ctx, skin)
 }
 
 // UpdateSkin 更新皮肤（名称/公开状态）。
@@ -188,10 +187,10 @@ func (l *LibraryLogic) CreateSkin(ctx *gin.Context, userID xSnowflake.SnowflakeI
 // 返回值:
 //   - *entity.SkinLibrary: 更新后的皮肤实体。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *LibraryLogic) UpdateSkin(ctx *gin.Context, userID xSnowflake.SnowflakeID, skinID xSnowflake.SnowflakeID, req *apiLibrary.UpdateSkinRequest) (*entity.SkinLibrary, *xError.Error) {
+func (l *LibraryLogic) UpdateSkin(ctx context.Context, userID xSnowflake.SnowflakeID, skinID xSnowflake.SnowflakeID, req *apiLibrary.UpdateSkinRequest) (*entity.SkinLibrary, *xError.Error) {
 	l.log.Info(ctx, "UpdateSkin - 更新皮肤")
 
-	skin, found, xErr := l.repo.skinRepo.GetByIDAndUserID(ctx.Request.Context(), nil, skinID, userID, false)
+	skin, found, xErr := l.repo.skinRepo.GetByIDAndUserID(ctx, nil, skinID, userID, false)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -223,7 +222,7 @@ func (l *LibraryLogic) UpdateSkin(ctx *gin.Context, userID xSnowflake.SnowflakeI
 	}
 
 	// 委托 Repository 层在事务内完成配额调整与记录更新
-	return l.repo.txn.UpdateSkinWithQuota(ctx.Request.Context(), userID, skinID, newName, newIsPublic, skin.IsPublic)
+	return l.repo.txn.UpdateSkinWithQuota(ctx, userID, skinID, newName, newIsPublic, skin.IsPublic)
 }
 
 // DeleteSkin 删除皮肤。
@@ -239,10 +238,10 @@ func (l *LibraryLogic) UpdateSkin(ctx *gin.Context, userID xSnowflake.SnowflakeI
 //
 // 返回值:
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *LibraryLogic) DeleteSkin(ctx *gin.Context, userID xSnowflake.SnowflakeID, skinID xSnowflake.SnowflakeID) *xError.Error {
+func (l *LibraryLogic) DeleteSkin(ctx context.Context, userID xSnowflake.SnowflakeID, skinID xSnowflake.SnowflakeID) *xError.Error {
 	l.log.Info(ctx, "DeleteSkin - 删除皮肤")
 
-	skin, found, xErr := l.repo.skinRepo.GetByIDAndUserID(ctx.Request.Context(), nil, skinID, userID, false)
+	skin, found, xErr := l.repo.skinRepo.GetByIDAndUserID(ctx, nil, skinID, userID, false)
 	if xErr != nil {
 		return xErr
 	}
@@ -255,7 +254,7 @@ func (l *LibraryLogic) DeleteSkin(ctx *gin.Context, userID xSnowflake.SnowflakeI
 	}
 
 	// 委托 Repository 层在事务内完成配额释放与记录删除
-	return l.repo.txn.DeleteSkinWithQuota(ctx.Request.Context(), userID, skinID, skin.IsPublic)
+	return l.repo.txn.DeleteSkinWithQuota(ctx, userID, skinID, skin.IsPublic)
 }
 
 // ListSkins 获取皮肤列表。
@@ -277,14 +276,14 @@ func (l *LibraryLogic) DeleteSkin(ctx *gin.Context, userID xSnowflake.SnowflakeI
 //   - []entity.SkinLibrary: 当前页的皮肤列表。
 //   - int64: 符合条件的总记录数（用于分页计算）。
 //   - *xError.Error: 数据查询过程中发生的错误。
-func (l *LibraryLogic) ListSkins(ctx *gin.Context, userID xSnowflake.SnowflakeID, mode string, page int, pageSize int) ([]entity.SkinLibrary, int64, *xError.Error) {
+func (l *LibraryLogic) ListSkins(ctx context.Context, userID xSnowflake.SnowflakeID, mode string, page int, pageSize int) ([]entity.SkinLibrary, int64, *xError.Error) {
 	l.log.Info(ctx, "ListSkins - 获取皮肤列表")
 
 	if mode == "market" {
-		return l.repo.skinRepo.ListPublic(ctx.Request.Context(), nil, page, pageSize)
+		return l.repo.skinRepo.ListPublic(ctx, nil, page, pageSize)
 	}
 
-	return l.repo.skinRepo.ListByUserID(ctx.Request.Context(), nil, userID, page, pageSize)
+	return l.repo.skinRepo.ListByUserID(ctx, nil, userID, page, pageSize)
 }
 
 // ==================== Cape Logic ====================
@@ -307,7 +306,7 @@ func (l *LibraryLogic) ListSkins(ctx *gin.Context, userID xSnowflake.SnowflakeID
 // 返回值:
 //   - *entity.CapeLibrary: 创建成功的披风实体；若纹理哈希已存在且属于当前用户则直接返回已有记录。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *LibraryLogic) CreateCape(ctx *gin.Context, userID xSnowflake.SnowflakeID, req *apiLibrary.CreateCapeRequest) (*entity.CapeLibrary, *xError.Error) {
+func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.SnowflakeID, req *apiLibrary.CreateCapeRequest) (*entity.CapeLibrary, *xError.Error) {
 	l.log.Info(ctx, "CreateCape - 创建披风")
 
 	if userID.IsZero() {
@@ -345,7 +344,7 @@ func (l *LibraryLogic) CreateCape(ctx *gin.Context, userID xSnowflake.SnowflakeI
 	}
 
 	// 委托 Repository 层在事务内完成创建与配额操作
-	return l.repo.txn.CreateCapeWithQuota(ctx.Request.Context(), cape)
+	return l.repo.txn.CreateCapeWithQuota(ctx, cape)
 }
 
 // UpdateCape 更新披风（名称/公开状态）。
@@ -365,10 +364,10 @@ func (l *LibraryLogic) CreateCape(ctx *gin.Context, userID xSnowflake.SnowflakeI
 // 返回值:
 //   - *entity.CapeLibrary: 更新后的披风实体。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *LibraryLogic) UpdateCape(ctx *gin.Context, userID xSnowflake.SnowflakeID, capeID xSnowflake.SnowflakeID, req *apiLibrary.UpdateCapeRequest) (*entity.CapeLibrary, *xError.Error) {
+func (l *LibraryLogic) UpdateCape(ctx context.Context, userID xSnowflake.SnowflakeID, capeID xSnowflake.SnowflakeID, req *apiLibrary.UpdateCapeRequest) (*entity.CapeLibrary, *xError.Error) {
 	l.log.Info(ctx, "UpdateCape - 更新披风")
 
-	cape, found, xErr := l.repo.capeRepo.GetByIDAndUserID(ctx.Request.Context(), nil, capeID, userID, false)
+	cape, found, xErr := l.repo.capeRepo.GetByIDAndUserID(ctx, nil, capeID, userID, false)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -400,7 +399,7 @@ func (l *LibraryLogic) UpdateCape(ctx *gin.Context, userID xSnowflake.SnowflakeI
 	}
 
 	// 委托 Repository 层在事务内完成配额调整与记录更新
-	return l.repo.txn.UpdateCapeWithQuota(ctx.Request.Context(), userID, capeID, newName, newIsPublic, cape.IsPublic)
+	return l.repo.txn.UpdateCapeWithQuota(ctx, userID, capeID, newName, newIsPublic, cape.IsPublic)
 }
 
 // DeleteCape 删除披风。
@@ -416,10 +415,10 @@ func (l *LibraryLogic) UpdateCape(ctx *gin.Context, userID xSnowflake.SnowflakeI
 //
 // 返回值:
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *LibraryLogic) DeleteCape(ctx *gin.Context, userID xSnowflake.SnowflakeID, capeID xSnowflake.SnowflakeID) *xError.Error {
+func (l *LibraryLogic) DeleteCape(ctx context.Context, userID xSnowflake.SnowflakeID, capeID xSnowflake.SnowflakeID) *xError.Error {
 	l.log.Info(ctx, "DeleteCape - 删除披风")
 
-	cape, found, xErr := l.repo.capeRepo.GetByIDAndUserID(ctx.Request.Context(), nil, capeID, userID, false)
+	cape, found, xErr := l.repo.capeRepo.GetByIDAndUserID(ctx, nil, capeID, userID, false)
 	if xErr != nil {
 		return xErr
 	}
@@ -432,7 +431,7 @@ func (l *LibraryLogic) DeleteCape(ctx *gin.Context, userID xSnowflake.SnowflakeI
 	}
 
 	// 委托 Repository 层在事务内完成配额释放与记录删除
-	return l.repo.txn.DeleteCapeWithQuota(ctx.Request.Context(), userID, capeID, cape.IsPublic)
+	return l.repo.txn.DeleteCapeWithQuota(ctx, userID, capeID, cape.IsPublic)
 }
 
 // ListCapes 获取披风列表。
@@ -454,14 +453,14 @@ func (l *LibraryLogic) DeleteCape(ctx *gin.Context, userID xSnowflake.SnowflakeI
 //   - []entity.CapeLibrary: 当前页的披风列表。
 //   - int64: 符合条件的总记录数（用于分页计算）。
 //   - *xError.Error: 数据查询过程中发生的错误。
-func (l *LibraryLogic) ListCapes(ctx *gin.Context, userID xSnowflake.SnowflakeID, mode string, page int, pageSize int) ([]entity.CapeLibrary, int64, *xError.Error) {
+func (l *LibraryLogic) ListCapes(ctx context.Context, userID xSnowflake.SnowflakeID, mode string, page int, pageSize int) ([]entity.CapeLibrary, int64, *xError.Error) {
 	l.log.Info(ctx, "ListCapes - 获取披风列表")
 
 	if mode == "market" {
-		return l.repo.capeRepo.ListPublic(ctx.Request.Context(), nil, page, pageSize)
+		return l.repo.capeRepo.ListPublic(ctx, nil, page, pageSize)
 	}
 
-	return l.repo.capeRepo.ListByUserID(ctx.Request.Context(), nil, userID, page, pageSize)
+	return l.repo.capeRepo.ListByUserID(ctx, nil, userID, page, pageSize)
 }
 
 // ==================== Helper Methods ====================
@@ -477,7 +476,7 @@ func (l *LibraryLogic) ListCapes(ctx *gin.Context, userID xSnowflake.SnowflakeID
 // 返回值:
 //   - string: 规范化后的名称（已去除首尾空白）。
 //   - *xError.Error: 校验失败时返回具体错误信息。
-func (l *LibraryLogic) validateSkinName(ctx *gin.Context, name string) (string, *xError.Error) {
+func (l *LibraryLogic) validateSkinName(ctx context.Context, name string) (string, *xError.Error) {
 	trimmedName := strings.TrimSpace(name)
 	if len(trimmedName) < skinNameMinLength || len(trimmedName) > skinNameMaxLength {
 		return "", xError.NewError(ctx, xError.ParameterError, "无效皮肤名称长度：必须在 1-64 个字符之间", true)
@@ -496,7 +495,7 @@ func (l *LibraryLogic) validateSkinName(ctx *gin.Context, name string) (string, 
 // 返回值:
 //   - string: 规范化后的名称（已去除首尾空白）。
 //   - *xError.Error: 校验失败时返回具体错误信息。
-func (l *LibraryLogic) validateCapeName(ctx *gin.Context, name string) (string, *xError.Error) {
+func (l *LibraryLogic) validateCapeName(ctx context.Context, name string) (string, *xError.Error) {
 	trimmedName := strings.TrimSpace(name)
 	if len(trimmedName) < capeNameMinLength || len(trimmedName) > capeNameMaxLength {
 		return "", xError.NewError(ctx, xError.ParameterError, "无效披风名称长度：必须在 1-64 个字符之间", true)
@@ -515,7 +514,7 @@ func (l *LibraryLogic) validateCapeName(ctx *gin.Context, name string) (string, 
 // 返回值:
 //   - []byte: 解码后的原始二进制数据。
 //   - *xError.Error: 解码失败时返回具体错误信息。
-func (l *LibraryLogic) decodeBase64Texture(ctx *gin.Context, texture string) ([]byte, *xError.Error) {
+func (l *LibraryLogic) decodeBase64Texture(ctx context.Context, texture string) ([]byte, *xError.Error) {
 	base64Data := texture
 	if strings.HasPrefix(texture, "data:") {
 		idx := strings.Index(texture, "base64,")

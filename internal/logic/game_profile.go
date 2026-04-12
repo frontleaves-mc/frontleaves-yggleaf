@@ -12,7 +12,6 @@ import (
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
 	repotxn "github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository/txn"
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -99,7 +98,7 @@ func NewGameProfileLogic(ctx context.Context) *GameProfileLogic {
 // 返回值:
 //   - *entity.GameProfile: 创建成功的游戏档案实体。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *GameProfileLogic) AddGameProfile(ctx *gin.Context, userID xSnowflake.SnowflakeID, name string) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) AddGameProfile(ctx context.Context, userID xSnowflake.SnowflakeID, name string) (*entity.GameProfile, *xError.Error) {
 	l.log.Info(ctx, "AddGameProfile - 新增游戏档案")
 
 	if userID.IsZero() {
@@ -123,7 +122,7 @@ func (l *GameProfileLogic) AddGameProfile(ctx *gin.Context, userID xSnowflake.Sn
 	}
 
 	// 委托 Repository 层在事务内完成创建与配额操作
-	return l.repo.txn.AddProfileWithQuota(ctx.Request.Context(), profile)
+	return l.repo.txn.AddProfileWithQuota(ctx, profile)
 }
 
 // ChangeUsername 修改指定游戏档案的用户名。
@@ -146,10 +145,10 @@ func (l *GameProfileLogic) AddGameProfile(ctx *gin.Context, userID xSnowflake.Sn
 // 返回值:
 //   - *entity.GameProfile: 更新后的游戏档案实体。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *GameProfileLogic) ChangeUsername(ctx *gin.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, newName string) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) ChangeUsername(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, newName string) (*entity.GameProfile, *xError.Error) {
 	l.log.Info(ctx, "ChangeUsername - 修改游戏档案用户名")
 
-	profile, found, xErr := l.repo.profile.GetByIDAndUserID(ctx.Request.Context(), nil, profileID, userID, false)
+	profile, found, xErr := l.repo.profile.GetByIDAndUserID(ctx, nil, profileID, userID, false)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -165,7 +164,7 @@ func (l *GameProfileLogic) ChangeUsername(ctx *gin.Context, userID xSnowflake.Sn
 		return profile, nil
 	}
 
-	nameExisted, xErr := l.repo.profile.ExistsByNameExceptID(ctx.Request.Context(), nil, normalizedName, profile.ID)
+	nameExisted, xErr := l.repo.profile.ExistsByNameExceptID(ctx, nil, normalizedName, profile.ID)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -173,7 +172,7 @@ func (l *GameProfileLogic) ChangeUsername(ctx *gin.Context, userID xSnowflake.Sn
 		return nil, xError.NewError(ctx, xError.DataConflict, "用户名已存在", true)
 	}
 
-	updatedProfile, xErr := l.repo.profile.UpdateName(ctx.Request.Context(), nil, profile.ID, normalizedName)
+	updatedProfile, xErr := l.repo.profile.UpdateName(ctx, nil, profile.ID, normalizedName)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -194,7 +193,7 @@ func (l *GameProfileLogic) ChangeUsername(ctx *gin.Context, userID xSnowflake.Sn
 // 返回值:
 //   - string: 规范化后的用户名（已去除首尾空白）。
 //   - *xError.Error: 校验失败时返回具体错误信息。
-func validateGameProfileName(ctx *gin.Context, name string) (string, *xError.Error) {
+func validateGameProfileName(ctx context.Context, name string) (string, *xError.Error) {
 	normalizedName := strings.TrimSpace(name)
 	if len(normalizedName) < gameProfileNameMinLength || len(normalizedName) > gameProfileNameMaxLength {
 		return "", xError.NewError(ctx, xError.ParameterError, "无效用户名长度：必须在 3-16 个字符之间", true)

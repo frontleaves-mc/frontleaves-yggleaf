@@ -11,7 +11,6 @@ import (
 	xModels "github.com/bamboo-services/bamboo-base-go/major/models"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
-	"github.com/gin-gonic/gin"
 	bSdkModels "github.com/phalanx-labs/beacon-sso-sdk/models"
 )
 
@@ -70,7 +69,7 @@ func NewUserLogic(ctx context.Context) *UserLogic {
 // 返回值:
 //   - *entity.User: 找到的或新建的用户实体对象。
 //   - *xError.Error: 用户实体拼装或仓储层操作过程中发生的错误。
-func (l *UserLogic) TakeUser(ctx *gin.Context, userinfo *bSdkModels.OAuthUserinfo) (*entity.User, *xError.Error) {
+func (l *UserLogic) TakeUser(ctx context.Context, userinfo *bSdkModels.OAuthUserinfo) (*entity.User, *xError.Error) {
 	l.log.Info(ctx, "TakeUser - 获取用户信息或创建用户")
 
 	// 尝试获取已存在用户

@@ -10,7 +10,6 @@ import (
 	xCtxUtil "github.com/bamboo-services/bamboo-base-go/common/utility/context"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
-	"github.com/gin-gonic/gin"
 )
 
 // accessUserRepo 访问令牌用户数据访问适配器
@@ -66,7 +65,7 @@ func NewAccessUserLogic(ctx context.Context) *AccessUserLogic {
 // 返回值:
 //   - *entity.User: 缓存命中的用户实体，未命中时返回 nil。
 //   - *xError.Error: 缓存读取过程中发生的错误。
-func (l *AccessUserLogic) GetUserByAT(ctx *gin.Context, accessToken string) (*entity.User, *xError.Error) {
+func (l *AccessUserLogic) GetUserByAT(ctx context.Context, accessToken string) (*entity.User, *xError.Error) {
 	l.log.Info(ctx, "GetUserByAT - 根据 AccessToken 从缓存获取用户信息")
 
 	tokenMD5 := md5Hex(accessToken)
@@ -92,7 +91,7 @@ func (l *AccessUserLogic) GetUserByAT(ctx *gin.Context, accessToken string) (*en
 //
 // 返回值:
 //   - *xError.Error: 缓存写入过程中发生的错误。
-func (l *AccessUserLogic) SetUserByAT(ctx *gin.Context, accessToken string, user *entity.User) *xError.Error {
+func (l *AccessUserLogic) SetUserByAT(ctx context.Context, accessToken string, user *entity.User) *xError.Error {
 	l.log.Info(ctx, "SetUserByAT - 写入 AccessToken 用户缓存")
 
 	tokenMD5 := md5Hex(accessToken)

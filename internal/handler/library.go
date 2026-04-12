@@ -55,7 +55,7 @@ func (h *LibraryHandler) CreateSkin(ctx *gin.Context) {
 		return
 	}
 
-	skin, xErr := h.service.libraryLogic.CreateSkin(ctx, userID, req)
+	skin, xErr := h.service.libraryLogic.CreateSkin(ctx.Request.Context(), userID, req)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -101,7 +101,7 @@ func (h *LibraryHandler) ListSkins(ctx *gin.Context) {
 		return
 	}
 
-	skins, total, xErr := h.service.libraryLogic.ListSkins(ctx, userID, mode, page, pageSize)
+	skins, total, xErr := h.service.libraryLogic.ListSkins(ctx.Request.Context(), userID, mode, page, pageSize)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -157,7 +157,7 @@ func (h *LibraryHandler) UpdateSkin(ctx *gin.Context) {
 		return
 	}
 
-	updatedSkin, xErr := h.service.libraryLogic.UpdateSkin(ctx, userID, skinID, req)
+	updatedSkin, xErr := h.service.libraryLogic.UpdateSkin(ctx.Request.Context(), userID, skinID, req)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -201,7 +201,7 @@ func (h *LibraryHandler) DeleteSkin(ctx *gin.Context) {
 		return
 	}
 
-	xErr = h.service.libraryLogic.DeleteSkin(ctx, userID, skinID)
+	xErr = h.service.libraryLogic.DeleteSkin(ctx.Request.Context(), userID, skinID)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -246,7 +246,7 @@ func (h *LibraryHandler) CreateCape(ctx *gin.Context) {
 		return
 	}
 
-	cape, xErr := h.service.libraryLogic.CreateCape(ctx, userID, req)
+	cape, xErr := h.service.libraryLogic.CreateCape(ctx.Request.Context(), userID, req)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -292,7 +292,7 @@ func (h *LibraryHandler) ListCapes(ctx *gin.Context) {
 		return
 	}
 
-	capes, total, xErr := h.service.libraryLogic.ListCapes(ctx, userID, mode, page, pageSize)
+	capes, total, xErr := h.service.libraryLogic.ListCapes(ctx.Request.Context(), userID, mode, page, pageSize)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -348,7 +348,7 @@ func (h *LibraryHandler) UpdateCape(ctx *gin.Context) {
 		return
 	}
 
-	updatedCape, xErr := h.service.libraryLogic.UpdateCape(ctx, userID, capeID, req)
+	updatedCape, xErr := h.service.libraryLogic.UpdateCape(ctx.Request.Context(), userID, capeID, req)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -392,7 +392,7 @@ func (h *LibraryHandler) DeleteCape(ctx *gin.Context) {
 		return
 	}
 
-	xErr = h.service.libraryLogic.DeleteCape(ctx, userID, capeID)
+	xErr = h.service.libraryLogic.DeleteCape(ctx.Request.Context(), userID, capeID)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return

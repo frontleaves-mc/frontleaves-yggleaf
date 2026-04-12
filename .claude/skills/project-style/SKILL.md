@@ -92,15 +92,16 @@ HTTP / RPC Request
 
 - HTTP 参数提取、响应序列化。
 - SQL/Redis 语句细节。
-- 框架耦合代码（Gin Context、GORM Session 细节）外泄到方法签名。
-- **数据库事务管理（Transaction 开启/提交/回滚）—— 必须委托给 `txn` 层。**
-- **直接操作 `*gorm.DB` 执行事务。**
+- **框架耦合类型泄漏到方法签名：Logic 及以下所有层的方法签名必须使用标准库 `context.Context`，禁止使用 `*gin.Context`。**
+- 数据库事务管理（Transaction 开启/提交/回滚）—— 必须委托给 `txn` 层。
+- 直接操作 `*gorm.DB` 执行事务。
 
 **写作要点：**
 
 - 方法名用业务语义（如 `CreateUser`, `BanPlayer`, `RefreshProfile`）。
+- **方法签名统一使用 `ctx context.Context` 作为第一个参数，不接受 `*gin.Context`。**
 - 返回错误使用可判定类型（业务错误 vs 系统错误）。
-- 业务流程可读性优先：按“校验 -> 执行 -> 收敛结果”组织。
+- 业务流程可读性优先：按”校验 -> 执行 -> 收敛结果”组织。
 
 ---
 
@@ -151,6 +152,7 @@ HTTP / RPC Request
 **写作要点：**
 
 - 输入尽量是明确 query/filter 结构，而非无序参数堆。
+- **方法签名统一使用 `ctx context.Context`，禁止使用 `*gin.Context`。**
 - repository 返回领域可用的数据模型，不返回 HTTP 语义。
 - 错误包装要保留可观测信息（操作、主键、关键参数）。
 
@@ -188,6 +190,7 @@ HTTP / RPC Request
 7. **NEVER**: 在下层返回上层协议对象（例如 repository 返回 HTTP 状态码）。
 8. **NEVER**: 跨层复用”顺手函数”破坏边界（例如 handler 调 util 直连 DB）。
 9. **NEVER**: 在事务内调用外部服务（如 Bucket 上传），避免长事务占用连接。
+10. **NEVER**: 在 logic、repository、repository/txn、repository/cache 层的方法签名中使用 `*gin.Context`。这些层必须使用标准库 `context.Context`，由 handler 层通过 `ctx.Request.Context()` 转换后传入。
 
 ---
 
@@ -224,14 +227,14 @@ internal/
 ## 示例 1：正确分层（伪代码）
 
 ```go
-// handler
+// handler（唯一允许使用 *gin.Context 的层）
 func (h *UserHandler) Create(ctx *gin.Context) {
     req := bindCreateUserRequest(ctx)
-    out, err := h.userLogic.CreateUser(ctx, req.ToLogicInput())
+    out, err := h.userLogic.CreateUser(ctx.Request.Context(), req.ToLogicInput()) // ← 转换为标准 context
     renderCreateUserResponse(ctx, out, err)
 }
 
-// logic
+// logic（使用标准 context.Context）
 func (l *UserLogic) CreateUser(ctx context.Context, in CreateUserInput) (CreateUserOutput, error) {
     if err := l.validator.ValidateCreateUser(in); err != nil {
         return CreateUserOutput{}, err
@@ -246,7 +249,7 @@ func (l *UserLogic) CreateUser(ctx context.Context, in CreateUserInput) (CreateU
     return ToCreateUserOutput(user), nil
 }
 
-// repository/cache
+// repository/cache（使用标准 context.Context）
 func (r *UserRepository) GetByID(ctx context.Context, id int64) (User, error) {
     if user, ok := r.cache.GetUser(ctx, id); ok {
         return user, nil
@@ -281,9 +284,9 @@ func (h *UserHandler) Ban(ctx *gin.Context) {
 ## 评审检查清单（PR Checklist）
 
 - [ ] handler 仅做协议适配，无业务规则分支。
-- [ ] logic 完整表达业务用例，不含 transport/db 框架泄漏，**不直接操作事务**。
+- [ ] logic 完整表达业务用例，不含 transport/db 框架泄漏，**不直接操作事务**，**方法签名使用 `context.Context` 而非 `*gin.Context`**。
 - [ ] repository/txn 仅做多表事务协调，**不含纯业务校验**，事务内无外部服务调用。
-- [ ] repository 仅做数据访问，不承载业务决策。
+- [ ] repository 仅做数据访问，不承载业务决策，**方法签名使用 `context.Context` 而非 `*gin.Context`**。
 - [ ] cache 策略与失效点明确，失败可降级。
 - [ ] 依赖方向单向向下，无跨层旁路调用。
 

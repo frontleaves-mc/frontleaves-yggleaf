@@ -27,7 +27,7 @@ func (h *UserHandler) UserCurrent(ctx *gin.Context) {
 		_ = ctx.Error(xErr)
 		return
 	}
-	getUser, xErr := h.service.userLogic.TakeUser(ctx, userinfo)
+	getUser, xErr := h.service.userLogic.TakeUser(ctx.Request.Context(), userinfo)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return

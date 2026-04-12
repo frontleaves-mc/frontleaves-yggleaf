@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -8,7 +9,6 @@ import (
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository/cache"
-	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
@@ -62,7 +62,7 @@ func NewUserRepo(db *gorm.DB, rdb *redis.Client) *UserRepo {
 //   - *entity.User: 命中的用户实体，未命中时返回 nil。
 //   - bool: 是否命中（true 表示命中，false 表示未命中）。
 //   - *xError.Error: 缓存读取或数据库查询过程中的错误。
-func (r *UserRepo) Get(ctx *gin.Context, id string) (*entity.User, bool, *xError.Error) {
+func (r *UserRepo) Get(ctx context.Context, id string) (*entity.User, bool, *xError.Error) {
 	r.log.Info(ctx, "Get - 获取用户信息")
 
 	// 检查缓存是否存在
@@ -102,7 +102,7 @@ func (r *UserRepo) Get(ctx *gin.Context, id string) (*entity.User, bool, *xError
 // 返回值:
 //   - *entity.User: 持久化后的用户实体。
 //   - *xError.Error: 数据库操作过程中的错误。
-func (r *UserRepo) Set(ctx *gin.Context, user *entity.User) (*entity.User, *xError.Error) {
+func (r *UserRepo) Set(ctx context.Context, user *entity.User) (*entity.User, *xError.Error) {
 	r.log.Info(ctx, "Set - 创建或更新用户信息")
 
 	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {

@@ -45,7 +45,7 @@ func (h *GameProfileHandler) AddGameProfile(ctx *gin.Context) {
 		return
 	}
 
-	profile, xErr := h.service.gameProfileLogic.AddGameProfile(ctx, userID, req.Name)
+	profile, xErr := h.service.gameProfileLogic.AddGameProfile(ctx.Request.Context(), userID, req.Name)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -95,7 +95,7 @@ func (h *GameProfileHandler) ChangeUsername(ctx *gin.Context) {
 		return
 	}
 
-	updatedProfile, xErr := h.service.gameProfileLogic.ChangeUsername(ctx, userID, profileID, req.NewName)
+	updatedProfile, xErr := h.service.gameProfileLogic.ChangeUsername(ctx.Request.Context(), userID, profileID, req.NewName)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return

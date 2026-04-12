@@ -1,13 +1,13 @@
 package repository
 
 import (
+	"context"
 	"time"
 
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository/cache"
-	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -57,7 +57,7 @@ func NewAccessUserRepo(rdb *redis.Client) *AccessUserRepo {
 //   - *entity.User: 命中的用户实体，未命中时返回 nil。
 //   - bool: 是否命中缓存（true 表示命中，false 表示未命中）。
 //   - *xError.Error: 缓存读取过程中的错误。
-func (r *AccessUserRepo) Get(ctx *gin.Context, tokenMD5 string) (*entity.User, bool, *xError.Error) {
+func (r *AccessUserRepo) Get(ctx context.Context, tokenMD5 string) (*entity.User, bool, *xError.Error) {
 	r.log.Info(ctx, "Get - 从缓存获取 AccessToken 用户信息")
 
 	user, err := r.cache.GetAllStruct(ctx, tokenMD5)
@@ -82,7 +82,7 @@ func (r *AccessUserRepo) Get(ctx *gin.Context, tokenMD5 string) (*entity.User, b
 //
 // 返回值:
 //   - *xError.Error: 缓存写入过程中的错误。
-func (r *AccessUserRepo) Set(ctx *gin.Context, tokenMD5 string, user *entity.User) *xError.Error {
+func (r *AccessUserRepo) Set(ctx context.Context, tokenMD5 string, user *entity.User) *xError.Error {
 	r.log.Info(ctx, "Set - 写入 AccessToken 用户缓存")
 
 	if err := r.cache.SetAllStruct(ctx, tokenMD5, user); err != nil {
