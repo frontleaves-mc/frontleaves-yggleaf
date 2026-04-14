@@ -32,7 +32,7 @@ func User(ctx context.Context) gin.HandlerFunc {
 	oauthLogic := bSdkLogic.NewBusiness(ctx)
 
 	return func(c *gin.Context) {
-		log.Info(ctx, "获取注入用户身份信息")
+		log.Info(c, "获取注入用户身份信息")
 
 		accessToken := c.GetString(xHttp.HeaderAuthorization.String())
 

@@ -26,7 +26,7 @@ type GameProfileQuotaLog struct {
 	// ----------
 	//  外键约束
 	// ----------
-	User       User         `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"`
+	User       *User         `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"`
 	RefProfile *GameProfile `gorm:"foreignKey:RefProfileID;references:ID;constraint:OnDelete:SET NULL;comment:关联游戏档案" json:"ref_profile,omitempty"`
 }
 

@@ -19,7 +19,7 @@ type GameProfile struct {
 	// ----------
 	//  外键约束
 	// ----------
-	User        User         `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"`                                                  // 关联用户
+	User        *User         `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"`                                                  // 关联用户
 	SkinLibrary *SkinLibrary `gorm:"foreignKey:SkinLibraryID;references:ID;constraint:OnDelete:SET NULL;comment:关联皮肤库" json:"skin_library,omitempty"` // 关联皮肤库
 	CapeLibrary *CapeLibrary `gorm:"foreignKey:CapeLibraryID;references:ID;constraint:OnDelete:SET NULL;comment:关联披风库" json:"cape_library,omitempty"` // 关联披风库
 }

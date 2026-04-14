@@ -16,7 +16,7 @@ type GameProfileQuota struct {
 	// ----------
 	//  外键约束
 	// ----------
-	User User `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"` // 关联用户
+	User *User `gorm:"constraint:OnDelete:CASCADE;comment:关联用户" json:"user,omitempty"` // 关联用户
 }
 
 // GetGene 返回 xSnowflake.Gene，用于标识该实体在 ID 生成时使用的基因类型。
