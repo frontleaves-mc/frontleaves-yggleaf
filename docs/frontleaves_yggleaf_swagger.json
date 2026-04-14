@@ -5,6 +5,51 @@
     },
     "paths": {
         "/game-profile": {
+            "get": {
+                "description": "获取当前用户的所有游戏档案列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "游戏档案接口"
+                ],
+                "summary": "[玩家] 获取游戏档案列表",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/user.GameProfileListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "根据当前登录用户创建游戏档案，UUID 由系统按 UUIDv7 自动生成",
                 "consumes": [
@@ -73,6 +118,53 @@
                     },
                     "503": {
                         "description": "资源耗尽",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/game-profile/quota": {
+            "get": {
+                "description": "获取当前用户的游戏档案配额信息，包括总额度与已使用额度",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "游戏档案接口"
+                ],
+                "summary": "[玩家] 获取游戏档案配额",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/entity.GameProfileQuota"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -862,6 +954,37 @@
                 }
             }
         },
+        "entity.GameProfileQuota": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "总额度",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "used": {
+                    "description": "已使用额度",
+                    "type": "integer"
+                },
+                "user": {
+                    "description": "----------\n 外键约束\n----------",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "description": "关联用户ID",
+                    "type": "integer"
+                }
+            }
+        },
         "entity.LibraryQuota": {
             "type": "object",
             "properties": {
@@ -1305,6 +1428,18 @@
             "properties": {
                 "new_name": {
                     "type": "string"
+                }
+            }
+        },
+        "user.GameProfileListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "游戏档案列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.GameProfile"
+                    }
                 }
             }
         },

@@ -65,6 +65,29 @@ definitions:
         description: Minecraft UUID
         type: string
     type: object
+  entity.GameProfileQuota:
+    properties:
+      id:
+        type: integer
+      total:
+        description: 总额度
+        type: integer
+      updated_at:
+        type: string
+      used:
+        description: 已使用额度
+        type: integer
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID
+        type: integer
+    type: object
   entity.LibraryQuota:
     properties:
       capes_private_total:
@@ -384,6 +407,14 @@ definitions:
     required:
     - new_name
     type: object
+  user.GameProfileListResponse:
+    properties:
+      items:
+        description: 游戏档案列表
+        items:
+          $ref: '#/definitions/entity.GameProfile'
+        type: array
+    type: object
   xBase.BaseResponse:
     properties:
       code:
@@ -404,6 +435,33 @@ info:
   contact: {}
 paths:
   /game-profile:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的所有游戏档案列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.GameProfileListResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 获取游戏档案列表'
+      tags:
+      - 游戏档案接口
     post:
       consumes:
       - application/json
@@ -496,6 +554,34 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
       summary: '[玩家] 修改用户名'
+      tags:
+      - 游戏档案接口
+  /game-profile/quota:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的游戏档案配额信息，包括总额度与已使用额度
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.GameProfileQuota'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 获取游戏档案配额'
       tags:
       - 游戏档案接口
   /library/capes:

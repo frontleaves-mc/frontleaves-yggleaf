@@ -97,6 +97,17 @@ func (r *GameProfileRepo) GetByID(ctx context.Context, tx *gorm.DB, profileID xS
 	return nil, false, xError.NewError(ctx, xError.DatabaseError, "查询游戏档案失败", true, err)
 }
 
+// ListByUserID 根据用户 ID 查询其所有游戏档案。
+func (r *GameProfileRepo) ListByUserID(ctx context.Context, tx *gorm.DB, userID xSnowflake.SnowflakeID) ([]entity.GameProfile, *xError.Error) {
+	r.log.Info(ctx, "ListByUserID - 根据用户 ID 获取游戏档案列表")
+
+	var profiles []entity.GameProfile
+	if err := r.pickDB(ctx, tx).Model(&entity.GameProfile{}).Where("user_id = ?", userID).Order("created_at ASC").Find(&profiles).Error; err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "查询游戏档案列表失败", true, err)
+	}
+	return profiles, nil
+}
+
 // UpdateName 更新指定档案的用户名。
 func (r *GameProfileRepo) UpdateName(ctx context.Context, tx *gorm.DB, profileID xSnowflake.SnowflakeID, name string) (*entity.GameProfile, *xError.Error) {
 	r.log.Info(ctx, "UpdateName - 更新游戏档案用户名")

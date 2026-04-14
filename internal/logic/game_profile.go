@@ -179,6 +179,56 @@ func (l *GameProfileLogic) ChangeUsername(ctx context.Context, userID xSnowflake
 	return updatedProfile, nil
 }
 
+// ListGameProfiles 获取指定用户的所有游戏档案列表。
+//
+// 该方法按创建时间正序返回该用户的全部游戏档案，不含分页。
+//
+// 参数:
+//   - ctx: 上下文对象。
+//   - userID: 操作者的雪花 ID。
+//
+// 返回值:
+//   - []entity.GameProfile: 游戏档案列表。
+//   - *xError.Error: 数据操作过程中发生的错误。
+func (l *GameProfileLogic) ListGameProfiles(ctx context.Context, userID xSnowflake.SnowflakeID) ([]entity.GameProfile, *xError.Error) {
+	l.log.Info(ctx, "ListGameProfiles - 获取游戏档案列表")
+
+	if userID.IsZero() {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效用户 ID：不能为 0", true)
+	}
+
+	profiles, xErr := l.repo.profile.ListByUserID(ctx, nil, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	return profiles, nil
+}
+
+// GetQuota 获取指定用户的游戏档案配额信息。
+//
+// 若该用户尚无配额记录，Repository 层会自动创建默认配额（Total=1, Used=0）。
+//
+// 参数:
+//   - ctx: 上下文对象。
+//   - userID: 操作者的雪花 ID。
+//
+// 返回值:
+//   - *entity.GameProfileQuota: 用户配额实体。
+//   - *xError.Error: 数据操作过程中发生的错误。
+func (l *GameProfileLogic) GetQuota(ctx context.Context, userID xSnowflake.SnowflakeID) (*entity.GameProfileQuota, *xError.Error) {
+	l.log.Info(ctx, "GetQuota - 获取游戏档案配额")
+
+	if userID.IsZero() {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效用户 ID：不能为 0", true)
+	}
+
+	quota, _, xErr := l.repo.quota.GetByUserID(ctx, nil, userID, false)
+	if xErr != nil {
+		return nil, xErr
+	}
+	return quota, nil
+}
+
 // validateGameProfileName 校验并规范化游戏档案用户名。
 //
 // 执行以下校验规则：

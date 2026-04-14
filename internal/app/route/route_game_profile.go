@@ -15,7 +15,9 @@ func (r *route) gameProfileRouter(route gin.IRouter) {
 	gameProfileGroup.Use(middleware.User(r.context))
 
 	{
+		gameProfileGroup.GET("", gameProfileHandler.ListGameProfiles)
 		gameProfileGroup.POST("", gameProfileHandler.AddGameProfile)
+		gameProfileGroup.GET("/quota", gameProfileHandler.GetQuota)
 		gameProfileGroup.PATCH("/:profile_id/username", gameProfileHandler.ChangeUsername)
 	}
 }

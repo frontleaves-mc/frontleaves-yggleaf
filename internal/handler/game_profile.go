@@ -103,3 +103,77 @@ func (h *GameProfileHandler) ChangeUsername(ctx *gin.Context) {
 
 	xResult.SuccessHasData(ctx, "修改游戏档案用户名成功", updatedProfile)
 }
+
+// ListGameProfiles 获取当前用户的游戏档案列表
+//
+// @Summary     [玩家] 获取游戏档案列表
+// @Description 获取当前用户的所有游戏档案列表
+// @Tags        游戏档案接口
+// @Accept      json
+// @Produce     json
+// @Success     200   {object}  xBase.BaseResponse{data=apiUser.GameProfileListResponse} "获取成功"
+// @Failure     400   {object}  xBase.BaseResponse                                       "请求参数错误"
+// @Failure     401   {object}  xBase.BaseResponse                                       "未授权"
+// @Router      /game-profile [GET]
+func (h *GameProfileHandler) ListGameProfiles(ctx *gin.Context) {
+	h.log.Info(ctx, "ListGameProfiles - 获取游戏档案列表")
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	profiles, xErr := h.service.gameProfileLogic.ListGameProfiles(ctx.Request.Context(), userID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	response := apiUser.GameProfileListResponse{
+		Items: profiles,
+	}
+
+	xResult.SuccessHasData(ctx, "获取游戏档案列表成功", response)
+}
+
+// GetQuota 获取当前用户的游戏档案配额
+//
+// @Summary     [玩家] 获取游戏档案配额
+// @Description 获取当前用户的游戏档案配额信息，包括总额度与已使用额度
+// @Tags        游戏档案接口
+// @Accept      json
+// @Produce     json
+// @Success     200   {object}  xBase.BaseResponse{data=entity.GameProfileQuota} "获取成功"
+// @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
+// @Failure     401   {object}  xBase.BaseResponse                               "未授权"
+// @Router      /game-profile/quota [GET]
+func (h *GameProfileHandler) GetQuota(ctx *gin.Context) {
+	h.log.Info(ctx, "GetQuota - 获取游戏档案配额")
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	quota, xErr := h.service.gameProfileLogic.GetQuota(ctx.Request.Context(), userID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "获取游戏档案配额成功", quota)
+}
