@@ -97,6 +97,26 @@ func (r *GameProfileRepo) GetByID(ctx context.Context, tx *gorm.DB, profileID xS
 	return nil, false, xError.NewError(ctx, xError.DatabaseError, "查询游戏档案失败", true, err)
 }
 
+// GetDetailByID 根据档案 ID 与用户 ID 查询游戏档案详情（含关联皮肤和披风）。
+func (r *GameProfileRepo) GetDetailByID(ctx context.Context, tx *gorm.DB, profileID xSnowflake.SnowflakeID, userID xSnowflake.SnowflakeID) (*entity.GameProfile, bool, *xError.Error) {
+	r.log.Info(ctx, "GetDetailByID - 获取游戏档案详情")
+
+	var profile entity.GameProfile
+	err := r.pickDB(ctx, tx).
+		Model(&entity.GameProfile{}).
+		Preload("SkinLibrary").
+		Preload("CapeLibrary").
+		Where("id = ? AND user_id = ?", profileID, userID).
+		First(&profile).Error
+	if err == nil {
+		return &profile, true, nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, nil
+	}
+	return nil, false, xError.NewError(ctx, xError.DatabaseError, "查询游戏档案详情失败", true, err)
+}
+
 // ListByUserID 根据用户 ID 查询其所有游戏档案。
 func (r *GameProfileRepo) ListByUserID(ctx context.Context, tx *gorm.DB, userID xSnowflake.SnowflakeID) ([]entity.GameProfile, *xError.Error) {
 	r.log.Info(ctx, "ListByUserID - 根据用户 ID 获取游戏档案列表")

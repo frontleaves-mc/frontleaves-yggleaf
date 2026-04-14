@@ -401,6 +401,43 @@ func (h *LibraryHandler) DeleteCape(ctx *gin.Context) {
 	xResult.Success(ctx, "删除披风成功")
 }
 
+// ==================== Quota Handler ====================
+
+// GetQuota 获取当前用户的资源库配额
+//
+// @Summary     [玩家] 获取资源库配额
+// @Description 获取当前用户的资源库配额信息，包括皮肤和披风的公开/私有额度与已使用额度
+// @Tags        资源库接口
+// @Accept      json
+// @Produce     json
+// @Success     200   {object}  xBase.BaseResponse{data=entity.LibraryQuota} "获取成功"
+// @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
+// @Failure     401   {object}  xBase.BaseResponse                               "未授权"
+// @Router      /library/quota [GET]
+func (h *LibraryHandler) GetQuota(ctx *gin.Context) {
+	h.log.Info(ctx, "GetQuota - 获取资源库配额")
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	quota, xErr := h.service.libraryLogic.GetQuota(ctx.Request.Context(), userID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "获取资源库配额成功", quota)
+}
+
 // ==================== Helper Methods ====================
 
 func (h *LibraryHandler) parsePagination(ctx *gin.Context) (int, int) {

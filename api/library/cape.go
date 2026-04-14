@@ -6,8 +6,9 @@ import (
 
 // CreateCapeRequest 创建披风请求
 type CreateCapeRequest struct {
-	Name    string `json:"name" binding:"required"`    // 披风名称
-	Texture string `json:"texture" binding:"required"` // 披风纹理文件 base64
+	Name     string `json:"name" binding:"required"`    // 披风名称
+	Texture  string `json:"texture" binding:"required"` // 披风纹理文件 base64
+	IsPublic *bool  `json:"is_public,omitempty"`        // 是否公开（可选，默认 false）
 }
 
 // UpdateCapeRequest 更新披风请求

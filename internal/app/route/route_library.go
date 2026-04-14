@@ -32,5 +32,8 @@ func (r *route) libraryRouter(route gin.IRouter) {
 			capeGroup.PATCH("/:cape_id", libraryHandler.UpdateCape)
 			capeGroup.DELETE("/:cape_id", libraryHandler.DeleteCape)
 		}
+
+		// 配额查询接口
+		libraryGroup.GET("/quota", libraryHandler.GetQuota)
 	}
 }

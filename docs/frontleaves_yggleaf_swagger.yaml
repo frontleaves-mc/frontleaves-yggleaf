@@ -302,6 +302,9 @@ definitions:
     type: object
   library.CreateCapeRequest:
     properties:
+      is_public:
+        description: 是否公开（可选，默认 false）
+        type: boolean
       name:
         description: 披风名称
         type: string
@@ -314,6 +317,9 @@ definitions:
     type: object
   library.CreateSkinRequest:
     properties:
+      is_public:
+        description: 是否公开（可选，默认 false）
+        type: boolean
       model:
         description: 皮肤模型 (1=classic, 2=slim)
         enum:
@@ -406,6 +412,43 @@ definitions:
         type: string
     required:
     - new_name
+    type: object
+  user.GameProfileDetailResponse:
+    properties:
+      cape_library:
+        allOf:
+        - $ref: '#/definitions/entity.CapeLibrary'
+        description: 关联披风库
+      cape_library_id:
+        description: 关联披风库ID
+        type: integer
+      id:
+        type: integer
+      name:
+        description: 游戏内用户名
+        type: string
+      skin_library:
+        allOf:
+        - $ref: '#/definitions/entity.SkinLibrary'
+        description: 关联皮肤库
+      skin_library_id:
+        description: 关联皮肤库ID
+        type: integer
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: |-
+          ----------
+           外键约束
+          ----------
+      user_id:
+        description: 关联用户ID
+        type: integer
+      uuid:
+        description: Minecraft UUID
+        type: string
     type: object
   user.GameProfileListResponse:
     properties:
@@ -506,6 +549,44 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
       summary: '[玩家] 创建游戏档案'
+      tags:
+      - 游戏档案接口
+  /game-profile/{profile_id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据档案 ID 获取游戏档案详情，包含关联的皮肤和披风信息
+      parameters:
+      - description: 游戏档案 ID
+        in: path
+        name: profile_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.GameProfileDetailResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 获取游戏档案详情'
       tags:
       - 游戏档案接口
   /game-profile/{profile_id}/username:
@@ -756,6 +837,34 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
       summary: '[玩家] 更新披风'
+      tags:
+      - 资源库接口
+  /library/quota:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的资源库配额信息，包括皮肤和披风的公开/私有额度与已使用额度
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.LibraryQuota'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 获取资源库配额'
       tags:
       - 资源库接口
   /library/skins:

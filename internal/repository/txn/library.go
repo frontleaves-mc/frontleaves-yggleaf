@@ -53,14 +53,14 @@ func NewLibraryTxnRepo(
 	}
 }
 
-// CreateSkinWithQuota 在事务内完成皮肤创建及私有配额扣减。
+// CreateSkinWithQuota 在事务内完成皮肤创建及对应配额扣减。
 //
 // 该方法执行以下原子操作序列：
 //  1. 行锁查询用户资源库配额
-//  2. 校验私有皮肤配额是否充足
+//  2. 根据 IsPublic 校验对应配额是否充足（公开配额或私有配额）
 //  3. 检查纹理哈希是否已存在（去重）
 //  4. 创建皮肤记录
-//  5. 更新私有皮肤已用数量 (+1)
+//  5. 更新对应已用配额数量 (+1)
 //
 // 任一步骤失败将触发整体回滚。调用方需确保 Bucket 上传已完成并将文件 ID 填入 skin.Texture。
 //
@@ -91,12 +91,20 @@ func (t *LibraryTxnRepo) CreateSkinWithQuota(
 			bizErr = xError.NewError(ctx, xError.ResourceNotFound, "用户资源库配额不存在", true)
 			return bizErr
 		}
-		if quota.SkinsPrivateUsed >= quota.SkinsPrivateTotal {
-			bizErr = xError.NewError(ctx, xError.ResourceExhausted, "私有皮肤配额不足", true)
-			return bizErr
+		// 2. 根据 IsPublic 校验对应配额
+		if skin.IsPublic {
+			if quota.SkinsPublicUsed >= quota.SkinsPublicTotal {
+				bizErr = xError.NewError(ctx, xError.ResourceExhausted, "公开皮肤配额不足", true)
+				return bizErr
+			}
+		} else {
+			if quota.SkinsPrivateUsed >= quota.SkinsPrivateTotal {
+				bizErr = xError.NewError(ctx, xError.ResourceExhausted, "私有皮肤配额不足", true)
+				return bizErr
+			}
 		}
 
-		// 2. 纹理哈希去重检查
+		// 3. 纹理哈希去重检查
 		existingSkin, found, xErr := t.skinRepo.GetByTextureHash(ctx, tx, skin.TextureHash)
 		if xErr != nil {
 			bizErr = xErr
@@ -117,8 +125,12 @@ func (t *LibraryTxnRepo) CreateSkinWithQuota(
 			return bizErr
 		}
 
-		// 4. 更新私有配额
-		bizErr = t.quotaRepo.UpdateSkinsPrivateUsed(ctx, tx, quota.ID, quota.SkinsPrivateUsed+1)
+		// 4. 根据 IsPublic 更新对应配额
+		if skin.IsPublic {
+			bizErr = t.quotaRepo.UpdateSkinsPublicUsed(ctx, tx, quota.ID, quota.SkinsPublicUsed+1)
+		} else {
+			bizErr = t.quotaRepo.UpdateSkinsPrivateUsed(ctx, tx, quota.ID, quota.SkinsPrivateUsed+1)
+		}
 		if bizErr != nil {
 			return bizErr
 		}
@@ -291,14 +303,14 @@ func (t *LibraryTxnRepo) DeleteSkinWithQuota(
 	return nil
 }
 
-// CreateCapeWithQuota 在事务内完成披风创建及私有配额扣减。
+// CreateCapeWithQuota 在事务内完成披风创建及对应配额扣减。
 //
 // 该方法执行以下原子操作序列：
 //  1. 行锁查询用户资源库配额
-//  2. 校验私有披风配额是否充足
+//  2. 根据 IsPublic 校验对应配额是否充足（公开配额或私有配额）
 //  3. 检查纹理哈希是否已存在（去重）
 //  4. 创建披风记录
-//  5. 更新私有披风已用数量 (+1)
+//  5. 更新对应已用配额数量 (+1)
 //
 // 任一步骤失败将触发整体回滚。调用方需确保 Bucket 上传已完成并将文件 ID 填入 cape.Texture。
 //
@@ -329,12 +341,20 @@ func (t *LibraryTxnRepo) CreateCapeWithQuota(
 			bizErr = xError.NewError(ctx, xError.ResourceNotFound, "用户资源库配额不存在", true)
 			return bizErr
 		}
-		if quota.CapesPrivateUsed >= quota.CapesPrivateTotal {
-			bizErr = xError.NewError(ctx, xError.ResourceExhausted, "私有披风配额不足", true)
-			return bizErr
+		// 2. 根据 IsPublic 校验对应配额
+		if cape.IsPublic {
+			if quota.CapesPublicUsed >= quota.CapesPublicTotal {
+				bizErr = xError.NewError(ctx, xError.ResourceExhausted, "公开披风配额不足", true)
+				return bizErr
+			}
+		} else {
+			if quota.CapesPrivateUsed >= quota.CapesPrivateTotal {
+				bizErr = xError.NewError(ctx, xError.ResourceExhausted, "私有披风配额不足", true)
+				return bizErr
+			}
 		}
 
-		// 2. 纹理哈希去重检查
+		// 3. 纹理哈希去重检查
 		existingCape, found, xErr := t.capeRepo.GetByTextureHash(ctx, tx, cape.TextureHash)
 		if xErr != nil {
 			bizErr = xErr
@@ -355,8 +375,12 @@ func (t *LibraryTxnRepo) CreateCapeWithQuota(
 			return bizErr
 		}
 
-		// 4. 更新私有配额
-		bizErr = t.quotaRepo.UpdateCapesPrivateUsed(ctx, tx, quota.ID, quota.CapesPrivateUsed+1)
+		// 4. 根据 IsPublic 更新对应配额
+		if cape.IsPublic {
+			bizErr = t.quotaRepo.UpdateCapesPublicUsed(ctx, tx, quota.ID, quota.CapesPublicUsed+1)
+		} else {
+			bizErr = t.quotaRepo.UpdateCapesPrivateUsed(ctx, tx, quota.ID, quota.CapesPrivateUsed+1)
+		}
 		if bizErr != nil {
 			return bizErr
 		}

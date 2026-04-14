@@ -18,6 +18,7 @@ func (r *route) gameProfileRouter(route gin.IRouter) {
 		gameProfileGroup.GET("", gameProfileHandler.ListGameProfiles)
 		gameProfileGroup.POST("", gameProfileHandler.AddGameProfile)
 		gameProfileGroup.GET("/quota", gameProfileHandler.GetQuota)
+		gameProfileGroup.GET("/:profile_id", gameProfileHandler.GetGameProfileDetail)
 		gameProfileGroup.PATCH("/:profile_id/username", gameProfileHandler.ChangeUsername)
 	}
 }

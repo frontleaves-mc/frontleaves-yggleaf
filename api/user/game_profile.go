@@ -14,3 +14,8 @@ type ChangeUsernameRequest struct {
 type GameProfileListResponse struct {
 	Items []entity.GameProfile `json:"items"` // 游戏档案列表
 }
+
+// GameProfileDetailResponse 游戏档案详情响应
+type GameProfileDetailResponse struct {
+	entity.GameProfile
+}

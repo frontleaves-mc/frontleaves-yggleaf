@@ -172,6 +172,68 @@
                 }
             }
         },
+        "/game-profile/{profile_id}": {
+            "get": {
+                "description": "根据档案 ID 获取游戏档案详情，包含关联的皮肤和披风信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "游戏档案接口"
+                ],
+                "summary": "[玩家] 获取游戏档案详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "游戏档案 ID",
+                        "name": "profile_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/user.GameProfileDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/game-profile/{profile_id}/username": {
             "patch": {
                 "description": "根据档案 ID 修改游戏档案用户名",
@@ -517,6 +579,53 @@
                     },
                     "503": {
                         "description": "配额耗尽",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/quota": {
+            "get": {
+                "description": "获取当前用户的资源库配额信息，包括皮肤和披风的公开/私有额度与已使用额度",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 获取资源库配额",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/entity.LibraryQuota"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -1284,6 +1393,10 @@
                 "texture"
             ],
             "properties": {
+                "is_public": {
+                    "description": "是否公开（可选，默认 false）",
+                    "type": "boolean"
+                },
                 "name": {
                     "description": "披风名称",
                     "type": "string"
@@ -1302,6 +1415,10 @@
                 "texture"
             ],
             "properties": {
+                "is_public": {
+                    "description": "是否公开（可选，默认 false）",
+                    "type": "boolean"
+                },
                 "model": {
                     "description": "皮肤模型 (1=classic, 2=slim)",
                     "type": "integer",
@@ -1427,6 +1544,61 @@
             ],
             "properties": {
                 "new_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.GameProfileDetailResponse": {
+            "type": "object",
+            "properties": {
+                "cape_library": {
+                    "description": "关联披风库",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.CapeLibrary"
+                        }
+                    ]
+                },
+                "cape_library_id": {
+                    "description": "关联披风库ID",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "游戏内用户名",
+                    "type": "string"
+                },
+                "skin_library": {
+                    "description": "关联皮肤库",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.SkinLibrary"
+                        }
+                    ]
+                },
+                "skin_library_id": {
+                    "description": "关联皮肤库ID",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "description": "----------\n 外键约束\n----------",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "description": "关联用户ID",
+                    "type": "integer"
+                },
+                "uuid": {
+                    "description": "Minecraft UUID",
                     "type": "string"
                 }
             }

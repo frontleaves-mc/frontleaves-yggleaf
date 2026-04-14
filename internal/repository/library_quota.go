@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	defaultSkinsPublicTotal  = 2
+	defaultSkinsPublicTotal  = 1
 	defaultSkinsPrivateTotal = 2
-	defaultCapesPublicTotal  = 2
+	defaultCapesPublicTotal  = 1
 	defaultCapesPrivateTotal = 2
 )
 

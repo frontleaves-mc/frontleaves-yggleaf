@@ -104,6 +104,49 @@ func (h *GameProfileHandler) ChangeUsername(ctx *gin.Context) {
 	xResult.SuccessHasData(ctx, "修改游戏档案用户名成功", updatedProfile)
 }
 
+// GetGameProfileDetail 获取指定游戏档案详情
+//
+// @Summary     [玩家] 获取游戏档案详情
+// @Description 根据档案 ID 获取游戏档案详情，包含关联的皮肤和披风信息
+// @Tags        游戏档案接口
+// @Accept      json
+// @Produce     json
+// @Param       profile_id path string true "游戏档案 ID"
+// @Success     200   {object}  xBase.BaseResponse{data=apiUser.GameProfileDetailResponse} "获取成功"
+// @Failure     400   {object}  xBase.BaseResponse                                     "请求参数错误"
+// @Failure     401   {object}  xBase.BaseResponse                                     "未授权"
+// @Failure     404   {object}  xBase.BaseResponse                                     "资源不存在"
+// @Router      /game-profile/{profile_id} [GET]
+func (h *GameProfileHandler) GetGameProfileDetail(ctx *gin.Context) {
+	h.log.Info(ctx, "GetGameProfileDetail - 获取游戏档案详情")
+
+	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析游戏档案 ID 失败", true, err))
+		return
+	}
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	profile, xErr := h.service.gameProfileLogic.GetGameProfileDetail(ctx.Request.Context(), userID, profileID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "获取游戏档案详情成功", profile)
+}
+
 // ListGameProfiles 获取当前用户的游戏档案列表
 //
 // @Summary     [玩家] 获取游戏档案列表

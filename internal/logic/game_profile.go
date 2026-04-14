@@ -179,6 +179,36 @@ func (l *GameProfileLogic) ChangeUsername(ctx context.Context, userID xSnowflake
 	return updatedProfile, nil
 }
 
+// GetGameProfileDetail 获取指定游戏档案的详情（含关联皮肤和披风）。
+//
+// 参数:
+//   - ctx: 上下文对象。
+//   - userID: 操作者的雪花 ID。
+//   - profileID: 目标游戏档案的雪花 ID。
+//
+// 返回值:
+//   - *entity.GameProfile: 游戏档案详情（含关联数据）。
+//   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
+func (l *GameProfileLogic) GetGameProfileDetail(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+	l.log.Info(ctx, "GetGameProfileDetail - 获取游戏档案详情")
+
+	if userID.IsZero() {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效用户 ID：不能为 0", true)
+	}
+	if profileID.IsZero() {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效档案 ID：不能为 0", true)
+	}
+
+	profile, found, xErr := l.repo.profile.GetDetailByID(ctx, nil, profileID, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+	return profile, nil
+}
+
 // ListGameProfiles 获取指定用户的所有游戏档案列表。
 //
 // 该方法按创建时间正序返回该用户的全部游戏档案，不含分页。

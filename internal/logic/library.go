@@ -157,13 +157,17 @@ func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.Snowfla
 	}
 
 	skinId, _ := strconv.ParseInt(uploadResp.FileId, 10, 64)
+	isPublic := false
+	if req.IsPublic != nil {
+		isPublic = *req.IsPublic
+	}
 	skin := &entity.SkinLibrary{
 		UserID:      &userID,
 		Name:        name,
 		Texture:     skinId,
 		TextureHash: textureHash,
 		Model:       model,
-		IsPublic:    false,
+		IsPublic:    isPublic,
 	}
 
 	// 委托 Repository 层在事务内完成创建与配额操作
@@ -335,12 +339,16 @@ func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.Snowfla
 	}
 
 	capeId, _ := strconv.ParseInt(uploadResp.FileId, 10, 64)
+	isPublic := false
+	if req.IsPublic != nil {
+		isPublic = *req.IsPublic
+	}
 	cape := &entity.CapeLibrary{
 		UserID:      &userID,
 		Name:        name,
 		Texture:     capeId,
 		TextureHash: textureHash,
-		IsPublic:    false,
+		IsPublic:    isPublic,
 	}
 
 	// 委托 Repository 层在事务内完成创建与配额操作
@@ -461,6 +469,33 @@ func (l *LibraryLogic) ListCapes(ctx context.Context, userID xSnowflake.Snowflak
 	}
 
 	return l.repo.capeRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+}
+
+// ==================== Quota Logic ====================
+
+// GetQuota 获取指定用户的资源库配额信息。
+//
+// 若该用户尚无配额记录，Repository 层会自动创建默认配额。
+//
+// 参数:
+//   - ctx: 上下文对象。
+//   - userID: 操作者的雪花 ID。
+//
+// 返回值:
+//   - *entity.LibraryQuota: 用户配额实体。
+//   - *xError.Error: 数据操作过程中发生的错误。
+func (l *LibraryLogic) GetQuota(ctx context.Context, userID xSnowflake.SnowflakeID) (*entity.LibraryQuota, *xError.Error) {
+	l.log.Info(ctx, "GetQuota - 获取资源库配额")
+
+	if userID.IsZero() {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效用户 ID：不能为 0", true)
+	}
+
+	quota, _, xErr := l.repo.quotaRepo.GetByUserID(ctx, nil, userID, false)
+	if xErr != nil {
+		return nil, xErr
+	}
+	return quota, nil
 }
 
 // ==================== Helper Methods ====================

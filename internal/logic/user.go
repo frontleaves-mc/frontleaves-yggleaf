@@ -16,7 +16,8 @@ import (
 
 // userRepo 用户数据访问适配器
 type userRepo struct {
-	user *repository.UserRepo
+	user             *repository.UserRepo
+	libraryQuotaRepo *repository.LibraryQuotaRepo
 }
 
 // UserLogic 用户业务逻辑处理者
@@ -52,7 +53,8 @@ func NewUserLogic(ctx context.Context) *UserLogic {
 			log: xLog.WithName(xLog.NamedLOGC, "UserLogic"),
 		},
 		repo: userRepo{
-			user: repository.NewUserRepo(db, rdb),
+			user:             repository.NewUserRepo(db, rdb),
+			libraryQuotaRepo: repository.NewLibraryQuotaRepo(db),
 		},
 	}
 }
@@ -97,5 +99,15 @@ func (l *UserLogic) TakeUser(ctx context.Context, userinfo *bSdkModels.OAuthUser
 		RoleName: xUtil.Ptr(entity.RolePlayer.String()),
 	}
 
-	return l.repo.user.Set(ctx, newUser)
+	user, xErr := l.repo.user.Set(ctx, newUser)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 主动为用户初始化资源库配额（不阻断主流程，仅记录警告日志）
+	if _, _, quotaErr := l.repo.libraryQuotaRepo.GetByUserID(ctx, nil, snowflakeID, false); quotaErr != nil {
+		l.log.Warn(ctx, string("创建用户资源库配额失败: "+quotaErr.ErrorMessage))
+	}
+
+	return user, nil
 }
