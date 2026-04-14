@@ -25,12 +25,14 @@ var gameProfileNameRegex = regexp.MustCompile(`^[A-Za-z0-9_]+$`)
 // gameProfileRepo 游戏档案数据访问适配器。
 //
 // 聚合游戏档案相关的各仓储实例，包括档案本体、配额和配额日志，
-// 以及事务协调仓储（TxnRepo），供 GameProfileLogic 统一调用。
+// 用户资源关联仓储，以及事务协调仓储（TxnRepo），供 GameProfileLogic 统一调用。
 type gameProfileRepo struct {
-	profile  *repository.GameProfileRepo         // 游戏档案仓储
-	quota    *repository.GameProfileQuotaRepo     // 游戏档案配额仓储
-	quotaLog *repository.GameProfileQuotaLogRepo  // 游戏档案配额日志仓储
-	txn      *repotxn.GameProfileTxnRepo       // 游戏档案事务协调仓储
+	profile     *repository.GameProfileRepo         // 游戏档案仓储
+	quota       *repository.GameProfileQuotaRepo     // 游戏档案配额仓储
+	quotaLog    *repository.GameProfileQuotaLogRepo  // 游戏档案配额日志仓储
+	userSkinLib *repository.UserSkinLibraryRepo      // 用户皮肤关联仓储
+	userCapeLib *repository.UserCapeLibraryRepo      // 用户披风关联仓储
+	txn         *repotxn.GameProfileTxnRepo          // 游戏档案事务协调仓储
 }
 
 // GameProfileLogic 游戏档案业务逻辑处理者。
@@ -67,6 +69,8 @@ func NewGameProfileLogic(ctx context.Context) *GameProfileLogic {
 	profileRepo := repository.NewGameProfileRepo(db)
 	quotaRepo := repository.NewGameProfileQuotaRepo(db)
 	quotaLogRepo := repository.NewGameProfileQuotaLogRepo(db)
+	userSkinLibRepo := repository.NewUserSkinLibraryRepo(db)
+	userCapeLibRepo := repository.NewUserCapeLibraryRepo(db)
 
 	return &GameProfileLogic{
 		logic: logic{
@@ -74,10 +78,12 @@ func NewGameProfileLogic(ctx context.Context) *GameProfileLogic {
 			log: xLog.WithName(xLog.NamedLOGC, "GameProfileLogic"),
 		},
 		repo: gameProfileRepo{
-			profile:  profileRepo,
-			quota:    quotaRepo,
-			quotaLog: quotaLogRepo,
-			txn:      repotxn.NewGameProfileTxnRepo(db, profileRepo, quotaRepo, quotaLogRepo),
+			profile:     profileRepo,
+			quota:       quotaRepo,
+			quotaLog:    quotaLogRepo,
+			userSkinLib: userSkinLibRepo,
+			userCapeLib: userCapeLibRepo,
+			txn:         repotxn.NewGameProfileTxnRepo(db, profileRepo, quotaRepo, quotaLogRepo),
 		},
 	}
 }
@@ -257,6 +263,95 @@ func (l *GameProfileLogic) GetQuota(ctx context.Context, userID xSnowflake.Snowf
 		return nil, xErr
 	}
 	return quota, nil
+}
+
+// EquipSkin 为指定游戏档案装备皮肤。
+//
+// 该方法执行以下业务流程：
+//  1. 校验档案归属权（档案必须属于当前用户）
+//  2. 校验用户是否拥有该皮肤（通过 UserSkinLibrary 关联校验）
+//  3. 更新档案的 SkinLibraryID
+func (l *GameProfileLogic) EquipSkin(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, skinLibraryID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+	l.log.Info(ctx, "EquipSkin - 装备皮肤")
+
+	// 1. 校验档案归属权
+	_, found, xErr := l.repo.profile.GetByIDAndUserID(ctx, nil, profileID, userID, false)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+
+	// 2. 校验用户是否拥有该皮肤
+	hasSkin, xErr := l.repo.userSkinLib.ExistsByUserAndSkin(ctx, nil, userID, skinLibraryID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !hasSkin {
+		return nil, xError.NewError(ctx, xError.PermissionDenied, "您未拥有该皮肤，无法装备", true)
+	}
+
+	// 3. 更新档案的 SkinLibraryID
+	return l.repo.profile.UpdateSkinLibraryID(ctx, nil, profileID, &skinLibraryID)
+}
+
+// EquipCape 为指定游戏档案装备披风。
+//
+// 同构于 EquipSkin，Skin → Cape。
+func (l *GameProfileLogic) EquipCape(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, capeLibraryID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+	l.log.Info(ctx, "EquipCape - 装备披风")
+
+	// 1. 校验档案归属权
+	_, found, xErr := l.repo.profile.GetByIDAndUserID(ctx, nil, profileID, userID, false)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+
+	// 2. 校验用户是否拥有该披风
+	hasCape, xErr := l.repo.userCapeLib.ExistsByUserAndCape(ctx, nil, userID, capeLibraryID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !hasCape {
+		return nil, xError.NewError(ctx, xError.PermissionDenied, "您未拥有该披风，无法装备", true)
+	}
+
+	// 3. 更新档案的 CapeLibraryID
+	return l.repo.profile.UpdateCapeLibraryID(ctx, nil, profileID, &capeLibraryID)
+}
+
+// UnequipSkin 为指定游戏档案卸下皮肤。
+func (l *GameProfileLogic) UnequipSkin(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+	l.log.Info(ctx, "UnequipSkin - 卸下皮肤")
+
+	_, found, xErr := l.repo.profile.GetByIDAndUserID(ctx, nil, profileID, userID, false)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+
+	return l.repo.profile.UpdateSkinLibraryID(ctx, nil, profileID, nil)
+}
+
+// UnequipCape 为指定游戏档案卸下披风。
+func (l *GameProfileLogic) UnequipCape(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+	l.log.Info(ctx, "UnequipCape - 卸下披风")
+
+	_, found, xErr := l.repo.profile.GetByIDAndUserID(ctx, nil, profileID, userID, false)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+
+	return l.repo.profile.UpdateCapeLibraryID(ctx, nil, profileID, nil)
 }
 
 // validateGameProfileName 校验并规范化游戏档案用户名。

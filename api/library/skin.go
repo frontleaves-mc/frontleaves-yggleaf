@@ -1,6 +1,7 @@
 package library
 
 import (
+	entityType "github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity/type"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 )
 
@@ -21,6 +22,7 @@ type UpdateSkinRequest struct {
 // SkinResponse 皮肤响应
 type SkinResponse struct {
 	entity.SkinLibrary
+	AssignmentType entityType.AssignmentType `json:"assignment_type,omitempty"` // 关联类型（mine 模式下返回）
 }
 
 // SkinListResponse 皮肤列表响应

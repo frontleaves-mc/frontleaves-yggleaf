@@ -146,6 +146,42 @@ func (r *GameProfileRepo) UpdateName(ctx context.Context, tx *gorm.DB, profileID
 	return updatedProfile, nil
 }
 
+// UpdateSkinLibraryID 更新指定档案的关联皮肤库 ID。
+func (r *GameProfileRepo) UpdateSkinLibraryID(ctx context.Context, tx *gorm.DB, profileID xSnowflake.SnowflakeID, skinLibraryID *xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+	r.log.Info(ctx, "UpdateSkinLibraryID - 更新游戏档案关联皮肤")
+
+	if err := r.pickDB(ctx, tx).Model(&entity.GameProfile{}).Where("id = ?", profileID).Update("skin_library_id", skinLibraryID).Error; err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "更新游戏档案皮肤失败", true, err)
+	}
+
+	updatedProfile, found, xErr := r.GetByID(ctx, tx, profileID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+	return updatedProfile, nil
+}
+
+// UpdateCapeLibraryID 更新指定档案的关联披风库 ID。
+func (r *GameProfileRepo) UpdateCapeLibraryID(ctx context.Context, tx *gorm.DB, profileID xSnowflake.SnowflakeID, capeLibraryID *xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+	r.log.Info(ctx, "UpdateCapeLibraryID - 更新游戏档案关联披风")
+
+	if err := r.pickDB(ctx, tx).Model(&entity.GameProfile{}).Where("id = ?", profileID).Update("cape_library_id", capeLibraryID).Error; err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "更新游戏档案披风失败", true, err)
+	}
+
+	updatedProfile, found, xErr := r.GetByID(ctx, tx, profileID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+	return updatedProfile, nil
+}
+
 func (r *GameProfileRepo) pickDB(ctx context.Context, tx *gorm.DB) *gorm.DB {
 	if tx != nil {
 		return tx.WithContext(ctx)

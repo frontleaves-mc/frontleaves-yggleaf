@@ -322,603 +322,6 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
-        "/library/capes": {
-            "get": {
-                "description": "根据模式获取披风列表，mode=market 获取所有公开披风，mode=mine 获取当前用户的披风",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 获取披风列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "mine",
-                        "description": "列表模式：market(市场) / mine(我的)",
-                        "name": "mode",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "每页数量",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "获取成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/xBase.BaseResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/library.CapeListResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "上传并创建一个新的披风资源，纹理文件以 base64 编码传输",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 创建披风",
-                "parameters": [
-                    {
-                        "description": "创建披风请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/library.CreateCapeRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "创建成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/xBase.BaseResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/entity.CapeLibrary"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "资源冲突",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "503": {
-                        "description": "配额耗尽",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/library/capes/{cape_id}": {
-            "delete": {
-                "description": "删除指定披风，只能删除自己创建的披风",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 删除披风",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "披风 ID",
-                        "name": "cape_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "删除成功",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "无权限",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "资源不存在",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "description": "修改指定披风的名称或公开状态，只能修改自己创建的披风",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 更新披风",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "披风 ID",
-                        "name": "cape_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新披风请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/library.UpdateCapeRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/xBase.BaseResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/entity.CapeLibrary"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "无权限",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "资源不存在",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "503": {
-                        "description": "配额耗尽",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/library/quota": {
-            "get": {
-                "description": "获取当前用户的资源库配额信息，包括皮肤和披风的公开/私有额度与已使用额度",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 获取资源库配额",
-                "responses": {
-                    "200": {
-                        "description": "获取成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/xBase.BaseResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/entity.LibraryQuota"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/library/skins": {
-            "get": {
-                "description": "根据模式获取皮肤列表，mode=market 获取所有公开皮肤，mode=mine 获取当前用户的皮肤",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 获取皮肤列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "mine",
-                        "description": "列表模式：market(市场) / mine(我的)",
-                        "name": "mode",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "每页数量",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "获取成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/xBase.BaseResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/library.SkinListResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "上传并创建一个新的皮肤资源，纹理文件以 base64 编码传输",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 创建皮肤",
-                "parameters": [
-                    {
-                        "description": "创建皮肤请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/library.CreateSkinRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "创建成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/xBase.BaseResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/entity.SkinLibrary"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "资源冲突",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "503": {
-                        "description": "配额耗尽",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/library/skins/{skin_id}": {
-            "delete": {
-                "description": "删除指定皮肤，只能删除自己创建的皮肤",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 删除皮肤",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "皮肤 ID",
-                        "name": "skin_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "删除成功",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "无权限",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "资源不存在",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "description": "修改指定皮肤的名称或公开状态，只能修改自己创建的皮肤",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "资源库接口"
-                ],
-                "summary": "[玩家] 更新皮肤",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "皮肤 ID",
-                        "name": "skin_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新皮肤请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/library.UpdateSkinRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/xBase.BaseResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/entity.SkinLibrary"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "无权限",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "资源不存在",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    },
-                    "503": {
-                        "description": "配额耗尽",
-                        "schema": {
-                            "$ref": "#/definitions/xBase.BaseResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/user/info": {
             "get": {
                 "description": "根据 AT 获取用户信息，获取到本程序的用户信息",
@@ -1014,7 +417,7 @@ const docTemplatefrontleaves_yggleaf = `{
                     ]
                 },
                 "user_id": {
-                    "description": "关联用户ID(为空代表系统内置披风)",
+                    "description": "创建者/上传者用户ID(为空代表系统内置披风)",
                     "type": "integer"
                 }
             }
@@ -1266,7 +669,7 @@ const docTemplatefrontleaves_yggleaf = `{
                     ]
                 },
                 "user_id": {
-                    "description": "关联用户ID(为空代表系统内置皮肤)",
+                    "description": "创建者/上传者用户ID(为空代表系统内置皮肤)",
                     "type": "integer"
                 }
             }
@@ -1336,49 +739,51 @@ const docTemplatefrontleaves_yggleaf = `{
                 "updated_at": {
                     "type": "string"
                 },
+                "user_cape_libraries": {
+                    "description": "用户披风关联",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.UserCapeLibrary"
+                    }
+                },
+                "user_skin_libraries": {
+                    "description": "用户皮肤关联",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.UserSkinLibrary"
+                    }
+                },
                 "username": {
                     "description": "用户用户名",
                     "type": "string"
                 }
             }
         },
-        "library.CapeListResponse": {
+        "entity.UserCapeLibrary": {
             "type": "object",
             "properties": {
-                "items": {
-                    "description": "披风列表",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/library.CapeResponse"
-                    }
+                "assignment_type": {
+                    "description": "关联类型",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entityType.AssignmentType"
+                        }
+                    ]
                 },
-                "total": {
-                    "description": "总数",
+                "cape_library": {
+                    "description": "关联披风库",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.CapeLibrary"
+                        }
+                    ]
+                },
+                "cape_library_id": {
+                    "description": "关联披风库ID",
                     "type": "integer"
-                }
-            }
-        },
-        "library.CapeResponse": {
-            "type": "object",
-            "properties": {
+                },
                 "id": {
                     "type": "integer"
-                },
-                "is_public": {
-                    "description": "是否公开",
-                    "type": "boolean"
-                },
-                "name": {
-                    "description": "披风名称",
-                    "type": "string"
-                },
-                "texture": {
-                    "description": "披风纹理文件ID(雪花算法)",
-                    "type": "integer"
-                },
-                "texture_hash": {
-                    "description": "披风纹理哈希",
-                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1392,107 +797,36 @@ const docTemplatefrontleaves_yggleaf = `{
                     ]
                 },
                 "user_id": {
-                    "description": "关联用户ID(为空代表系统内置披风)",
+                    "description": "关联用户ID",
                     "type": "integer"
                 }
             }
         },
-        "library.CreateCapeRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "texture"
-            ],
-            "properties": {
-                "is_public": {
-                    "description": "是否公开（可选，默认 false）",
-                    "type": "boolean"
-                },
-                "name": {
-                    "description": "披风名称",
-                    "type": "string"
-                },
-                "texture": {
-                    "description": "披风纹理文件 base64",
-                    "type": "string"
-                }
-            }
-        },
-        "library.CreateSkinRequest": {
-            "type": "object",
-            "required": [
-                "model",
-                "name",
-                "texture"
-            ],
-            "properties": {
-                "is_public": {
-                    "description": "是否公开（可选，默认 false）",
-                    "type": "boolean"
-                },
-                "model": {
-                    "description": "皮肤模型 (1=classic, 2=slim)",
-                    "type": "integer",
-                    "enum": [
-                        1,
-                        2
-                    ]
-                },
-                "name": {
-                    "description": "皮肤名称",
-                    "type": "string"
-                },
-                "texture": {
-                    "description": "皮肤纹理文件 base64",
-                    "type": "string"
-                }
-            }
-        },
-        "library.SkinListResponse": {
+        "entity.UserSkinLibrary": {
             "type": "object",
             "properties": {
-                "items": {
-                    "description": "皮肤列表",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/library.SkinResponse"
-                    }
-                },
-                "total": {
-                    "description": "总数",
-                    "type": "integer"
-                }
-            }
-        },
-        "library.SkinResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "is_public": {
-                    "description": "是否公开",
-                    "type": "boolean"
-                },
-                "model": {
-                    "description": "皮肤模型(1=classic,2=slim)",
+                "assignment_type": {
+                    "description": "关联类型",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/entity.ModelType"
+                            "$ref": "#/definitions/entityType.AssignmentType"
                         }
                     ]
                 },
-                "name": {
-                    "description": "皮肤名称",
-                    "type": "string"
-                },
-                "texture": {
-                    "description": "皮肤纹理文件ID(雪花算法)",
+                "id": {
                     "type": "integer"
                 },
-                "texture_hash": {
-                    "description": "皮肤纹理哈希",
-                    "type": "string"
+                "skin_library": {
+                    "description": "关联皮肤库",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.SkinLibrary"
+                        }
+                    ]
+                },
+                "skin_library_id": {
+                    "description": "关联皮肤库ID",
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1506,36 +840,24 @@ const docTemplatefrontleaves_yggleaf = `{
                     ]
                 },
                 "user_id": {
-                    "description": "关联用户ID(为空代表系统内置皮肤)",
+                    "description": "关联用户ID",
                     "type": "integer"
                 }
             }
         },
-        "library.UpdateCapeRequest": {
-            "type": "object",
-            "properties": {
-                "is_public": {
-                    "description": "是否公开（可选）",
-                    "type": "boolean"
-                },
-                "name": {
-                    "description": "披风名称（可选）",
-                    "type": "string"
-                }
-            }
-        },
-        "library.UpdateSkinRequest": {
-            "type": "object",
-            "properties": {
-                "is_public": {
-                    "description": "是否公开（可选）",
-                    "type": "boolean"
-                },
-                "name": {
-                    "description": "皮肤名称（可选）",
-                    "type": "string"
-                }
-            }
+        "entityType.AssignmentType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "AssignmentTypeNormal",
+                "AssignmentTypeGift",
+                "AssignmentTypeAdmin"
+            ]
         },
         "user.AddGameProfileRequest": {
             "type": "object",

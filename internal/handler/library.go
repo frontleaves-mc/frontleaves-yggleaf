@@ -9,6 +9,7 @@ import (
 	xResult "github.com/bamboo-services/bamboo-base-go/major/result"
 	apiLibrary "github.com/frontleaves-mc/frontleaves-yggleaf/api/library"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
+	entityType "github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity/type"
 	"github.com/gin-gonic/gin"
 	bSdkUtil "github.com/phalanx-labs/beacon-sso-sdk/utility"
 )
@@ -22,19 +23,6 @@ const (
 // ==================== Skin Handlers ====================
 
 // CreateSkin 创建皮肤
-//
-// @Summary     [玩家] 创建皮肤
-// @Description 上传并创建一个新的皮肤资源，纹理文件以 base64 编码传输
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Param       request body apiLibrary.CreateSkinRequest true "创建皮肤请求"
-// @Success     200   {object}  xBase.BaseResponse{data=entity.SkinLibrary} "创建成功"
-// @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse                               "未授权"
-// @Failure     409   {object}  xBase.BaseResponse                               "资源冲突"
-// @Failure     503   {object}  xBase.BaseResponse                               "配额耗尽"
-// @Router      /library/skins [POST]
 func (h *LibraryHandler) CreateSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "CreateSkin - 创建皮肤")
 
@@ -65,19 +53,6 @@ func (h *LibraryHandler) CreateSkin(ctx *gin.Context) {
 }
 
 // ListSkins 获取皮肤列表
-//
-// @Summary     [玩家] 获取皮肤列表
-// @Description 根据模式获取皮肤列表，mode=market 获取所有公开皮肤，mode=mine 获取当前用户的皮肤
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Param       mode       query string false "列表模式：market(市场) / mine(我的)" default(mine)
-// @Param       page       query int    false "页码" default(1)
-// @Param       page_size  query int    false "每页数量" default(20)
-// @Success     200   {object}  xBase.BaseResponse{data=apiLibrary.SkinListResponse} "获取成功"
-// @Failure     400   {object}  xBase.BaseResponse                                       "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse                                       "未授权"
-// @Router      /library/skins [GET]
 func (h *LibraryHandler) ListSkins(ctx *gin.Context) {
 	h.log.Info(ctx, "ListSkins - 获取皮肤列表")
 
@@ -101,36 +76,32 @@ func (h *LibraryHandler) ListSkins(ctx *gin.Context) {
 		return
 	}
 
-	skins, total, xErr := h.service.libraryLogic.ListSkins(ctx.Request.Context(), userID, mode, page, pageSize)
-	if xErr != nil {
-		_ = ctx.Error(xErr)
-		return
+	if mode == "market" {
+		skins, total, xErr := h.service.libraryLogic.ListSkins(ctx.Request.Context(), page, pageSize)
+		if xErr != nil {
+			_ = ctx.Error(xErr)
+			return
+		}
+		response := apiLibrary.SkinListResponse{
+			Total: total,
+			Items: h.convertSkinEntitiesToResponses(skins),
+		}
+		xResult.SuccessHasData(ctx, "获取皮肤列表成功", response)
+	} else {
+		associations, total, xErr := h.service.libraryLogic.ListMySkins(ctx.Request.Context(), userID, page, pageSize)
+		if xErr != nil {
+			_ = ctx.Error(xErr)
+			return
+		}
+		response := apiLibrary.SkinListResponse{
+			Total: total,
+			Items: h.convertUserSkinLibrariesToResponses(associations),
+		}
+		xResult.SuccessHasData(ctx, "获取皮肤列表成功", response)
 	}
-
-	response := apiLibrary.SkinListResponse{
-		Total: total,
-		Items: h.convertSkinEntitiesToResponses(skins),
-	}
-
-	xResult.SuccessHasData(ctx, "获取皮肤列表成功", response)
 }
 
 // UpdateSkin 更新皮肤
-//
-// @Summary     [玩家] 更新皮肤
-// @Description 修改指定皮肤的名称或公开状态，只能修改自己创建的皮肤
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Param       skin_id path string true "皮肤 ID"
-// @Param       request body apiLibrary.UpdateSkinRequest true "更新皮肤请求"
-// @Success     200   {object}  xBase.BaseResponse{data=entity.SkinLibrary} "更新成功"
-// @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse                               "未授权"
-// @Failure     403   {object}  xBase.BaseResponse                               "无权限"
-// @Failure     404   {object}  xBase.BaseResponse                               "资源不存在"
-// @Failure     503   {object}  xBase.BaseResponse                               "配额耗尽"
-// @Router      /library/skins/{skin_id} [PATCH]
 func (h *LibraryHandler) UpdateSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "UpdateSkin - 更新皮肤")
 
@@ -167,19 +138,6 @@ func (h *LibraryHandler) UpdateSkin(ctx *gin.Context) {
 }
 
 // DeleteSkin 删除皮肤
-//
-// @Summary     [玩家] 删除皮肤
-// @Description 删除指定皮肤，只能删除自己创建的皮肤
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Param       skin_id path string true "皮肤 ID"
-// @Success     200   {object}  xBase.BaseResponse "删除成功"
-// @Failure     400   {object}  xBase.BaseResponse "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse "未授权"
-// @Failure     403   {object}  xBase.BaseResponse "无权限"
-// @Failure     404   {object}  xBase.BaseResponse "资源不存在"
-// @Router      /library/skins/{skin_id} [DELETE]
 func (h *LibraryHandler) DeleteSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "DeleteSkin - 删除皮肤")
 
@@ -213,19 +171,6 @@ func (h *LibraryHandler) DeleteSkin(ctx *gin.Context) {
 // ==================== Cape Handlers ====================
 
 // CreateCape 创建披风
-//
-// @Summary     [玩家] 创建披风
-// @Description 上传并创建一个新的披风资源，纹理文件以 base64 编码传输
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Param       request body apiLibrary.CreateCapeRequest true "创建披风请求"
-// @Success     200   {object}  xBase.BaseResponse{data=entity.CapeLibrary} "创建成功"
-// @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse                               "未授权"
-// @Failure     409   {object}  xBase.BaseResponse                               "资源冲突"
-// @Failure     503   {object}  xBase.BaseResponse                               "配额耗尽"
-// @Router      /library/capes [POST]
 func (h *LibraryHandler) CreateCape(ctx *gin.Context) {
 	h.log.Info(ctx, "CreateCape - 创建披风")
 
@@ -256,19 +201,6 @@ func (h *LibraryHandler) CreateCape(ctx *gin.Context) {
 }
 
 // ListCapes 获取披风列表
-//
-// @Summary     [玩家] 获取披风列表
-// @Description 根据模式获取披风列表，mode=market 获取所有公开披风，mode=mine 获取当前用户的披风
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Param       mode       query string false "列表模式：market(市场) / mine(我的)" default(mine)
-// @Param       page       query int    false "页码" default(1)
-// @Param       page_size  query int    false "每页数量" default(20)
-// @Success     200   {object}  xBase.BaseResponse{data=apiLibrary.CapeListResponse} "获取成功"
-// @Failure     400   {object}  xBase.BaseResponse                                       "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse                                       "未授权"
-// @Router      /library/capes [GET]
 func (h *LibraryHandler) ListCapes(ctx *gin.Context) {
 	h.log.Info(ctx, "ListCapes - 获取披风列表")
 
@@ -292,36 +224,32 @@ func (h *LibraryHandler) ListCapes(ctx *gin.Context) {
 		return
 	}
 
-	capes, total, xErr := h.service.libraryLogic.ListCapes(ctx.Request.Context(), userID, mode, page, pageSize)
-	if xErr != nil {
-		_ = ctx.Error(xErr)
-		return
+	if mode == "market" {
+		capes, total, xErr := h.service.libraryLogic.ListCapes(ctx.Request.Context(), page, pageSize)
+		if xErr != nil {
+			_ = ctx.Error(xErr)
+			return
+		}
+		response := apiLibrary.CapeListResponse{
+			Total: total,
+			Items: h.convertCapeEntitiesToResponses(capes),
+		}
+		xResult.SuccessHasData(ctx, "获取披风列表成功", response)
+	} else {
+		associations, total, xErr := h.service.libraryLogic.ListMyCapes(ctx.Request.Context(), userID, page, pageSize)
+		if xErr != nil {
+			_ = ctx.Error(xErr)
+			return
+		}
+		response := apiLibrary.CapeListResponse{
+			Total: total,
+			Items: h.convertUserCapeLibrariesToResponses(associations),
+		}
+		xResult.SuccessHasData(ctx, "获取披风列表成功", response)
 	}
-
-	response := apiLibrary.CapeListResponse{
-		Total: total,
-		Items: h.convertCapeEntitiesToResponses(capes),
-	}
-
-	xResult.SuccessHasData(ctx, "获取披风列表成功", response)
 }
 
 // UpdateCape 更新披风
-//
-// @Summary     [玩家] 更新披风
-// @Description 修改指定披风的名称或公开状态，只能修改自己创建的披风
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Param       cape_id path string true "披风 ID"
-// @Param       request body apiLibrary.UpdateCapeRequest true "更新披风请求"
-// @Success     200   {object}  xBase.BaseResponse{data=entity.CapeLibrary} "更新成功"
-// @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse                               "未授权"
-// @Failure     403   {object}  xBase.BaseResponse                               "无权限"
-// @Failure     404   {object}  xBase.BaseResponse                               "资源不存在"
-// @Failure     503   {object}  xBase.BaseResponse                               "配额耗尽"
-// @Router      /library/capes/{cape_id} [PATCH]
 func (h *LibraryHandler) UpdateCape(ctx *gin.Context) {
 	h.log.Info(ctx, "UpdateCape - 更新披风")
 
@@ -358,19 +286,6 @@ func (h *LibraryHandler) UpdateCape(ctx *gin.Context) {
 }
 
 // DeleteCape 删除披风
-//
-// @Summary     [玩家] 删除披风
-// @Description 删除指定披风，只能删除自己创建的披风
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Param       cape_id path string true "披风 ID"
-// @Success     200   {object}  xBase.BaseResponse "删除成功"
-// @Failure     400   {object}  xBase.BaseResponse "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse "未授权"
-// @Failure     403   {object}  xBase.BaseResponse "无权限"
-// @Failure     404   {object}  xBase.BaseResponse "资源不存在"
-// @Router      /library/capes/{cape_id} [DELETE]
 func (h *LibraryHandler) DeleteCape(ctx *gin.Context) {
 	h.log.Info(ctx, "DeleteCape - 删除披风")
 
@@ -404,16 +319,6 @@ func (h *LibraryHandler) DeleteCape(ctx *gin.Context) {
 // ==================== Quota Handler ====================
 
 // GetQuota 获取当前用户的资源库配额
-//
-// @Summary     [玩家] 获取资源库配额
-// @Description 获取当前用户的资源库配额信息，包括皮肤和披风的公开/私有额度与已使用额度
-// @Tags        资源库接口
-// @Accept      json
-// @Produce     json
-// @Success     200   {object}  xBase.BaseResponse{data=entity.LibraryQuota} "获取成功"
-// @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
-// @Failure     401   {object}  xBase.BaseResponse                               "未授权"
-// @Router      /library/quota [GET]
 func (h *LibraryHandler) GetQuota(ctx *gin.Context) {
 	h.log.Info(ctx, "GetQuota - 获取资源库配额")
 
@@ -436,6 +341,214 @@ func (h *LibraryHandler) GetQuota(ctx *gin.Context) {
 	}
 
 	xResult.SuccessHasData(ctx, "获取资源库配额成功", quota)
+}
+
+// ==================== Admin Handlers ====================
+
+// GiftSkin 管理员赠送皮肤
+func (h *LibraryHandler) GiftSkin(ctx *gin.Context) {
+	h.log.Info(ctx, "GiftSkin - 管理员赠送皮肤")
+
+	targetUserID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析目标用户 ID 失败", true, err))
+		return
+	}
+
+	req := xUtil.Bind(ctx, &apiLibrary.GiftSkinRequest{}).Data()
+	if req == nil {
+		return
+	}
+
+	skinLibraryID, err := xSnowflake.ParseSnowflakeID(req.SkinLibraryID)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析皮肤库 ID 失败", true, err))
+		return
+	}
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	operatorID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析操作者 ID 失败", true, err))
+		return
+	}
+
+	assignmentType := entityType.AssignmentType(req.AssignmentType)
+	result, xErr := h.service.libraryLogic.GiftSkin(ctx.Request.Context(), operatorID, targetUserID, skinLibraryID, assignmentType)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "赠送皮肤成功", result)
+}
+
+// RevokeSkin 管理员撤销皮肤
+func (h *LibraryHandler) RevokeSkin(ctx *gin.Context) {
+	h.log.Info(ctx, "RevokeSkin - 管理员撤销皮肤")
+
+	targetUserID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析目标用户 ID 失败", true, err))
+		return
+	}
+
+	skinLibraryID, err := xSnowflake.ParseSnowflakeID(ctx.Param("skin_library_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析皮肤库 ID 失败", true, err))
+		return
+	}
+
+	xErr := h.service.libraryLogic.RevokeSkin(ctx.Request.Context(), targetUserID, skinLibraryID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.Success(ctx, "撤销皮肤成功")
+}
+
+// GiftCape 管理员赠送披风
+func (h *LibraryHandler) GiftCape(ctx *gin.Context) {
+	h.log.Info(ctx, "GiftCape - 管理员赠送披风")
+
+	targetUserID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析目标用户 ID 失败", true, err))
+		return
+	}
+
+	req := xUtil.Bind(ctx, &apiLibrary.GiftCapeRequest{}).Data()
+	if req == nil {
+		return
+	}
+
+	capeLibraryID, err := xSnowflake.ParseSnowflakeID(req.CapeLibraryID)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析披风库 ID 失败", true, err))
+		return
+	}
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	operatorID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析操作者 ID 失败", true, err))
+		return
+	}
+
+	assignmentType := entityType.AssignmentType(req.AssignmentType)
+	result, xErr := h.service.libraryLogic.GiftCape(ctx.Request.Context(), operatorID, targetUserID, capeLibraryID, assignmentType)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "赠送披风成功", result)
+}
+
+// RevokeCape 管理员撤销披风
+func (h *LibraryHandler) RevokeCape(ctx *gin.Context) {
+	h.log.Info(ctx, "RevokeCape - 管理员撤销披风")
+
+	targetUserID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析目标用户 ID 失败", true, err))
+		return
+	}
+
+	capeLibraryID, err := xSnowflake.ParseSnowflakeID(ctx.Param("cape_library_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析披风库 ID 失败", true, err))
+		return
+	}
+
+	xErr := h.service.libraryLogic.RevokeCape(ctx.Request.Context(), targetUserID, capeLibraryID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.Success(ctx, "撤销披风成功")
+}
+
+// SyncQuota 管理员同步用户配额
+func (h *LibraryHandler) SyncQuota(ctx *gin.Context) {
+	h.log.Info(ctx, "SyncQuota - 管理员同步配额")
+
+	userID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	xErr := h.service.libraryLogic.RecalculateQuota(ctx.Request.Context(), userID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.Success(ctx, "同步配额成功")
+}
+
+
+// ListUserSkins 查询指定用户的皮肤列表（管理员）
+func (h *LibraryHandler) ListUserSkins(ctx *gin.Context) {
+	h.log.Info(ctx, "ListUserSkins - 查询用户皮肤列表")
+
+	userID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	page, pageSize := h.parsePagination(ctx)
+
+	associations, total, xErr := h.service.libraryLogic.ListUserSkins(ctx.Request.Context(), userID, page, pageSize)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	response := apiLibrary.SkinListResponse{
+		Total: total,
+		Items: h.convertUserSkinLibrariesToResponses(associations),
+	}
+	xResult.SuccessHasData(ctx, "获取用户皮肤列表成功", response)
+}
+
+// ListUserCapes 查询指定用户的披风列表（管理员）
+func (h *LibraryHandler) ListUserCapes(ctx *gin.Context) {
+	h.log.Info(ctx, "ListUserCapes - 查询用户披风列表")
+
+	userID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	page, pageSize := h.parsePagination(ctx)
+
+	associations, total, xErr := h.service.libraryLogic.ListUserCapes(ctx.Request.Context(), userID, page, pageSize)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	response := apiLibrary.CapeListResponse{
+		Total: total,
+		Items: h.convertUserCapeLibrariesToResponses(associations),
+	}
+	xResult.SuccessHasData(ctx, "获取用户披风列表成功", response)
 }
 
 // ==================== Helper Methods ====================
@@ -472,6 +585,34 @@ func (h *LibraryHandler) convertCapeEntitiesToResponses(capes []entity.CapeLibra
 	responses := make([]apiLibrary.CapeResponse, len(capes))
 	for i, cape := range capes {
 		responses[i] = apiLibrary.CapeResponse{CapeLibrary: cape}
+	}
+	return responses
+}
+
+func (h *LibraryHandler) convertUserSkinLibrariesToResponses(associations []entity.UserSkinLibrary) []apiLibrary.SkinResponse {
+	responses := make([]apiLibrary.SkinResponse, len(associations))
+	for i, assoc := range associations {
+		resp := apiLibrary.SkinResponse{
+			AssignmentType: assoc.AssignmentType,
+		}
+		if assoc.SkinLibrary != nil {
+			resp.SkinLibrary = *assoc.SkinLibrary
+		}
+		responses[i] = resp
+	}
+	return responses
+}
+
+func (h *LibraryHandler) convertUserCapeLibrariesToResponses(associations []entity.UserCapeLibrary) []apiLibrary.CapeResponse {
+	responses := make([]apiLibrary.CapeResponse, len(associations))
+	for i, assoc := range associations {
+		resp := apiLibrary.CapeResponse{
+			AssignmentType: assoc.AssignmentType,
+		}
+		if assoc.CapeLibrary != nil {
+			resp.CapeLibrary = *assoc.CapeLibrary
+		}
+		responses[i] = resp
 	}
 	return responses
 }

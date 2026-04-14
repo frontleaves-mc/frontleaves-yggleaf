@@ -23,6 +23,8 @@ var migrateTables = []interface{}{
 	&entity.LibraryQuota{},
 	&entity.GameProfileQuota{},
 	&entity.GameProfileQuotaLog{},
+	&entity.UserSkinLibrary{},
+	&entity.UserCapeLibrary{},
 }
 
 func (r *reg) databaseInit(ctx context.Context) (any, error) {

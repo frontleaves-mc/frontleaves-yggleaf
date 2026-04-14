@@ -1,6 +1,7 @@
 package library
 
 import (
+	entityType "github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity/type"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 )
 
@@ -20,6 +21,7 @@ type UpdateCapeRequest struct {
 // CapeResponse 披风响应
 type CapeResponse struct {
 	entity.CapeLibrary
+	AssignmentType entityType.AssignmentType `json:"assignment_type,omitempty"` // 关联类型（mine 模式下返回）
 }
 
 // CapeListResponse 披风列表响应

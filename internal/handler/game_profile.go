@@ -220,3 +220,141 @@ func (h *GameProfileHandler) GetQuota(ctx *gin.Context) {
 
 	xResult.SuccessHasData(ctx, "获取游戏档案配额成功", quota)
 }
+
+// ==================== Equip Handlers ====================
+
+// EquipSkin 为游戏档案装备皮肤
+func (h *GameProfileHandler) EquipSkin(ctx *gin.Context) {
+	h.log.Info(ctx, "EquipSkin - 装备皮肤")
+
+	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析游戏档案 ID 失败", true, err))
+		return
+	}
+
+	skinLibraryID, err := xSnowflake.ParseSnowflakeID(ctx.Param("skin_library_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析皮肤库 ID 失败", true, err))
+		return
+	}
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	profile, xErr := h.service.gameProfileLogic.EquipSkin(ctx.Request.Context(), userID, profileID, skinLibraryID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "装备皮肤成功", profile)
+}
+
+// UnequipSkin 为游戏档案卸下皮肤
+func (h *GameProfileHandler) UnequipSkin(ctx *gin.Context) {
+	h.log.Info(ctx, "UnequipSkin - 卸下皮肤")
+
+	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析游戏档案 ID 失败", true, err))
+		return
+	}
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	profile, xErr := h.service.gameProfileLogic.UnequipSkin(ctx.Request.Context(), userID, profileID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "卸下皮肤成功", profile)
+}
+
+// EquipCape 为游戏档案装备披风
+func (h *GameProfileHandler) EquipCape(ctx *gin.Context) {
+	h.log.Info(ctx, "EquipCape - 装备披风")
+
+	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析游戏档案 ID 失败", true, err))
+		return
+	}
+
+	capeLibraryID, err := xSnowflake.ParseSnowflakeID(ctx.Param("cape_library_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析披风库 ID 失败", true, err))
+		return
+	}
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	profile, xErr := h.service.gameProfileLogic.EquipCape(ctx.Request.Context(), userID, profileID, capeLibraryID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "装备披风成功", profile)
+}
+
+// UnequipCape 为游戏档案卸下披风
+func (h *GameProfileHandler) UnequipCape(ctx *gin.Context) {
+	h.log.Info(ctx, "UnequipCape - 卸下披风")
+
+	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析游戏档案 ID 失败", true, err))
+		return
+	}
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
+		return
+	}
+
+	profile, xErr := h.service.gameProfileLogic.UnequipCape(ctx.Request.Context(), userID, profileID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "卸下披风成功", profile)
+}

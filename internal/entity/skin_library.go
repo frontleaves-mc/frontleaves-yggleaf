@@ -20,7 +20,7 @@ const (
 // SkinLibrary 皮肤库实体，存储系统内置或用户上传的皮肤资源。
 type SkinLibrary struct {
 	xModels.BaseEntity                         // 嵌入基础实体字段
-	UserID             *xSnowflake.SnowflakeID `gorm:"type:bigint;index:idx_skin_library_user_id;comment:关联用户ID(为空代表系统内置皮肤)" json:"user_id,omitempty"`     // 关联用户ID(为空代表系统内置皮肤)
+	UserID             *xSnowflake.SnowflakeID `gorm:"type:bigint;index:idx_skin_library_user_id;comment:创建者/上传者用户ID(为空代表系统内置皮肤)" json:"user_id,omitempty"`     // 创建者/上传者用户ID(为空代表系统内置皮肤)
 	Name               string                  `gorm:"not null;type:varchar(64);comment:皮肤名称" json:"name"`                                                 // 皮肤名称
 	Texture            int64                   `gorm:"not null;type:bigint;comment:皮肤纹理文件ID(雪花算法)" json:"texture"`                                         // 皮肤纹理文件ID(雪花算法)
 	TextureHash        string                  `gorm:"not null;type:char(64);uniqueIndex:uk_skin_library_texture_hash;comment:皮肤纹理哈希" json:"texture_hash"` // 皮肤纹理哈希

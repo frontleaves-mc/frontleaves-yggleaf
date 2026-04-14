@@ -35,5 +35,25 @@ func (r *route) libraryRouter(route gin.IRouter) {
 
 		// 配额查询接口
 		libraryGroup.GET("/quota", libraryHandler.GetQuota)
+
+		// 管理员接口
+		adminGroup := libraryGroup.Group("/admin")
+		adminGroup.Use(middleware.Admin(r.context))
+		{
+			// 管理员赠送/撤销皮肤
+			adminGroup.POST("/users/:user_id/skins/gift", libraryHandler.GiftSkin)
+			adminGroup.DELETE("/users/:user_id/skins/:skin_library_id", libraryHandler.RevokeSkin)
+
+			// 管理员赠送/撤销披风
+			adminGroup.POST("/users/:user_id/capes/gift", libraryHandler.GiftCape)
+			adminGroup.DELETE("/users/:user_id/capes/:cape_library_id", libraryHandler.RevokeCape)
+
+			// 管理员配额同步
+			adminGroup.POST("/users/:user_id/quota/sync", libraryHandler.SyncQuota)
+
+			// 管理员查询用户资源
+			adminGroup.GET("/users/:user_id/skins", libraryHandler.ListUserSkins)
+			adminGroup.GET("/users/:user_id/capes", libraryHandler.ListUserCapes)
+		}
 	}
 }

@@ -72,6 +72,9 @@ func (r *LibraryQuotaRepo) GetByUserID(ctx context.Context, tx *gorm.DB, userID 
 func (r *LibraryQuotaRepo) UpdateSkinsPublicUsed(ctx context.Context, tx *gorm.DB, quotaID xSnowflake.SnowflakeID, used int32) *xError.Error {
 	r.log.Info(ctx, "UpdateSkinsPublicUsed - 更新公开皮肤已使用值")
 
+	if used < 0 {
+		return xError.NewError(ctx, xError.ServerInternalError, "配额已用值不能为负数", true)
+	}
 	if err := r.pickDB(ctx, tx).Model(&entity.LibraryQuota{}).Where("id = ?", quotaID).Update("skins_public_used", used).Error; err != nil {
 		return xError.NewError(ctx, xError.DatabaseError, "更新公开皮肤配额失败", true, err)
 	}
@@ -82,6 +85,9 @@ func (r *LibraryQuotaRepo) UpdateSkinsPublicUsed(ctx context.Context, tx *gorm.D
 func (r *LibraryQuotaRepo) UpdateSkinsPrivateUsed(ctx context.Context, tx *gorm.DB, quotaID xSnowflake.SnowflakeID, used int32) *xError.Error {
 	r.log.Info(ctx, "UpdateSkinsPrivateUsed - 更新私有皮肤已使用值")
 
+	if used < 0 {
+		return xError.NewError(ctx, xError.ServerInternalError, "配额已用值不能为负数", true)
+	}
 	if err := r.pickDB(ctx, tx).Model(&entity.LibraryQuota{}).Where("id = ?", quotaID).Update("skins_private_used", used).Error; err != nil {
 		return xError.NewError(ctx, xError.DatabaseError, "更新私有皮肤配额失败", true, err)
 	}
@@ -92,6 +98,9 @@ func (r *LibraryQuotaRepo) UpdateSkinsPrivateUsed(ctx context.Context, tx *gorm.
 func (r *LibraryQuotaRepo) UpdateCapesPublicUsed(ctx context.Context, tx *gorm.DB, quotaID xSnowflake.SnowflakeID, used int32) *xError.Error {
 	r.log.Info(ctx, "UpdateCapesPublicUsed - 更新公开披风已使用值")
 
+	if used < 0 {
+		return xError.NewError(ctx, xError.ServerInternalError, "配额已用值不能为负数", true)
+	}
 	if err := r.pickDB(ctx, tx).Model(&entity.LibraryQuota{}).Where("id = ?", quotaID).Update("capes_public_used", used).Error; err != nil {
 		return xError.NewError(ctx, xError.DatabaseError, "更新公开披风配额失败", true, err)
 	}
@@ -102,8 +111,27 @@ func (r *LibraryQuotaRepo) UpdateCapesPublicUsed(ctx context.Context, tx *gorm.D
 func (r *LibraryQuotaRepo) UpdateCapesPrivateUsed(ctx context.Context, tx *gorm.DB, quotaID xSnowflake.SnowflakeID, used int32) *xError.Error {
 	r.log.Info(ctx, "UpdateCapesPrivateUsed - 更新私有披风已使用值")
 
+	if used < 0 {
+		return xError.NewError(ctx, xError.ServerInternalError, "配额已用值不能为负数", true)
+	}
 	if err := r.pickDB(ctx, tx).Model(&entity.LibraryQuota{}).Where("id = ?", quotaID).Update("capes_private_used", used).Error; err != nil {
 		return xError.NewError(ctx, xError.DatabaseError, "更新私有披风配额失败", true, err)
+	}
+	return nil
+}
+
+// UpdateAllUsed 一次性更新配额的全部 4 个 Used 字段，用于配额重算场景。
+func (r *LibraryQuotaRepo) UpdateAllUsed(ctx context.Context, tx *gorm.DB, quotaID xSnowflake.SnowflakeID, skinsPubUsed, skinsPriUsed, capesPubUsed, capesPriUsed int32) *xError.Error {
+	r.log.Info(ctx, "UpdateAllUsed - 一次性更新配额全部 Used 字段")
+
+	updates := map[string]interface{}{
+		"skins_public_used":  skinsPubUsed,
+		"skins_private_used": skinsPriUsed,
+		"capes_public_used":  capesPubUsed,
+		"capes_private_used": capesPriUsed,
+	}
+	if err := r.pickDB(ctx, tx).Model(&entity.LibraryQuota{}).Where("id = ?", quotaID).Updates(updates).Error; err != nil {
+		return xError.NewError(ctx, xError.DatabaseError, "更新配额 Used 字段失败", true, err)
 	}
 	return nil
 }

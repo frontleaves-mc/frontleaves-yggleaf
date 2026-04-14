@@ -25,7 +25,9 @@ type User struct {
 	GameProfiles  []GameProfile  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;comment:游戏档案关联" json:"game_profiles,omitempty"`         // 游戏档案关联
 	SkinLibraries []SkinLibrary  `gorm:"foreignKey:UserID;constraint:OnDelete:SET NULL;comment:皮肤库关联" json:"skin_libraries,omitempty"`        // 皮肤库关联
 	CapeLibraries []CapeLibrary  `gorm:"foreignKey:UserID;constraint:OnDelete:SET NULL;comment:披风库关联" json:"cape_libraries,omitempty"`        // 披风库关联
-	LibraryQuotas []LibraryQuota `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;comment:资源库配额关联" json:"library_quotas,omitempty"`       // 资源库配额关联
+	LibraryQuotas      []LibraryQuota      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;comment:资源库配额关联" json:"library_quotas,omitempty"`       // 资源库配额关联
+	UserSkinLibraries []UserSkinLibrary   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;comment:用户皮肤关联" json:"user_skin_libraries,omitempty"`   // 用户皮肤关联
+	UserCapeLibraries []UserCapeLibrary   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;comment:用户披风关联" json:"user_cape_libraries,omitempty"`   // 用户披风关联
 }
 
 // GetGene 返回 xSnowflake.GeneUser，用于标识该实体在 ID 生成时使用的基因类型。
