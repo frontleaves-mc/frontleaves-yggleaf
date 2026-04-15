@@ -11,4 +11,5 @@ const (
 	GeneForLibraryQuota        xSnowflake.Gene = 37 // 资源库配额
 	GeneForUserSkinLibrary     xSnowflake.Gene = 38 // 用户皮肤关联
 	GeneForUserCapeLibrary     xSnowflake.Gene = 39 // 用户披风关联
+	GeneForGameToken          xSnowflake.Gene = 40 // Yggdrasil 游戏令牌
 )

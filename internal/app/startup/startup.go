@@ -30,6 +30,7 @@ func Init() (context.Context, []xRegNode.RegNodeList) {
 	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.RedisClientKey, Node: businessReg.nosqlInit})
 	regNode = append(regNode, xRegNode.RegNodeList{Key: bConst.CtxBucketKey, Node: businessReg.bucketInit})
 	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.Exec, Node: businessReg.businessDataPrepare})
+	regNode = append(regNode, xRegNode.RegNodeList{Key: bConst.CtxYggdrasilRSAKeyPair, Node: businessReg.yggdrasilRSAKeyInit})
 
 	// 初始化 OAuth2
 	regNode = append(regNode, bSdkStartup.NewStartupConfig()...)

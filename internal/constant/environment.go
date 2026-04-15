@@ -7,4 +7,7 @@ const (
 	EnvBucketSecretKey xEnv.EnvKey = "BUCKET_SECRET_KEY" // 定义了对象存储访问密钥的环境变量键名。
 	EnvBucketHost      xEnv.EnvKey = "BUCKET_HOST"       // 定义了对象存储主机地址的环境变量键名。
 	EnvBucketPort      xEnv.EnvKey = "BUCKET_PORT"       // 定义了对象存储端口号的环境变量键名。
+
+	EnvYggdrasilPrivateKeyPath xEnv.EnvKey = "YGGDRASIL_PRIVATE_KEY_PATH" // Yggdrasil RSA 私钥文件路径
+	EnvYggdrasilPublicKeyPath  xEnv.EnvKey = "YGGDRASIL_PUBLIC_KEY_PATH"  // Yggdrasil RSA 公钥文件路径
 )

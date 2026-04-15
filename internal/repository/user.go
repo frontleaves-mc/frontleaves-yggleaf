@@ -115,3 +115,69 @@ func (r *UserRepo) Set(ctx context.Context, user *entity.User) (*entity.User, *x
 	}
 	return user, nil
 }
+
+// GetByEmail 根据邮箱查询用户。
+//
+// 该方法通过邮箱地址查询用户实体，用于 Yggdrasil 认证流程中按邮箱查找用户。
+// 邮箱字段为可空字段，查询时使用精确匹配。
+//
+// 参数:
+//   - ctx: 上下文对象
+//   - email: 用户邮箱地址
+//
+// 返回值:
+//   - *entity.User: 命中的用户实体，未命中时返回 nil
+//   - bool: 是否命中
+//   - *xError.Error: 查询过程中的错误
+func (r *UserRepo) GetByEmail(ctx context.Context, tx *gorm.DB, email string) (*entity.User, bool, *xError.Error) {
+	r.log.Info(ctx, "GetByEmail - 根据邮箱获取用户信息")
+
+	var user entity.User
+	err := r.pickDB(ctx, tx).Model(&entity.User{}).Where("email = ?", email).First(&user).Error
+	if err == nil {
+		return &user, true, nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, nil
+	}
+	return nil, false, xError.NewError(ctx, xError.DatabaseError, "根据邮箱查询用户失败", true, err)
+}
+
+// GetByPhone 根据手机号查询用户。
+//
+// 该方法通过手机号码查询用户实体，用于 Yggdrasil 认证流程中按手机号查找用户。
+// 支持事务参数，当 tx 非空时使用事务连接执行查询。
+//
+// 参数:
+//   - ctx: 上下文对象
+//   - tx: 可选的事务对象（非空时使用事务连接）
+//   - phone: 用户手机号码
+//
+// 返回值:
+//   - *entity.User: 命中的用户实体，未命中时返回 nil
+//   - bool: 是否命中
+//   - *xError.Error: 查询过程中的错误
+func (r *UserRepo) GetByPhone(ctx context.Context, tx *gorm.DB, phone string) (*entity.User, bool, *xError.Error) {
+	r.log.Info(ctx, "GetByPhone - 根据手机号获取用户信息")
+
+	var user entity.User
+	err := r.pickDB(ctx, tx).Model(&entity.User{}).Where("phone = ?", phone).First(&user).Error
+	if err == nil {
+		return &user, true, nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, nil
+	}
+	return nil, false, xError.NewError(ctx, xError.DatabaseError, "根据手机号查询用户失败", true, err)
+}
+
+// pickDB 根据事务参数选择数据库连接。
+//
+// 当 tx 非空时返回事务连接（用于事务内查询），
+// 否则返回默认的 db 连接。所有查询方法均应通过此方法获取数据库连接。
+func (r *UserRepo) pickDB(ctx context.Context, tx *gorm.DB) *gorm.DB {
+	if tx != nil {
+		return tx.WithContext(ctx)
+	}
+	return r.db.WithContext(ctx)
+}

@@ -114,7 +114,7 @@ Yggdrasil 协议要求的服务端接口按功能分为 **五大模块**。
 }
 ```
 
-**本项目映射**：`entity.User` → 需将 SnowflakeID 关联至一个无符号 UUID 作为用户 ID。
+**本项目映射**：`entity.User` → 通过 `yggdrasil.DeriveUserUUID` 从 SnowflakeID 派生确定性 UUID（UUIDv5）。
 
 ### 4.2 角色信息序列化
 
@@ -264,15 +264,15 @@ POST /api/v1/yggdrasil/authserver/authenticate
 
 | 步骤 | 说明 | 关联 |
 |------|------|------|
-| 1. 凭证验证 | 接受邮箱或角色名作为 `username` | `entity.User.Email` / `entity.GameProfile.Name` |
+| 1. 凭证验证 | 接受邮箱或手机号作为 `username` | `entity.User.Email` / `entity.User.Phone` |
 | 2. 密码校验 | 验证 `password` 与 `entity.User.GamePassword` | 需密码加密存储（bcrypt 推荐） |
-| 3. 令牌生成 | 生成 accessToken + clientToken | **需新建** `entity.Token` |
+| 3. 令牌生成 | 生成 accessToken + clientToken | `entity.GameToken` |
 | 4. 角色绑定 | 单角色自动绑定，多角色返回空 | `entity.GameProfile` 关联 `UserID` |
 | 5. 封禁检查 | `entity.User.HasBan` 为 true 则拒绝 | 已有字段 |
 
 **安全要求**：
 - 必须实施速率限制（按用户而非 IP）
-- 支持角色名登录（`feature.non_email_login`）
+- 支持手机号登录（`feature.non_email_login`）
 
 ---
 
@@ -634,11 +634,11 @@ Yggdrasil 协议要求使用 **RSA 密钥对** 对角色属性进行数字签名
 
 ## 七、需要新建的实体与数据结构
 
-### 7.1 Token 实体（需新建）
+### 7.1 GameToken 实体（已创建）
 
 ```go
-// entity/token.go
-type Token struct {
+// entity/game_token.go
+type GameToken struct {
     ID              int64     // 主键
     AccessToken     string    // 服务端生成的访问令牌（UUID 或 JWT）
     ClientToken     string    // 客户端提供的令牌标识
@@ -658,7 +658,7 @@ type Token struct {
   └────────────────────────────────┘
 ```
 
-**Gene 编号建议**：`38`（接续现有编号 32-37）
+**Gene 编号建议**：`40`（接续现有编号 32-39）
 
 ### 7.2 会话缓存结构（Redis，无需持久化实体）
 
@@ -733,10 +733,10 @@ YGGDRASIL_PUBLIC_KEY_PATH=/path/to/public_key.pem
 
 | 实体/字段 | 说明 |
 |-----------|------|
-| `entity.Token` | **新建**：令牌管理（accessToken, clientToken, 绑定角色, 状态, 过期时间） |
-| `User` 无符号 UUID | 需确定方案：可复用 User 的 SnowflakeID 转 UUID，或新增 UUID 字段 |
-| 纹理 URL 生成 | 需根据 S3 配置域名 + TextureHash 组装完整 URL |
-| RSA 密钥对 | 启动时加载，用于签名和验证 |
+| `entity.GameToken` | **已创建**：游戏令牌管理（accessToken, clientToken, 绑定角色, 状态, 过期时间） |
+| `User` 无符号 UUID | 已通过 `DeriveUserUUID` 使用 UUIDv5 从 SnowflakeID 派生 |
+| 纹理 URL 生成 | 通过 `YggdrasilTextureURLTemplate` 常量组装 |
+| RSA 密钥对 | 启动时从文件加载或自动生成，通过 context 注入 |
 
 ---
 

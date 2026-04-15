@@ -25,6 +25,7 @@ var migrateTables = []interface{}{
 	&entity.GameProfileQuotaLog{},
 	&entity.UserSkinLibrary{},
 	&entity.UserCapeLibrary{},
+	&entity.GameToken{},
 }
 
 func (r *reg) databaseInit(ctx context.Context) (any, error) {

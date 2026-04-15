@@ -85,7 +85,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/entity.GameProfile"
+                                            "$ref": "#/definitions/user.GameProfileResponse"
                                         }
                                     }
                                 }
@@ -206,7 +206,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/user.GameProfileDetailResponse"
+                                            "$ref": "#/definitions/user.GameProfileResponse"
                                         }
                                     }
                                 }
@@ -277,7 +277,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/entity.GameProfile"
+                                            "$ref": "#/definitions/user.GameProfileResponse"
                                         }
                                     }
                                 }
@@ -848,6 +848,96 @@
                 "AssignmentTypeAdmin"
             ]
         },
+        "library.CapeResponse": {
+            "type": "object",
+            "properties": {
+                "assignment_type": {
+                    "description": "关联类型（mine 模式下返回）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entityType.AssignmentType"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "披风库记录 ID",
+                    "type": "integer"
+                },
+                "is_public": {
+                    "description": "是否公开",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "披风名称",
+                    "type": "string"
+                },
+                "texture_hash": {
+                    "description": "纹理 SHA256 哈希",
+                    "type": "string"
+                },
+                "texture_url": {
+                    "description": "纹理文件下载链接（由 bucket.Get 解析）",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "创建者/上传者用户 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "library.SkinResponse": {
+            "type": "object",
+            "properties": {
+                "assignment_type": {
+                    "description": "关联类型（mine 模式下返回）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entityType.AssignmentType"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "皮肤库记录 ID",
+                    "type": "integer"
+                },
+                "is_public": {
+                    "description": "是否公开",
+                    "type": "boolean"
+                },
+                "model": {
+                    "description": "皮肤模型 (1=classic, 2=slim)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.ModelType"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "皮肤名称",
+                    "type": "string"
+                },
+                "texture_hash": {
+                    "description": "纹理 SHA256 哈希",
+                    "type": "string"
+                },
+                "texture_url": {
+                    "description": "纹理文件下载链接（由 bucket.Get 解析）",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "创建者/上传者用户 ID",
+                    "type": "integer"
+                }
+            }
+        },
         "user.AddGameProfileRequest": {
             "type": "object",
             "required": [
@@ -870,61 +960,6 @@
                 }
             }
         },
-        "user.GameProfileDetailResponse": {
-            "type": "object",
-            "properties": {
-                "cape_library": {
-                    "description": "关联披风库",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.CapeLibrary"
-                        }
-                    ]
-                },
-                "cape_library_id": {
-                    "description": "关联披风库ID",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "游戏内用户名",
-                    "type": "string"
-                },
-                "skin_library": {
-                    "description": "关联皮肤库",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.SkinLibrary"
-                        }
-                    ]
-                },
-                "skin_library_id": {
-                    "description": "关联皮肤库ID",
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user": {
-                    "description": "----------\n 外键约束\n----------",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.User"
-                        }
-                    ]
-                },
-                "user_id": {
-                    "description": "关联用户ID",
-                    "type": "integer"
-                },
-                "uuid": {
-                    "description": "Minecraft UUID",
-                    "type": "string"
-                }
-            }
-        },
         "user.GameProfileListResponse": {
             "type": "object",
             "properties": {
@@ -932,8 +967,57 @@
                     "description": "游戏档案列表",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/entity.GameProfile"
+                        "$ref": "#/definitions/user.GameProfileResponse"
                     }
+                }
+            }
+        },
+        "user.GameProfileResponse": {
+            "type": "object",
+            "properties": {
+                "cape": {
+                    "description": "装备的披风信息（含 texture_url）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/library.CapeResponse"
+                        }
+                    ]
+                },
+                "cape_library_id": {
+                    "description": "装备的披风库 ID",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "档案 ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "档案用户名",
+                    "type": "string"
+                },
+                "skin": {
+                    "description": "装备的皮肤信息（含 texture_url）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/library.SkinResponse"
+                        }
+                    ]
+                },
+                "skin_library_id": {
+                    "description": "装备的皮肤库 ID",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "关联用户 ID",
+                    "type": "integer"
+                },
+                "uuid": {
+                    "description": "UUIDv7 标识",
+                    "type": "string"
                 }
             }
         },

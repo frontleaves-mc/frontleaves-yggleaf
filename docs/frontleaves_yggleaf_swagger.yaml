@@ -337,6 +337,66 @@ definitions:
     - AssignmentTypeNormal
     - AssignmentTypeGift
     - AssignmentTypeAdmin
+  library.CapeResponse:
+    properties:
+      assignment_type:
+        allOf:
+        - $ref: '#/definitions/entityType.AssignmentType'
+        description: 关联类型（mine 模式下返回）
+      id:
+        description: 披风库记录 ID
+        type: integer
+      is_public:
+        description: 是否公开
+        type: boolean
+      name:
+        description: 披风名称
+        type: string
+      texture_hash:
+        description: 纹理 SHA256 哈希
+        type: string
+      texture_url:
+        description: 纹理文件下载链接（由 bucket.Get 解析）
+        type: string
+      updated_at:
+        description: 更新时间
+        type: string
+      user_id:
+        description: 创建者/上传者用户 ID
+        type: integer
+    type: object
+  library.SkinResponse:
+    properties:
+      assignment_type:
+        allOf:
+        - $ref: '#/definitions/entityType.AssignmentType'
+        description: 关联类型（mine 模式下返回）
+      id:
+        description: 皮肤库记录 ID
+        type: integer
+      is_public:
+        description: 是否公开
+        type: boolean
+      model:
+        allOf:
+        - $ref: '#/definitions/entity.ModelType'
+        description: 皮肤模型 (1=classic, 2=slim)
+      name:
+        description: 皮肤名称
+        type: string
+      texture_hash:
+        description: 纹理 SHA256 哈希
+        type: string
+      texture_url:
+        description: 纹理文件下载链接（由 bucket.Get 解析）
+        type: string
+      updated_at:
+        description: 更新时间
+        type: string
+      user_id:
+        description: 创建者/上传者用户 ID
+        type: integer
+    type: object
   user.AddGameProfileRequest:
     properties:
       name:
@@ -351,50 +411,45 @@ definitions:
     required:
     - new_name
     type: object
-  user.GameProfileDetailResponse:
-    properties:
-      cape_library:
-        allOf:
-        - $ref: '#/definitions/entity.CapeLibrary'
-        description: 关联披风库
-      cape_library_id:
-        description: 关联披风库ID
-        type: integer
-      id:
-        type: integer
-      name:
-        description: 游戏内用户名
-        type: string
-      skin_library:
-        allOf:
-        - $ref: '#/definitions/entity.SkinLibrary'
-        description: 关联皮肤库
-      skin_library_id:
-        description: 关联皮肤库ID
-        type: integer
-      updated_at:
-        type: string
-      user:
-        allOf:
-        - $ref: '#/definitions/entity.User'
-        description: |-
-          ----------
-           外键约束
-          ----------
-      user_id:
-        description: 关联用户ID
-        type: integer
-      uuid:
-        description: Minecraft UUID
-        type: string
-    type: object
   user.GameProfileListResponse:
     properties:
       items:
         description: 游戏档案列表
         items:
-          $ref: '#/definitions/entity.GameProfile'
+          $ref: '#/definitions/user.GameProfileResponse'
         type: array
+    type: object
+  user.GameProfileResponse:
+    properties:
+      cape:
+        allOf:
+        - $ref: '#/definitions/library.CapeResponse'
+        description: 装备的披风信息（含 texture_url）
+      cape_library_id:
+        description: 装备的披风库 ID
+        type: integer
+      id:
+        description: 档案 ID
+        type: integer
+      name:
+        description: 档案用户名
+        type: string
+      skin:
+        allOf:
+        - $ref: '#/definitions/library.SkinResponse'
+        description: 装备的皮肤信息（含 texture_url）
+      skin_library_id:
+        description: 装备的皮肤库 ID
+        type: integer
+      updated_at:
+        description: 更新时间
+        type: string
+      user_id:
+        description: 关联用户 ID
+        type: integer
+      uuid:
+        description: UUIDv7 标识
+        type: string
     type: object
   xBase.BaseResponse:
     properties:
@@ -464,7 +519,7 @@ paths:
             - $ref: '#/definitions/xBase.BaseResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/entity.GameProfile'
+                  $ref: '#/definitions/user.GameProfileResponse'
               type: object
         "400":
           description: 请求参数错误
@@ -510,7 +565,7 @@ paths:
             - $ref: '#/definitions/xBase.BaseResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/user.GameProfileDetailResponse'
+                  $ref: '#/definitions/user.GameProfileResponse'
               type: object
         "400":
           description: 请求参数错误
@@ -554,7 +609,7 @@ paths:
             - $ref: '#/definitions/xBase.BaseResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/entity.GameProfile'
+                  $ref: '#/definitions/user.GameProfileResponse'
               type: object
         "400":
           description: 请求参数错误
