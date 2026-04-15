@@ -8,7 +8,6 @@ import (
 	xUtil "github.com/bamboo-services/bamboo-base-go/common/utility"
 	xResult "github.com/bamboo-services/bamboo-base-go/major/result"
 	apiLibrary "github.com/frontleaves-mc/frontleaves-yggleaf/api/library"
-	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	entityType "github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity/type"
 	"github.com/gin-gonic/gin"
 	bSdkUtil "github.com/phalanx-labs/beacon-sso-sdk/utility"
@@ -43,13 +42,13 @@ func (h *LibraryHandler) CreateSkin(ctx *gin.Context) {
 		return
 	}
 
-	skin, xErr := h.service.libraryLogic.CreateSkin(ctx.Request.Context(), userID, req)
+	skin, xErr := h.service.libraryLogic.CreateSkin(ctx.Request.Context(), userID, req.Name, req.Model, req.Texture, req.IsPublic)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "创建皮肤成功", skin)
+	xResult.SuccessHasData(ctx, "创建皮肤成功", skinDTOToResponse(skin))
 }
 
 // ListSkins 获取皮肤列表
@@ -84,7 +83,7 @@ func (h *LibraryHandler) ListSkins(ctx *gin.Context) {
 		}
 		response := apiLibrary.SkinListResponse{
 			Total: total,
-			Items: h.convertSkinEntitiesToResponses(skins),
+			Items: skinDTOsToResponses(skins),
 		}
 		xResult.SuccessHasData(ctx, "获取皮肤列表成功", response)
 	} else {
@@ -95,7 +94,7 @@ func (h *LibraryHandler) ListSkins(ctx *gin.Context) {
 		}
 		response := apiLibrary.SkinListResponse{
 			Total: total,
-			Items: h.convertUserSkinLibrariesToResponses(associations),
+			Items: skinDTOsToResponses(associations),
 		}
 		xResult.SuccessHasData(ctx, "获取皮肤列表成功", response)
 	}
@@ -128,13 +127,13 @@ func (h *LibraryHandler) UpdateSkin(ctx *gin.Context) {
 		return
 	}
 
-	updatedSkin, xErr := h.service.libraryLogic.UpdateSkin(ctx.Request.Context(), userID, skinID, req)
+	updatedSkin, xErr := h.service.libraryLogic.UpdateSkin(ctx.Request.Context(), userID, skinID, req.Name, req.IsPublic)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "更新皮肤成功", updatedSkin)
+	xResult.SuccessHasData(ctx, "更新皮肤成功", skinDTOToResponse(updatedSkin))
 }
 
 // DeleteSkin 删除皮肤
@@ -191,13 +190,13 @@ func (h *LibraryHandler) CreateCape(ctx *gin.Context) {
 		return
 	}
 
-	cape, xErr := h.service.libraryLogic.CreateCape(ctx.Request.Context(), userID, req)
+	cape, xErr := h.service.libraryLogic.CreateCape(ctx.Request.Context(), userID, req.Name, req.Texture, req.IsPublic)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "创建披风成功", cape)
+	xResult.SuccessHasData(ctx, "创建披风成功", capeDTOToResponse(cape))
 }
 
 // ListCapes 获取披风列表
@@ -232,7 +231,7 @@ func (h *LibraryHandler) ListCapes(ctx *gin.Context) {
 		}
 		response := apiLibrary.CapeListResponse{
 			Total: total,
-			Items: h.convertCapeEntitiesToResponses(capes),
+			Items: capeDTOsToResponses(capes),
 		}
 		xResult.SuccessHasData(ctx, "获取披风列表成功", response)
 	} else {
@@ -243,7 +242,7 @@ func (h *LibraryHandler) ListCapes(ctx *gin.Context) {
 		}
 		response := apiLibrary.CapeListResponse{
 			Total: total,
-			Items: h.convertUserCapeLibrariesToResponses(associations),
+			Items: capeDTOsToResponses(associations),
 		}
 		xResult.SuccessHasData(ctx, "获取披风列表成功", response)
 	}
@@ -276,13 +275,13 @@ func (h *LibraryHandler) UpdateCape(ctx *gin.Context) {
 		return
 	}
 
-	updatedCape, xErr := h.service.libraryLogic.UpdateCape(ctx.Request.Context(), userID, capeID, req)
+	updatedCape, xErr := h.service.libraryLogic.UpdateCape(ctx.Request.Context(), userID, capeID, req.Name, req.IsPublic)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "更新披风成功", updatedCape)
+	xResult.SuccessHasData(ctx, "更新披风成功", capeDTOToResponse(updatedCape))
 }
 
 // DeleteCape 删除披风
@@ -385,7 +384,7 @@ func (h *LibraryHandler) GiftSkin(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "赠送皮肤成功", result)
+	xResult.SuccessHasData(ctx, "赠送皮肤成功", skinDTOToResponse(result))
 }
 
 // RevokeSkin 管理员撤销皮肤
@@ -453,7 +452,7 @@ func (h *LibraryHandler) GiftCape(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "赠送披风成功", result)
+	xResult.SuccessHasData(ctx, "赠送披风成功", capeDTOToResponse(result))
 }
 
 // RevokeCape 管理员撤销披风
@@ -521,7 +520,7 @@ func (h *LibraryHandler) ListUserSkins(ctx *gin.Context) {
 
 	response := apiLibrary.SkinListResponse{
 		Total: total,
-		Items: h.convertUserSkinLibrariesToResponses(associations),
+		Items: skinDTOsToResponses(associations),
 	}
 	xResult.SuccessHasData(ctx, "获取用户皮肤列表成功", response)
 }
@@ -546,7 +545,7 @@ func (h *LibraryHandler) ListUserCapes(ctx *gin.Context) {
 
 	response := apiLibrary.CapeListResponse{
 		Total: total,
-		Items: h.convertUserCapeLibrariesToResponses(associations),
+		Items: capeDTOsToResponses(associations),
 	}
 	xResult.SuccessHasData(ctx, "获取用户披风列表成功", response)
 }
@@ -571,48 +570,4 @@ func (h *LibraryHandler) parsePagination(ctx *gin.Context) (int, int) {
 	}
 
 	return page, pageSize
-}
-
-func (h *LibraryHandler) convertSkinEntitiesToResponses(skins []entity.SkinLibrary) []apiLibrary.SkinResponse {
-	responses := make([]apiLibrary.SkinResponse, len(skins))
-	for i, skin := range skins {
-		responses[i] = apiLibrary.SkinResponse{SkinLibrary: skin}
-	}
-	return responses
-}
-
-func (h *LibraryHandler) convertCapeEntitiesToResponses(capes []entity.CapeLibrary) []apiLibrary.CapeResponse {
-	responses := make([]apiLibrary.CapeResponse, len(capes))
-	for i, cape := range capes {
-		responses[i] = apiLibrary.CapeResponse{CapeLibrary: cape}
-	}
-	return responses
-}
-
-func (h *LibraryHandler) convertUserSkinLibrariesToResponses(associations []entity.UserSkinLibrary) []apiLibrary.SkinResponse {
-	responses := make([]apiLibrary.SkinResponse, len(associations))
-	for i, assoc := range associations {
-		resp := apiLibrary.SkinResponse{
-			AssignmentType: assoc.AssignmentType,
-		}
-		if assoc.SkinLibrary != nil {
-			resp.SkinLibrary = *assoc.SkinLibrary
-		}
-		responses[i] = resp
-	}
-	return responses
-}
-
-func (h *LibraryHandler) convertUserCapeLibrariesToResponses(associations []entity.UserCapeLibrary) []apiLibrary.CapeResponse {
-	responses := make([]apiLibrary.CapeResponse, len(associations))
-	for i, assoc := range associations {
-		resp := apiLibrary.CapeResponse{
-			AssignmentType: assoc.AssignmentType,
-		}
-		if assoc.CapeLibrary != nil {
-			resp.CapeLibrary = *assoc.CapeLibrary
-		}
-		responses[i] = resp
-	}
-	return responses
 }

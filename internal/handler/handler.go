@@ -60,13 +60,16 @@ type IHandler interface {
 //   - *T: 初始化完成的处理器实例指针。若上下文缺少必要依赖（如 db 或 rdb），该函数内部调用的
 //     xCtxUtil.MustGetDB/rdb 将会触发 panic。请确保上下文已通过中间件正确注入了这些资源。
 func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
+	// LibraryLogic 先于 GameProfileLogic 初始化（GameProfileLogic 依赖 LibraryLogic 进行纹理解析）
+	libraryLogic := logic.NewLibraryLogic(ctx)
+
 	return &T{
 		name: handlerName,
 		log:  xLog.WithName(xLog.NamedCONT, handlerName),
 		service: &service{
 			userLogic:        logic.NewUserLogic(ctx),
-			gameProfileLogic: logic.NewGameProfileLogic(ctx),
-			libraryLogic:     logic.NewLibraryLogic(ctx),
+			gameProfileLogic: logic.NewGameProfileLogic(ctx, libraryLogic),
+			libraryLogic:     libraryLogic,
 			oauthLogic:       bSdkLogic.NewBusiness(ctx),
 		},
 	}

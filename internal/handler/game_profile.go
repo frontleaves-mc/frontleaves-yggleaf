@@ -18,7 +18,7 @@ import (
 // @Accept      json
 // @Produce     json
 // @Param       request body apiUser.AddGameProfileRequest true "创建游戏档案请求"
-// @Success     200   {object}  xBase.BaseResponse{data=entity.GameProfile} "创建成功"
+// @Success     200   {object}  xBase.BaseResponse{data=apiUser.GameProfileResponse} "创建成功"
 // @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse                               "未授权"
 // @Failure     404   {object}  xBase.BaseResponse                               "资源不存在"
@@ -51,7 +51,7 @@ func (h *GameProfileHandler) AddGameProfile(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "创建游戏档案成功", profile)
+	xResult.SuccessHasData(ctx, "创建游戏档案成功", gameProfileDTOToResponse(profile))
 }
 
 // ChangeUsername 修改当前用户指定游戏档案用户名
@@ -63,7 +63,7 @@ func (h *GameProfileHandler) AddGameProfile(ctx *gin.Context) {
 // @Produce     json
 // @Param       profile_id path string true "游戏档案 ID"
 // @Param       request body apiUser.ChangeUsernameRequest true "修改用户名请求"
-// @Success     200   {object}  xBase.BaseResponse{data=entity.GameProfile} "修改成功"
+// @Success     200   {object}  xBase.BaseResponse{data=apiUser.GameProfileResponse} "修改成功"
 // @Failure     400   {object}  xBase.BaseResponse                               "请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse                               "未授权"
 // @Failure     404   {object}  xBase.BaseResponse                               "资源不存在"
@@ -101,7 +101,7 @@ func (h *GameProfileHandler) ChangeUsername(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "修改游戏档案用户名成功", updatedProfile)
+	xResult.SuccessHasData(ctx, "修改游戏档案用户名成功", gameProfileDTOToResponse(updatedProfile))
 }
 
 // GetGameProfileDetail 获取指定游戏档案详情
@@ -112,7 +112,7 @@ func (h *GameProfileHandler) ChangeUsername(ctx *gin.Context) {
 // @Accept      json
 // @Produce     json
 // @Param       profile_id path string true "游戏档案 ID"
-// @Success     200   {object}  xBase.BaseResponse{data=apiUser.GameProfileDetailResponse} "获取成功"
+// @Success     200   {object}  xBase.BaseResponse{data=apiUser.GameProfileResponse} "获取成功"
 // @Failure     400   {object}  xBase.BaseResponse                                     "请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse                                     "未授权"
 // @Failure     404   {object}  xBase.BaseResponse                                     "资源不存在"
@@ -144,7 +144,7 @@ func (h *GameProfileHandler) GetGameProfileDetail(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "获取游戏档案详情成功", profile)
+	xResult.SuccessHasData(ctx, "获取游戏档案详情成功", gameProfileDTOToResponse(profile))
 }
 
 // ListGameProfiles 获取当前用户的游戏档案列表
@@ -180,7 +180,7 @@ func (h *GameProfileHandler) ListGameProfiles(ctx *gin.Context) {
 	}
 
 	response := apiUser.GameProfileListResponse{
-		Items: profiles,
+		Items: gameProfileDTOsToResponses(profiles),
 	}
 
 	xResult.SuccessHasData(ctx, "获取游戏档案列表成功", response)
@@ -257,7 +257,7 @@ func (h *GameProfileHandler) EquipSkin(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "装备皮肤成功", profile)
+	xResult.SuccessHasData(ctx, "装备皮肤成功", gameProfileDTOToResponse(profile))
 }
 
 // UnequipSkin 为游戏档案卸下皮肤
@@ -288,7 +288,7 @@ func (h *GameProfileHandler) UnequipSkin(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "卸下皮肤成功", profile)
+	xResult.SuccessHasData(ctx, "卸下皮肤成功", gameProfileDTOToResponse(profile))
 }
 
 // EquipCape 为游戏档案装备披风
@@ -325,7 +325,7 @@ func (h *GameProfileHandler) EquipCape(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "装备披风成功", profile)
+	xResult.SuccessHasData(ctx, "装备披风成功", gameProfileDTOToResponse(profile))
 }
 
 // UnequipCape 为游戏档案卸下披风
@@ -356,5 +356,5 @@ func (h *GameProfileHandler) UnequipCape(ctx *gin.Context) {
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "卸下披风成功", profile)
+	xResult.SuccessHasData(ctx, "卸下披风成功", gameProfileDTOToResponse(profile))
 }

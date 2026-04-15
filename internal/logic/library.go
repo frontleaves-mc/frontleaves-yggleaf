@@ -12,8 +12,8 @@ import (
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 	xCtxUtil "github.com/bamboo-services/bamboo-base-go/common/utility/context"
-	apiLibrary "github.com/frontleaves-mc/frontleaves-yggleaf/api/library"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
+	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/models"
 	entityType "github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity/type"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
 	repotxn "github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository/txn"
@@ -112,6 +112,155 @@ func NewLibraryLogic(ctx context.Context) *LibraryLogic {
 	}
 }
 
+// ==================== Texture URL 解析 ====================
+
+// resolveTextureURL 通过 beacon-bucket SDK 的 Get 方法将 Texture ID 解析为下载链接。
+//
+// 参数说明:
+//   - ctx: 请求上下文
+//   - textureID: 数据库中存储的 int64 纹理文件 ID
+//
+// 返回值:
+//   - string: 文件下载链接
+//   - *xError.Error: 当 Bucket 服务不可用或文件不存在时返回错误
+func (l *LibraryLogic) resolveTextureURL(ctx context.Context, textureID int64) (string, *xError.Error) {
+	fileID := strconv.FormatInt(textureID, 10)
+	resp, err := l.helper.bucket.Normal.Get(ctx, &bBucketApi.GetRequest{
+		FileId: fileID,
+	})
+	if err != nil {
+		return "", xError.NewError(ctx, xError.ServerInternalError, "获取纹理文件信息失败", true, err)
+	}
+	if resp.GetObj() == nil {
+		return "", xError.NewError(ctx, xError.ServerInternalError, "纹理文件元数据缺失", true)
+	}
+	link := resp.GetObj().GetLink()
+	if link == "" {
+		return "", xError.NewError(ctx, xError.ServerInternalError, "纹理文件下载链接为空", true)
+	}
+	return link, nil
+}
+
+// buildSkinDTO 将 SkinLibrary 实体转换为 SkinDTO。
+//
+// 在转换过程中调用 bucket.Get 解析 Texture ID 为下载链接。
+// 若 Bucket 服务不可用，直接返回错误（不降级）。
+func (l *LibraryLogic) buildSkinDTO(ctx context.Context, skin *entity.SkinLibrary) (*models.SkinDTO, *xError.Error) {
+	url, xErr := l.resolveTextureURL(ctx, skin.Texture)
+	if xErr != nil {
+		return nil, xErr
+	}
+	return &models.SkinDTO{
+		ID:          skin.ID,
+		UserID:      skin.UserID,
+		Name:        skin.Name,
+		TextureURL:  url,
+		TextureHash: skin.TextureHash,
+		Model:       skin.Model,
+		IsPublic:    skin.IsPublic,
+		UpdatedAt:   skin.UpdatedAt,
+	}, nil
+}
+
+// buildCapeDTO 将 CapeLibrary 实体转换为 CapeDTO。
+func (l *LibraryLogic) buildCapeDTO(ctx context.Context, cape *entity.CapeLibrary) (*models.CapeDTO, *xError.Error) {
+	url, xErr := l.resolveTextureURL(ctx, cape.Texture)
+	if xErr != nil {
+		return nil, xErr
+	}
+	return &models.CapeDTO{
+		ID:          cape.ID,
+		UserID:      cape.UserID,
+		Name:        cape.Name,
+		TextureURL:  url,
+		TextureHash: cape.TextureHash,
+		IsPublic:    cape.IsPublic,
+		UpdatedAt:   cape.UpdatedAt,
+	}, nil
+}
+
+// buildSkinDTOs 批量将 SkinLibrary 实体列表转换为 SkinDTO 列表。
+//
+// 逐个调用 resolveTextureURL 解析纹理链接。若任一解析失败，整个批次中止并返回错误。
+func (l *LibraryLogic) buildSkinDTOs(ctx context.Context, skins []entity.SkinLibrary) ([]models.SkinDTO, *xError.Error) {
+	responses := make([]models.SkinDTO, len(skins))
+	for i, skin := range skins {
+		resp, xErr := l.buildSkinDTO(ctx, &skin)
+		if xErr != nil {
+			return nil, xErr
+		}
+		responses[i] = *resp
+	}
+	return responses, nil
+}
+
+// buildCapeDTOs 批量将 CapeLibrary 实体列表转换为 CapeDTO 列表。
+func (l *LibraryLogic) buildCapeDTOs(ctx context.Context, capes []entity.CapeLibrary) ([]models.CapeDTO, *xError.Error) {
+	responses := make([]models.CapeDTO, len(capes))
+	for i, cape := range capes {
+		resp, xErr := l.buildCapeDTO(ctx, &cape)
+		if xErr != nil {
+			return nil, xErr
+		}
+		responses[i] = *resp
+	}
+	return responses, nil
+}
+
+// buildUserSkinAssociationDTOs 将 UserSkinLibrary 关联列表转换为 SkinDTO 列表。
+//
+// 从关联实体中提取 SkinLibrary（GORM Preload）和 AssignmentType，
+// 并调用 bucket.Get 解析纹理链接。
+func (l *LibraryLogic) buildUserSkinAssociationDTOs(ctx context.Context, associations []entity.UserSkinLibrary) ([]models.SkinDTO, *xError.Error) {
+	responses := make([]models.SkinDTO, len(associations))
+	for i, assoc := range associations {
+		resp := models.SkinDTO{
+			AssignmentType: assoc.AssignmentType,
+		}
+		if assoc.SkinLibrary != nil {
+			url, xErr := l.resolveTextureURL(ctx, assoc.SkinLibrary.Texture)
+			if xErr != nil {
+				return nil, xErr
+			}
+			resp.ID = assoc.SkinLibrary.ID
+			resp.UserID = assoc.SkinLibrary.UserID
+			resp.Name = assoc.SkinLibrary.Name
+			resp.TextureURL = url
+			resp.TextureHash = assoc.SkinLibrary.TextureHash
+			resp.Model = assoc.SkinLibrary.Model
+			resp.IsPublic = assoc.SkinLibrary.IsPublic
+			resp.UpdatedAt = assoc.SkinLibrary.UpdatedAt
+		}
+		responses[i] = resp
+	}
+	return responses, nil
+}
+
+// buildUserCapeAssociationDTOs 将 UserCapeLibrary 关联列表转换为 CapeDTO 列表。
+func (l *LibraryLogic) buildUserCapeAssociationDTOs(ctx context.Context, associations []entity.UserCapeLibrary) ([]models.CapeDTO, *xError.Error) {
+	responses := make([]models.CapeDTO, len(associations))
+	for i, assoc := range associations {
+		resp := models.CapeDTO{
+			AssignmentType: assoc.AssignmentType,
+		}
+		if assoc.CapeLibrary != nil {
+			url, xErr := l.resolveTextureURL(ctx, assoc.CapeLibrary.Texture)
+			if xErr != nil {
+				return nil, xErr
+			}
+			resp.ID = assoc.CapeLibrary.ID
+			resp.UserID = assoc.CapeLibrary.UserID
+			resp.Name = assoc.CapeLibrary.Name
+			resp.TextureURL = url
+			resp.TextureHash = assoc.CapeLibrary.TextureHash
+			resp.IsPublic = assoc.CapeLibrary.IsPublic
+			resp.UpdatedAt = assoc.CapeLibrary.UpdatedAt
+		}
+		responses[i] = resp
+	}
+	return responses, nil
+}
+
 // ==================== Skin Logic ====================
 
 // CreateSkin 创建皮肤。
@@ -124,24 +273,24 @@ func NewLibraryLogic(ctx context.Context) *LibraryLogic {
 //  5. 计算 SHA256 纹理哈希（用于去重）
 //  6. 上传纹理到对象存储（事务外执行）
 //  7. 委托 Repository 层在事务内完成：配额检查 → 哈希去重 → 记录创建 → 关联创建 → 配额扣减
-func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.SnowflakeID, req *apiLibrary.CreateSkinRequest) (*entity.SkinLibrary, *xError.Error) {
+func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.SnowflakeID, name string, modelType uint8, texture string, isPublic *bool) (*models.SkinDTO, *xError.Error) {
 	l.log.Info(ctx, "CreateSkin - 创建皮肤")
 
 	if userID.IsZero() {
 		return nil, xError.NewError(ctx, xError.ParameterError, "无效用户 ID：不能为 0", true)
 	}
 
-	name, xErr := l.validateSkinName(ctx, req.Name)
+	validatedName, xErr := l.validateSkinName(ctx, name)
 	if xErr != nil {
 		return nil, xErr
 	}
 
-	model := entity.ModelType(req.Model)
+	model := entity.ModelType(modelType)
 	if model != entity.ModelTypeClassic && model != entity.ModelTypeSlim {
 		return nil, xError.NewError(ctx, xError.ParameterError, "无效皮肤模型类型", true)
 	}
 
-	textureData, xErr := l.decodeBase64Texture(ctx, req.Texture)
+	textureData, xErr := l.decodeBase64Texture(ctx, texture)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -151,7 +300,7 @@ func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.Snowfla
 	uploadResp, err := l.helper.bucket.Normal.Upload(ctx, &bBucketApi.UploadRequest{
 		BucketId:      "360607182437229568",
 		PathId:        "360607485278626816",
-		ContentBase64: req.Texture,
+		ContentBase64: texture,
 	})
 	if err != nil {
 		return nil, xError.NewError(ctx, xError.ServerInternalError, "上传皮肤纹理失败", true, err)
@@ -161,21 +310,27 @@ func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.Snowfla
 	if err != nil {
 		return nil, xError.NewError(ctx, xError.ServerInternalError, "解析纹理文件 ID 失败", true, err)
 	}
-	isPublic := false
-	if req.IsPublic != nil {
-		isPublic = *req.IsPublic
+	isPublicVal := false
+	if isPublic != nil {
+		isPublicVal = *isPublic
 	}
 	skin := &entity.SkinLibrary{
 		UserID:      &userID,
-		Name:        name,
+		Name:        validatedName,
 		Texture:     skinId,
 		TextureHash: textureHash,
 		Model:       model,
-		IsPublic:    isPublic,
+		IsPublic:    isPublicVal,
 	}
 
 	// 委托 Repository 层在事务内完成创建、关联与配额操作
-	return l.repo.txn.CreateSkinWithQuota(ctx, skin)
+	createdSkin, xErr := l.repo.txn.CreateSkinWithQuota(ctx, skin)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 将 entity 转换为 DTO（含纹理链接解析）
+	return l.buildSkinDTO(ctx, createdSkin)
 }
 
 // UpdateSkin 更新皮肤（名称/公开状态）。
@@ -186,7 +341,7 @@ func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.Snowfla
 //  3. 解析并校验新参数（名称/公开状态）
 //  4. 短路优化：若所有字段均未变更则直接返回
 //  5. 委托 Repository 层在事务内完成：公开状态变更时的配额调整 → 皮肤记录更新
-func (l *LibraryLogic) UpdateSkin(ctx context.Context, userID xSnowflake.SnowflakeID, skinID xSnowflake.SnowflakeID, req *apiLibrary.UpdateSkinRequest) (*entity.SkinLibrary, *xError.Error) {
+func (l *LibraryLogic) UpdateSkin(ctx context.Context, userID xSnowflake.SnowflakeID, skinID xSnowflake.SnowflakeID, newName *string, newIsPublic *bool) (*models.SkinDTO, *xError.Error) {
 	l.log.Info(ctx, "UpdateSkin - 更新皮肤")
 
 	// 通过用户关联校验归属
@@ -214,27 +369,31 @@ func (l *LibraryLogic) UpdateSkin(ctx context.Context, userID xSnowflake.Snowfla
 		return nil, xError.NewError(ctx, xError.PermissionDenied, "只有资源创建者可以修改资源属性", true)
 	}
 
-	newName := skin.Name
-	newIsPublic := skin.IsPublic
+	newNameVal := skin.Name
+	newIsPublicVal := skin.IsPublic
 
-	if req.Name != nil {
-		validatedName, xErr := l.validateSkinName(ctx, *req.Name)
+	if newName != nil {
+		validatedName, xErr := l.validateSkinName(ctx, *newName)
 		if xErr != nil {
 			return nil, xErr
 		}
-		newName = validatedName
+		newNameVal = validatedName
 	}
 
-	if req.IsPublic != nil {
-		newIsPublic = *req.IsPublic
+	if newIsPublic != nil {
+		newIsPublicVal = *newIsPublic
 	}
 
-	if skin.Name == newName && skin.IsPublic == newIsPublic {
-		return skin, nil
+	if skin.Name == newNameVal && skin.IsPublic == newIsPublicVal {
+		return l.buildSkinDTO(ctx, skin)
 	}
 
 	// 委托 Repository 层在事务内完成配额调整与记录更新
-	return l.repo.txn.UpdateSkinWithQuota(ctx, userID, skinID, newName, newIsPublic, skin.IsPublic)
+	updatedSkin, xErr := l.repo.txn.UpdateSkinWithQuota(ctx, userID, skinID, newNameVal, newIsPublicVal, skin.IsPublic)
+	if xErr != nil {
+		return nil, xErr
+	}
+	return l.buildSkinDTO(ctx, updatedSkin)
 }
 
 // DeleteSkin 删除皮肤关联。
@@ -275,20 +434,40 @@ func (l *LibraryLogic) DeleteSkin(ctx context.Context, userID xSnowflake.Snowfla
 // ListSkins 获取市场公开皮肤列表。
 //
 // 分页获取所有公开的皮肤。该方法为纯读操作，无需事务包裹。
-func (l *LibraryLogic) ListSkins(ctx context.Context, page int, pageSize int) ([]entity.SkinLibrary, int64, *xError.Error) {
+func (l *LibraryLogic) ListSkins(ctx context.Context, page int, pageSize int) ([]models.SkinDTO, int64, *xError.Error) {
 	l.log.Info(ctx, "ListSkins - 获取公开皮肤列表")
 
-	return l.repo.skinRepo.ListPublic(ctx, nil, page, pageSize)
+	skins, total, xErr := l.repo.skinRepo.ListPublic(ctx, nil, page, pageSize)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	responses, xErr := l.buildSkinDTOs(ctx, skins)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	return responses, total, nil
 }
 
 // ListMySkins 获取当前用户的皮肤关联列表。
 //
 // 通过 UserSkinLibrary 查询，包含 Preloaded 的 SkinLibrary 信息。
 // 该方法为纯读操作，无需事务包裹。
-func (l *LibraryLogic) ListMySkins(ctx context.Context, userID xSnowflake.SnowflakeID, page int, pageSize int) ([]entity.UserSkinLibrary, int64, *xError.Error) {
+func (l *LibraryLogic) ListMySkins(ctx context.Context, userID xSnowflake.SnowflakeID, page int, pageSize int) ([]models.SkinDTO, int64, *xError.Error) {
 	l.log.Info(ctx, "ListMySkins - 获取我的皮肤列表")
 
-	return l.repo.userSkinRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+	associations, total, xErr := l.repo.userSkinRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	responses, xErr := l.buildUserSkinAssociationDTOs(ctx, associations)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	return responses, total, nil
 }
 
 // ==================== Cape Logic ====================
@@ -302,19 +481,19 @@ func (l *LibraryLogic) ListMySkins(ctx context.Context, userID xSnowflake.Snowfl
 //  4. 计算 SHA256 纹理哈希（用于去重）
 //  5. 上传纹理到对象存储（事务外执行）
 //  6. 委托 Repository 层在事务内完成：配额检查 → 哈希去重 → 记录创建 → 关联创建 → 配额扣减
-func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.SnowflakeID, req *apiLibrary.CreateCapeRequest) (*entity.CapeLibrary, *xError.Error) {
+func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.SnowflakeID, name string, texture string, isPublic *bool) (*models.CapeDTO, *xError.Error) {
 	l.log.Info(ctx, "CreateCape - 创建披风")
 
 	if userID.IsZero() {
 		return nil, xError.NewError(ctx, xError.ParameterError, "无效用户 ID：不能为 0", true)
 	}
 
-	name, xErr := l.validateCapeName(ctx, req.Name)
+	validatedName, xErr := l.validateCapeName(ctx, name)
 	if xErr != nil {
 		return nil, xErr
 	}
 
-	textureData, xErr := l.decodeBase64Texture(ctx, req.Texture)
+	textureData, xErr := l.decodeBase64Texture(ctx, texture)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -324,7 +503,7 @@ func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.Snowfla
 	uploadResp, err := l.helper.bucket.Normal.Upload(ctx, &bBucketApi.UploadRequest{
 		BucketId:      "yggleaf",
 		PathId:        "capes",
-		ContentBase64: req.Texture,
+		ContentBase64: texture,
 	})
 	if err != nil {
 		return nil, xError.NewError(ctx, xError.ServerInternalError, "上传披风纹理失败", true, err)
@@ -334,20 +513,26 @@ func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.Snowfla
 	if err != nil {
 		return nil, xError.NewError(ctx, xError.ServerInternalError, "解析纹理文件 ID 失败", true, err)
 	}
-	isPublic := false
-	if req.IsPublic != nil {
-		isPublic = *req.IsPublic
+	isPublicVal := false
+	if isPublic != nil {
+		isPublicVal = *isPublic
 	}
 	cape := &entity.CapeLibrary{
 		UserID:      &userID,
-		Name:        name,
+		Name:        validatedName,
 		Texture:     capeId,
 		TextureHash: textureHash,
-		IsPublic:    isPublic,
+		IsPublic:    isPublicVal,
 	}
 
 	// 委托 Repository 层在事务内完成创建、关联与配额操作
-	return l.repo.txn.CreateCapeWithQuota(ctx, cape)
+	createdCape, xErr := l.repo.txn.CreateCapeWithQuota(ctx, cape)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 将 entity 转换为 DTO（含纹理链接解析）
+	return l.buildCapeDTO(ctx, createdCape)
 }
 
 // UpdateCape 更新披风（名称/公开状态）。
@@ -358,7 +543,7 @@ func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.Snowfla
 //  3. 解析并校验新参数（名称/公开状态）
 //  4. 短路优化：若所有字段均未变更则直接返回
 //  5. 委托 Repository 层在事务内完成：公开状态变更时的配额调整 → 披风记录更新
-func (l *LibraryLogic) UpdateCape(ctx context.Context, userID xSnowflake.SnowflakeID, capeID xSnowflake.SnowflakeID, req *apiLibrary.UpdateCapeRequest) (*entity.CapeLibrary, *xError.Error) {
+func (l *LibraryLogic) UpdateCape(ctx context.Context, userID xSnowflake.SnowflakeID, capeID xSnowflake.SnowflakeID, newName *string, newIsPublic *bool) (*models.CapeDTO, *xError.Error) {
 	l.log.Info(ctx, "UpdateCape - 更新披风")
 
 	// 通过用户关联校验归属
@@ -386,27 +571,31 @@ func (l *LibraryLogic) UpdateCape(ctx context.Context, userID xSnowflake.Snowfla
 		return nil, xError.NewError(ctx, xError.PermissionDenied, "只有资源创建者可以修改资源属性", true)
 	}
 
-	newName := cape.Name
-	newIsPublic := cape.IsPublic
+	newNameVal := cape.Name
+	newIsPublicVal := cape.IsPublic
 
-	if req.Name != nil {
-		validatedName, xErr := l.validateCapeName(ctx, *req.Name)
+	if newName != nil {
+		validatedName, xErr := l.validateCapeName(ctx, *newName)
 		if xErr != nil {
 			return nil, xErr
 		}
-		newName = validatedName
+		newNameVal = validatedName
 	}
 
-	if req.IsPublic != nil {
-		newIsPublic = *req.IsPublic
+	if newIsPublic != nil {
+		newIsPublicVal = *newIsPublic
 	}
 
-	if cape.Name == newName && cape.IsPublic == newIsPublic {
-		return cape, nil
+	if cape.Name == newNameVal && cape.IsPublic == newIsPublicVal {
+		return l.buildCapeDTO(ctx, cape)
 	}
 
 	// 委托 Repository 层在事务内完成配额调整与记录更新
-	return l.repo.txn.UpdateCapeWithQuota(ctx, userID, capeID, newName, newIsPublic, cape.IsPublic)
+	updatedCape, xErr := l.repo.txn.UpdateCapeWithQuota(ctx, userID, capeID, newNameVal, newIsPublicVal, cape.IsPublic)
+	if xErr != nil {
+		return nil, xErr
+	}
+	return l.buildCapeDTO(ctx, updatedCape)
 }
 
 // DeleteCape 删除披风关联。
@@ -447,20 +636,40 @@ func (l *LibraryLogic) DeleteCape(ctx context.Context, userID xSnowflake.Snowfla
 // ListCapes 获取市场公开披风列表。
 //
 // 分页获取所有公开的披风。该方法为纯读操作，无需事务包裹。
-func (l *LibraryLogic) ListCapes(ctx context.Context, page int, pageSize int) ([]entity.CapeLibrary, int64, *xError.Error) {
+func (l *LibraryLogic) ListCapes(ctx context.Context, page int, pageSize int) ([]models.CapeDTO, int64, *xError.Error) {
 	l.log.Info(ctx, "ListCapes - 获取公开披风列表")
 
-	return l.repo.capeRepo.ListPublic(ctx, nil, page, pageSize)
+	capes, total, xErr := l.repo.capeRepo.ListPublic(ctx, nil, page, pageSize)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	responses, xErr := l.buildCapeDTOs(ctx, capes)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	return responses, total, nil
 }
 
 // ListMyCapes 获取当前用户的披风关联列表。
 //
 // 通过 UserCapeLibrary 查询，包含 Preloaded 的 CapeLibrary 信息。
 // 该方法为纯读操作，无需事务包裹。
-func (l *LibraryLogic) ListMyCapes(ctx context.Context, userID xSnowflake.SnowflakeID, page int, pageSize int) ([]entity.UserCapeLibrary, int64, *xError.Error) {
+func (l *LibraryLogic) ListMyCapes(ctx context.Context, userID xSnowflake.SnowflakeID, page int, pageSize int) ([]models.CapeDTO, int64, *xError.Error) {
 	l.log.Info(ctx, "ListMyCapes - 获取我的披风列表")
 
-	return l.repo.userCapeRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+	associations, total, xErr := l.repo.userCapeRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	responses, xErr := l.buildUserCapeAssociationDTOs(ctx, associations)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	return responses, total, nil
 }
 
 // ==================== Quota Logic ====================
@@ -485,7 +694,7 @@ func (l *LibraryLogic) GetQuota(ctx context.Context, userID xSnowflake.Snowflake
 // ==================== Admin Logic ====================
 
 // GiftSkin 管理员向用户赠送皮肤。
-func (l *LibraryLogic) GiftSkin(ctx context.Context, operatorID xSnowflake.SnowflakeID, targetUserID xSnowflake.SnowflakeID, skinLibraryID xSnowflake.SnowflakeID, assignmentType entityType.AssignmentType) (*entity.UserSkinLibrary, *xError.Error) {
+func (l *LibraryLogic) GiftSkin(ctx context.Context, operatorID xSnowflake.SnowflakeID, targetUserID xSnowflake.SnowflakeID, skinLibraryID xSnowflake.SnowflakeID, assignmentType entityType.AssignmentType) (*models.SkinDTO, *xError.Error) {
 	l.log.Info(ctx, "GiftSkin - 管理员赠送皮肤")
 
 	if !assignmentType.IsValid() {
@@ -498,7 +707,26 @@ func (l *LibraryLogic) GiftSkin(ctx context.Context, operatorID xSnowflake.Snowf
 		return nil, xError.NewError(ctx, xError.ParameterError, "不能向自己赠送资源", true)
 	}
 
-	return l.repo.txn.GiftSkinToUser(ctx, targetUserID, skinLibraryID, assignmentType)
+	result, xErr := l.repo.txn.GiftSkinToUser(ctx, targetUserID, skinLibraryID, assignmentType)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 单独查询皮肤实体（事务方法未 Preload SkinLibrary）
+	skinEntity, found, xErr := l.repo.skinRepo.GetByID(ctx, nil, skinLibraryID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "皮肤资源不存在", true)
+	}
+
+	skinResp, xErr := l.buildSkinDTO(ctx, skinEntity)
+	if xErr != nil {
+		return nil, xErr
+	}
+	skinResp.AssignmentType = result.AssignmentType
+	return skinResp, nil
 }
 
 // RevokeSkin 管理员撤销用户皮肤关联。
@@ -509,7 +737,7 @@ func (l *LibraryLogic) RevokeSkin(ctx context.Context, targetUserID xSnowflake.S
 }
 
 // GiftCape 管理员向用户赠送披风。
-func (l *LibraryLogic) GiftCape(ctx context.Context, operatorID xSnowflake.SnowflakeID, targetUserID xSnowflake.SnowflakeID, capeLibraryID xSnowflake.SnowflakeID, assignmentType entityType.AssignmentType) (*entity.UserCapeLibrary, *xError.Error) {
+func (l *LibraryLogic) GiftCape(ctx context.Context, operatorID xSnowflake.SnowflakeID, targetUserID xSnowflake.SnowflakeID, capeLibraryID xSnowflake.SnowflakeID, assignmentType entityType.AssignmentType) (*models.CapeDTO, *xError.Error) {
 	l.log.Info(ctx, "GiftCape - 管理员赠送披风")
 
 	if !assignmentType.IsValid() {
@@ -522,7 +750,26 @@ func (l *LibraryLogic) GiftCape(ctx context.Context, operatorID xSnowflake.Snowf
 		return nil, xError.NewError(ctx, xError.ParameterError, "不能向自己赠送资源", true)
 	}
 
-	return l.repo.txn.GiftCapeToUser(ctx, targetUserID, capeLibraryID, assignmentType)
+	result, xErr := l.repo.txn.GiftCapeToUser(ctx, targetUserID, capeLibraryID, assignmentType)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 单独查询披风实体（事务方法未 Preload CapeLibrary）
+	capeEntity, found, xErr := l.repo.capeRepo.GetByID(ctx, nil, capeLibraryID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "披风资源不存在", true)
+	}
+
+	capeResp, xErr := l.buildCapeDTO(ctx, capeEntity)
+	if xErr != nil {
+		return nil, xErr
+	}
+	capeResp.AssignmentType = result.AssignmentType
+	return capeResp, nil
 }
 
 // RevokeCape 管理员撤销用户披风关联。
@@ -541,17 +788,37 @@ func (l *LibraryLogic) RecalculateQuota(ctx context.Context, userID xSnowflake.S
 
 
 // ListUserSkins 查询指定用户的皮肤关联列表（管理员视角）。
-func (l *LibraryLogic) ListUserSkins(ctx context.Context, userID xSnowflake.SnowflakeID, page int, pageSize int) ([]entity.UserSkinLibrary, int64, *xError.Error) {
+func (l *LibraryLogic) ListUserSkins(ctx context.Context, userID xSnowflake.SnowflakeID, page int, pageSize int) ([]models.SkinDTO, int64, *xError.Error) {
 	l.log.Info(ctx, "ListUserSkins - 查询用户皮肤关联")
 
-	return l.repo.userSkinRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+	associations, total, xErr := l.repo.userSkinRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	responses, xErr := l.buildUserSkinAssociationDTOs(ctx, associations)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	return responses, total, nil
 }
 
 // ListUserCapes 查询指定用户的披风关联列表（管理员视角）。
-func (l *LibraryLogic) ListUserCapes(ctx context.Context, userID xSnowflake.SnowflakeID, page int, pageSize int) ([]entity.UserCapeLibrary, int64, *xError.Error) {
+func (l *LibraryLogic) ListUserCapes(ctx context.Context, userID xSnowflake.SnowflakeID, page int, pageSize int) ([]models.CapeDTO, int64, *xError.Error) {
 	l.log.Info(ctx, "ListUserCapes - 查询用户披风关联")
 
-	return l.repo.userCapeRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+	associations, total, xErr := l.repo.userCapeRepo.ListByUserID(ctx, nil, userID, page, pageSize)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	responses, xErr := l.buildUserCapeAssociationDTOs(ctx, associations)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	return responses, total, nil
 }
 
 // ==================== Helper Methods ====================

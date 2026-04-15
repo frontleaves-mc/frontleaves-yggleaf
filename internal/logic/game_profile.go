@@ -10,6 +10,7 @@ import (
 	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 	xCtxUtil "github.com/bamboo-services/bamboo-base-go/common/utility/context"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
+	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/models"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
 	repotxn "github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository/txn"
 	"github.com/google/uuid"
@@ -45,7 +46,8 @@ type gameProfileRepo struct {
 // 均委托给 Repository 层的 GameProfileTxnRepo 完成。
 type GameProfileLogic struct {
 	logic
-	repo gameProfileRepo
+	repo         gameProfileRepo
+	libraryLogic *LibraryLogic // 复用 LibraryLogic 的纹理解析能力
 }
 
 // NewGameProfileLogic 创建游戏档案业务逻辑实例。
@@ -62,7 +64,7 @@ type GameProfileLogic struct {
 //
 // 注意: 该函数依赖于 `xCtxUtil.MustGetDB` 和 `xCtxUtil.MustGetRDB`。如果上下文中缺少
 // 必要的数据库或 Redis 连接，这些辅助函数会触发 panic。请确保上下文已通过中间件正确注入了这些资源。
-func NewGameProfileLogic(ctx context.Context) *GameProfileLogic {
+func NewGameProfileLogic(ctx context.Context, libraryLogic *LibraryLogic) *GameProfileLogic {
 	db := xCtxUtil.MustGetDB(ctx)
 	rdb := xCtxUtil.MustGetRDB(ctx)
 
@@ -85,6 +87,7 @@ func NewGameProfileLogic(ctx context.Context) *GameProfileLogic {
 			userCapeLib: userCapeLibRepo,
 			txn:         repotxn.NewGameProfileTxnRepo(db, profileRepo, quotaRepo, quotaLogRepo),
 		},
+		libraryLogic: libraryLogic,
 	}
 }
 
@@ -104,7 +107,7 @@ func NewGameProfileLogic(ctx context.Context) *GameProfileLogic {
 // 返回值:
 //   - *entity.GameProfile: 创建成功的游戏档案实体。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *GameProfileLogic) AddGameProfile(ctx context.Context, userID xSnowflake.SnowflakeID, name string) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) AddGameProfile(ctx context.Context, userID xSnowflake.SnowflakeID, name string) (*models.GameProfileDTO, *xError.Error) {
 	l.log.Info(ctx, "AddGameProfile - 新增游戏档案")
 
 	if userID.IsZero() {
@@ -128,7 +131,21 @@ func (l *GameProfileLogic) AddGameProfile(ctx context.Context, userID xSnowflake
 	}
 
 	// 委托 Repository 层在事务内完成创建与配额操作
-	return l.repo.txn.AddProfileWithQuota(ctx, profile)
+	createdProfile, xErr := l.repo.txn.AddProfileWithQuota(ctx, profile)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 新创建的档案无装备，直接构建 DTO
+	return &models.GameProfileDTO{
+		ID:            createdProfile.ID,
+		UserID:        createdProfile.UserID,
+		UUID:          createdProfile.UUID.String(),
+		Name:          createdProfile.Name,
+		SkinLibraryID: createdProfile.SkinLibraryID,
+		CapeLibraryID: createdProfile.CapeLibraryID,
+		UpdatedAt:     createdProfile.UpdatedAt,
+	}, nil
 }
 
 // ChangeUsername 修改指定游戏档案的用户名。
@@ -151,7 +168,7 @@ func (l *GameProfileLogic) AddGameProfile(ctx context.Context, userID xSnowflake
 // 返回值:
 //   - *entity.GameProfile: 更新后的游戏档案实体。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *GameProfileLogic) ChangeUsername(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, newName string) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) ChangeUsername(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, newName string) (*models.GameProfileDTO, *xError.Error) {
 	l.log.Info(ctx, "ChangeUsername - 修改游戏档案用户名")
 
 	profile, found, xErr := l.repo.profile.GetByIDAndUserID(ctx, nil, profileID, userID, false)
@@ -167,7 +184,15 @@ func (l *GameProfileLogic) ChangeUsername(ctx context.Context, userID xSnowflake
 		return nil, xErr
 	}
 	if profile.Name == normalizedName {
-		return profile, nil
+		return &models.GameProfileDTO{
+			ID:            profile.ID,
+			UserID:        profile.UserID,
+			UUID:          profile.UUID.String(),
+			Name:          profile.Name,
+			SkinLibraryID: profile.SkinLibraryID,
+			CapeLibraryID: profile.CapeLibraryID,
+			UpdatedAt:     profile.UpdatedAt,
+		}, nil
 	}
 
 	nameExisted, xErr := l.repo.profile.ExistsByNameExceptID(ctx, nil, normalizedName, profile.ID)
@@ -182,7 +207,16 @@ func (l *GameProfileLogic) ChangeUsername(ctx context.Context, userID xSnowflake
 	if xErr != nil {
 		return nil, xErr
 	}
-	return updatedProfile, nil
+
+	return &models.GameProfileDTO{
+		ID:            updatedProfile.ID,
+		UserID:        updatedProfile.UserID,
+		UUID:          updatedProfile.UUID.String(),
+		Name:          updatedProfile.Name,
+		SkinLibraryID: updatedProfile.SkinLibraryID,
+		CapeLibraryID: updatedProfile.CapeLibraryID,
+		UpdatedAt:     updatedProfile.UpdatedAt,
+	}, nil
 }
 
 // GetGameProfileDetail 获取指定游戏档案的详情（含关联皮肤和披风）。
@@ -195,7 +229,7 @@ func (l *GameProfileLogic) ChangeUsername(ctx context.Context, userID xSnowflake
 // 返回值:
 //   - *entity.GameProfile: 游戏档案详情（含关联数据）。
 //   - *xError.Error: 业务校验失败或数据操作过程中发生的错误。
-func (l *GameProfileLogic) GetGameProfileDetail(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) GetGameProfileDetail(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*models.GameProfileDTO, *xError.Error) {
 	l.log.Info(ctx, "GetGameProfileDetail - 获取游戏档案详情")
 
 	if userID.IsZero() {
@@ -212,7 +246,7 @@ func (l *GameProfileLogic) GetGameProfileDetail(ctx context.Context, userID xSno
 	if !found {
 		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
 	}
-	return profile, nil
+	return l.buildProfileDTO(ctx, profile)
 }
 
 // ListGameProfiles 获取指定用户的所有游戏档案列表。
@@ -226,7 +260,7 @@ func (l *GameProfileLogic) GetGameProfileDetail(ctx context.Context, userID xSno
 // 返回值:
 //   - []entity.GameProfile: 游戏档案列表。
 //   - *xError.Error: 数据操作过程中发生的错误。
-func (l *GameProfileLogic) ListGameProfiles(ctx context.Context, userID xSnowflake.SnowflakeID) ([]entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) ListGameProfiles(ctx context.Context, userID xSnowflake.SnowflakeID) ([]models.GameProfileDTO, *xError.Error) {
 	l.log.Info(ctx, "ListGameProfiles - 获取游戏档案列表")
 
 	if userID.IsZero() {
@@ -237,7 +271,21 @@ func (l *GameProfileLogic) ListGameProfiles(ctx context.Context, userID xSnowfla
 	if xErr != nil {
 		return nil, xErr
 	}
-	return profiles, nil
+
+	// 列表视图不填充 Skin/Cape 详情（避免 N+1 查询）
+	responses := make([]models.GameProfileDTO, len(profiles))
+	for i, p := range profiles {
+		responses[i] = models.GameProfileDTO{
+			ID:            p.ID,
+			UserID:        p.UserID,
+			UUID:          p.UUID.String(),
+			Name:          p.Name,
+			SkinLibraryID: p.SkinLibraryID,
+			CapeLibraryID: p.CapeLibraryID,
+			UpdatedAt:     p.UpdatedAt,
+		}
+	}
+	return responses, nil
 }
 
 // GetQuota 获取指定用户的游戏档案配额信息。
@@ -271,7 +319,7 @@ func (l *GameProfileLogic) GetQuota(ctx context.Context, userID xSnowflake.Snowf
 //  1. 校验档案归属权（档案必须属于当前用户）
 //  2. 校验用户是否拥有该皮肤（通过 UserSkinLibrary 关联校验）
 //  3. 更新档案的 SkinLibraryID
-func (l *GameProfileLogic) EquipSkin(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, skinLibraryID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) EquipSkin(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, skinLibraryID xSnowflake.SnowflakeID) (*models.GameProfileDTO, *xError.Error) {
 	l.log.Info(ctx, "EquipSkin - 装备皮肤")
 
 	// 1. 校验档案归属权
@@ -293,13 +341,26 @@ func (l *GameProfileLogic) EquipSkin(ctx context.Context, userID xSnowflake.Snow
 	}
 
 	// 3. 更新档案的 SkinLibraryID
-	return l.repo.profile.UpdateSkinLibraryID(ctx, nil, profileID, &skinLibraryID)
+	_, xErr = l.repo.profile.UpdateSkinLibraryID(ctx, nil, profileID, &skinLibraryID)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 4. 重新获取完整档案（含 Preload 的关联数据）用于构建 DTO
+	profile, found, xErr := l.repo.profile.GetDetailByID(ctx, nil, profileID, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+	return l.buildProfileDTO(ctx, profile)
 }
 
 // EquipCape 为指定游戏档案装备披风。
 //
 // 同构于 EquipSkin，Skin → Cape。
-func (l *GameProfileLogic) EquipCape(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, capeLibraryID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) EquipCape(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, capeLibraryID xSnowflake.SnowflakeID) (*models.GameProfileDTO, *xError.Error) {
 	l.log.Info(ctx, "EquipCape - 装备披风")
 
 	// 1. 校验档案归属权
@@ -321,11 +382,24 @@ func (l *GameProfileLogic) EquipCape(ctx context.Context, userID xSnowflake.Snow
 	}
 
 	// 3. 更新档案的 CapeLibraryID
-	return l.repo.profile.UpdateCapeLibraryID(ctx, nil, profileID, &capeLibraryID)
+	_, xErr = l.repo.profile.UpdateCapeLibraryID(ctx, nil, profileID, &capeLibraryID)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 4. 重新获取完整档案（含 Preload 的关联数据）用于构建 DTO
+	profile, found, xErr := l.repo.profile.GetDetailByID(ctx, nil, profileID, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+	return l.buildProfileDTO(ctx, profile)
 }
 
 // UnequipSkin 为指定游戏档案卸下皮肤。
-func (l *GameProfileLogic) UnequipSkin(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) UnequipSkin(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*models.GameProfileDTO, *xError.Error) {
 	l.log.Info(ctx, "UnequipSkin - 卸下皮肤")
 
 	_, found, xErr := l.repo.profile.GetByIDAndUserID(ctx, nil, profileID, userID, false)
@@ -336,11 +410,25 @@ func (l *GameProfileLogic) UnequipSkin(ctx context.Context, userID xSnowflake.Sn
 		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
 	}
 
-	return l.repo.profile.UpdateSkinLibraryID(ctx, nil, profileID, nil)
+	// 更新档案的 SkinLibraryID（卸下设为 nil）
+	_, xErr = l.repo.profile.UpdateSkinLibraryID(ctx, nil, profileID, nil)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 重新获取完整档案（含 Preload 的关联数据）用于构建 DTO
+	profile, found, xErr := l.repo.profile.GetDetailByID(ctx, nil, profileID, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+	return l.buildProfileDTO(ctx, profile)
 }
 
 // UnequipCape 为指定游戏档案卸下披风。
-func (l *GameProfileLogic) UnequipCape(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*entity.GameProfile, *xError.Error) {
+func (l *GameProfileLogic) UnequipCape(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID) (*models.GameProfileDTO, *xError.Error) {
 	l.log.Info(ctx, "UnequipCape - 卸下披风")
 
 	_, found, xErr := l.repo.profile.GetByIDAndUserID(ctx, nil, profileID, userID, false)
@@ -351,7 +439,54 @@ func (l *GameProfileLogic) UnequipCape(ctx context.Context, userID xSnowflake.Sn
 		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
 	}
 
-	return l.repo.profile.UpdateCapeLibraryID(ctx, nil, profileID, nil)
+	_, xErr = l.repo.profile.UpdateCapeLibraryID(ctx, nil, profileID, nil)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 重新获取完整档案（含 Preload 的关联数据）用于构建 DTO
+	profile, found, xErr := l.repo.profile.GetDetailByID(ctx, nil, profileID, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "游戏档案不存在", true)
+	}
+	return l.buildProfileDTO(ctx, profile)
+}
+
+// buildProfileDTO 将 GameProfile 实体转换为 GameProfileDTO。
+//
+// 若 profile 关联了 SkinLibrary 或 CapeLibrary（GORM Preload），则调用
+// LibraryLogic 的构建方法解析纹理链接。
+func (l *GameProfileLogic) buildProfileDTO(ctx context.Context, profile *entity.GameProfile) (*models.GameProfileDTO, *xError.Error) {
+	resp := &models.GameProfileDTO{
+		ID:            profile.ID,
+		UserID:        profile.UserID,
+		UUID:          profile.UUID.String(),
+		Name:          profile.Name,
+		SkinLibraryID: profile.SkinLibraryID,
+		CapeLibraryID: profile.CapeLibraryID,
+		UpdatedAt:     profile.UpdatedAt,
+	}
+
+	if profile.SkinLibrary != nil {
+		skinResp, xErr := l.libraryLogic.buildSkinDTO(ctx, profile.SkinLibrary)
+		if xErr != nil {
+			return nil, xErr
+		}
+		resp.Skin = skinResp
+	}
+
+	if profile.CapeLibrary != nil {
+		capeResp, xErr := l.libraryLogic.buildCapeDTO(ctx, profile.CapeLibrary)
+		if xErr != nil {
+			return nil, xErr
+		}
+		resp.Cape = capeResp
+	}
+
+	return resp, nil
 }
 
 // validateGameProfileName 校验并规范化游戏档案用户名。
