@@ -728,7 +728,7 @@ func (t *LibraryTxnRepo) GiftSkinToUser(
 			return xErr
 		}
 		if !found {
-			bizErr = xError.NewError(ctx, xError.ResourceNotFound, "皮肤库记录不存在", true)
+			bizErr = xError.NewError(ctx, xError.ResourceNotFound, "皮肤资源不存在", true)
 			return bizErr
 		}
 
@@ -739,7 +739,7 @@ func (t *LibraryTxnRepo) GiftSkinToUser(
 			return xErr
 		}
 		if exists {
-			bizErr = xError.NewError(ctx, xError.DataConflict, "用户已关联该皮肤", true)
+			bizErr = xError.NewError(ctx, xError.DataConflict, "该用户已拥有此皮肤", true)
 			return bizErr
 		}
 
@@ -814,7 +814,7 @@ func (t *LibraryTxnRepo) RevokeSkinFromUser(
 				bizErr = xErr
 				return xErr
 			}
-			if skinFound && skinRec.UserID != nil {
+			if skinFound && skinRec.UserID != nil && *skinRec.UserID == targetUserID {
 				bizErr = t.skinRepo.DeleteByID(ctx, tx, skinLibraryID)
 				if bizErr != nil {
 					return bizErr
@@ -855,7 +855,7 @@ func (t *LibraryTxnRepo) GiftCapeToUser(
 			return xErr
 		}
 		if !found {
-			bizErr = xError.NewError(ctx, xError.ResourceNotFound, "披风库记录不存在", true)
+			bizErr = xError.NewError(ctx, xError.ResourceNotFound, "披风资源不存在", true)
 			return bizErr
 		}
 
@@ -866,7 +866,7 @@ func (t *LibraryTxnRepo) GiftCapeToUser(
 			return xErr
 		}
 		if exists {
-			bizErr = xError.NewError(ctx, xError.DataConflict, "用户已关联该披风", true)
+			bizErr = xError.NewError(ctx, xError.DataConflict, "该用户已拥有此披风", true)
 			return bizErr
 		}
 
@@ -940,7 +940,7 @@ func (t *LibraryTxnRepo) RevokeCapeFromUser(
 				bizErr = xErr
 				return xErr
 			}
-			if capeFound && capeRec.UserID != nil {
+			if capeFound && capeRec.UserID != nil && *capeRec.UserID == targetUserID {
 				bizErr = t.capeRepo.DeleteByID(ctx, tx, capeLibraryID)
 				if bizErr != nil {
 					return bizErr

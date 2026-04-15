@@ -489,7 +489,7 @@ func (l *LibraryLogic) GiftSkin(ctx context.Context, operatorID xSnowflake.Snowf
 	l.log.Info(ctx, "GiftSkin - 管理员赠送皮肤")
 
 	if !assignmentType.IsValid() {
-		return nil, xError.NewError(ctx, xError.ParameterError, "无效的分配类型", true)
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效的关联类型", true)
 	}
 	if assignmentType == entityType.AssignmentTypeNormal {
 		return nil, xError.NewError(ctx, xError.ParameterError, "管理员赠送不能使用 Normal 类型", true)
@@ -513,7 +513,7 @@ func (l *LibraryLogic) GiftCape(ctx context.Context, operatorID xSnowflake.Snowf
 	l.log.Info(ctx, "GiftCape - 管理员赠送披风")
 
 	if !assignmentType.IsValid() {
-		return nil, xError.NewError(ctx, xError.ParameterError, "无效的分配类型", true)
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效的关联类型", true)
 	}
 	if assignmentType == entityType.AssignmentTypeNormal {
 		return nil, xError.NewError(ctx, xError.ParameterError, "管理员赠送不能使用 Normal 类型", true)
