@@ -42,7 +42,11 @@ func AbortWithPredefinedError(c *gin.Context, httpStatus int, yggErr YggdrasilEr
 	c.Abort()
 }
 
-// YggNoContent 返回 204 No Content（用于 validate、invalidate 等无响应体接口）
+// YggNoContent 返回 204 No Content（用于 validate、invalidate 等无响应体接口）。
+//
+// 必须写入空 body 以触发 Gin 的 WriteHeaderNow()，将 ResponseWriter 标记为 Written。
+// 否则 bamboo 框架的 ResponseMiddleware 会因 ctx.Writer.Written()==false 而返回 40024 DEVELOPER_ERROR。
 func YggNoContent(c *gin.Context) {
 	c.Status(http.StatusNoContent)
+	c.Writer.Write([]byte{}) // 标记响应已写入，绕过框架 DEVELOPER_ERROR 检测
 }

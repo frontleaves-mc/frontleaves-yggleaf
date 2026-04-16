@@ -70,7 +70,7 @@ func (h *ServerHandler) HasJoined(ctx *gin.Context) {
 		return
 	}
 	if !found {
-		ctx.Status(http.StatusNoContent)
+		apiYgg.YggNoContent(ctx)
 		return
 	}
 
@@ -98,14 +98,14 @@ func (h *ServerHandler) ProfileQuery(ctx *gin.Context) {
 
 	uuid := ctx.Param("uuid")
 	if uuid == "" {
-		ctx.Status(http.StatusNoContent)
+		apiYgg.YggNoContent(ctx)
 		return
 	}
 
 	// 预校验 UUID 格式（与 JoinServer/RefreshToken 保持一致）
 	// 无符号 UUID 为 32 个十六进制字符（0-9, a-f, A-F）
 	if !yggdrasil.IsValidUnsignedUUID(uuid) {
-		ctx.Status(http.StatusNoContent)
+		apiYgg.YggNoContent(ctx)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (h *ServerHandler) ProfileQuery(ctx *gin.Context) {
 		return
 	}
 	if !found {
-		ctx.Status(http.StatusNoContent)
+		apiYgg.YggNoContent(ctx)
 		return
 	}
 

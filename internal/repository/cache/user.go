@@ -24,6 +24,7 @@ const (
 	userCacheFieldRole    = "role_id"
 	userCacheFieldHasBan  = "has_ban"
 	userCacheFieldJailed  = "jailed_at"
+	userCacheFieldGamePwd = "game_password"
 )
 
 // UserCache 用户实体缓存管理器
@@ -274,6 +275,9 @@ func buildUserFields(user *entity.User) map[string]any {
 	if user.JailedAt != nil {
 		fields[userCacheFieldJailed] = user.JailedAt.Format(userCacheTimeLayout)
 	}
+	if user.GamePassword != "" {
+		fields[userCacheFieldGamePwd] = user.GamePassword
+	}
 	return fields
 }
 
@@ -321,6 +325,9 @@ func parseUserFields(fields map[string]string) (*entity.User, error) {
 			return nil, fmt.Errorf("字段 %s 解析失败: %w", userCacheFieldJailed, err)
 		}
 		user.JailedAt = &parsed
+	}
+	if value, ok := fields[userCacheFieldGamePwd]; ok && value != "" {
+		user.GamePassword = value
 	}
 	return user, nil
 }
