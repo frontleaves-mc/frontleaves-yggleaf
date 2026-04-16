@@ -30,21 +30,21 @@ func NewServerHandler(base *ygghandler.YggdrasilBase) *ServerHandler {
 	return &ServerHandler{YggdrasilBase: base}
 }
 
-// HasJoined 服务端验证客户端是否成功加入服务器。
+// HasJoined 服务端验证客户端是否成功加入服务器
 //
-// GET /api/v1/yggdrasil/sessionserver/session/minecraft/hasJoined
-//
-// 该接口由 Minecraft 服务端调用，用于验证客户端是否已成功加入。
-// 通过查询 Redis 中的会话缓存验证 serverId，验证通过后返回角色完整信息（含签名）。
-//
-// 请求参数:
-//   - username: 角色名称（必填）
-//   - serverId: 服务端生成的随机字符串（必填）
-//   - ip: 客户端 IP 地址（可选，用于防止代理连接）
-//
-// 响应:
-//   - 成功: 200 + 角色完整信息（含 textures 属性和数字签名）
-//   - 失败: 204 No Content
+// @Summary     [服务端] 验证客户端会话
+// @Description 由 Minecraft 服务端调用，通过 username 和 serverId 验证客户端是否已成功加入服务器。验证通过后返回角色完整信息（含 textures 属性和数字签名）。
+// @Tags        Yggdrasil-会话接口
+// @Accept      json
+// @Produce     json
+// @Param       username query string true  "角色名称"
+// @Param       serverId query string true  "服务端生成的随机标识"
+// @Param       ip        query string false "客户端 IP 地址（可选，用于防止代理连接）"
+// @Success     200   {object}  apiYgg.ProfileResponse      "验证成功，返回角色完整信息"
+// @Failure     204   {object}  nil                        "未找到匹配的会话"
+// @Failure     400   {object}  apiYgg.YggdrasilError    "缺少必要参数或参数过长"
+// @Failure     500   {object}  apiYgg.YggdrasilError    "服务器内部错误"
+// @Router      /sessionserver/session/minecraft/hasJoined [get]
 func (h *ServerHandler) HasJoined(ctx *gin.Context) {
 	h.Log.Info(ctx, "HasJoined - 服务端验证客户端")
 
@@ -77,22 +77,19 @@ func (h *ServerHandler) HasJoined(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, profileResp)
 }
 
-// ProfileQuery 查询指定角色的属性信息。
+// ProfileQuery 查询指定角色的属性信息
 //
-// GET /api/v1/yggdrasil/sessionserver/session/minecraft/profile/:uuid
-//
-// 该接口由 Minecraft 服务端/客户端调用，查询指定 UUID 的角色信息。
-// 根据 unsigned 参数决定是否包含 textures 属性的数字签名。
-//
-// 路径参数:
-//   - uuid: 角色的无符号 UUID（32 位十六进制字符串）
-//
-// 查询参数:
-//   - unsigned: true(默认) 不含签名 / false 含签名
-//
-// 响应:
-//   - 存在: 200 + 角色信息（含属性，按 unsigned 决定是否含签名）
-//   - 不存在: 204 No Content
+// @Summary     [服务端] 查询角色属性
+// @Description 由 Minecraft 服务端或客户端调用，查询指定 UUID 的角色信息。根据 unsigned 参数决定是否包含 textures 属性的数字签名。
+// @Tags        Yggdrasil-会话接口
+// @Accept      json
+// @Produce     json
+// @Param       uuid     path  string true  "角色的无符号 UUID（32 位十六进制字符串）"
+// @Param       unsigned query bool   false "是否不含签名，默认 true"
+// @Success     200   {object}  apiYgg.ProfileResponse   "查询成功，返回角色信息（含属性）"
+// @Failure     204   {object}  nil                         "角色不存在"
+// @Failure     500   {object}  apiYgg.YggdrasilError     "服务器内部错误"
+// @Router      /sessionserver/session/minecraft/profile/{uuid} [get]
 func (h *ServerHandler) ProfileQuery(ctx *gin.Context) {
 	h.Log.Info(ctx, "ProfileQuery - 查询角色属性")
 
@@ -131,17 +128,18 @@ func (h *ServerHandler) ProfileQuery(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, profileResp)
 }
 
-// ProfilesBatchLookup 按名称批量查询角色。
+// ProfilesBatchLookup 按名称批量查询角色
 //
-// POST /api/v1/yggdrasil/api/profiles/minecraft
-//
-// 该接口由 Minecraft 服务端调用，根据角色名称批量查询角色信息。
-// 仅返回无符号 UUID 和名称，不包含角色属性（无 properties）。
-// 不存在的角色不包含在响应中。
-//
-// 请求体: JSON 数组，包含角色名称列表（最多 10 个）
-//
-// 响应: 200 + 匹配的角色列表
+// @Summary     [服务端] 批量查询角色
+// @Description 由 Minecraft 服务端调用，根据角色名称列表批量查询角色信息。仅返回无符号 UUID 和名称，不包含角色属性。不存在的角色不包含在响应中，单次最多查询 10 个。
+// @Tags        Yggdrasil-会话接口
+// @Accept      json
+// @Produce     json
+// @Param       names body []string true "角色名称列表（JSON 数组，最多 10 个）"
+// @Success     200   {object}  []apiYgg.BatchProfileItem    "查询成功"
+// @Failure     400   {object}  apiYgg.YggdrasilError      "请求体格式错误"
+// @Failure     500   {object}  apiYgg.YggdrasilError      "服务器内部错误"
+// @Router      /api/profiles/minecraft [post]
 func (h *ServerHandler) ProfilesBatchLookup(ctx *gin.Context) {
 	h.Log.Info(ctx, "ProfilesBatchLookup - 批量查询角色")
 

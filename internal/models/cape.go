@@ -21,3 +21,9 @@ type CapeDTO struct {
 	UpdatedAt      time.Time                 // 更新时间
 	AssignmentType entityType.AssignmentType // 关联类型（mine 模式下返回）
 }
+
+// CapeSimpleDTO 披风精简数据传输对象（仅 ID + Name）。
+type CapeSimpleDTO struct {
+	ID   xSnowflake.SnowflakeID // 披风库记录 ID
+	Name string                 // 披风名称
+}

@@ -23,3 +23,9 @@ type SkinDTO struct {
 	UpdatedAt      time.Time                 // 更新时间
 	AssignmentType entityType.AssignmentType // 关联类型（mine 模式下返回）
 }
+
+// SkinSimpleDTO 皮肤精简数据传输对象（仅 ID + Name）。
+type SkinSimpleDTO struct {
+	ID   xSnowflake.SnowflakeID // 皮肤库记录 ID
+	Name string                 // 皮肤名称
+}

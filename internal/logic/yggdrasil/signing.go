@@ -1,17 +1,19 @@
 package yggdrasil
 
 import (
+	"context"
 	"crypto"
 	"crypto/rsa"
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
-	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	yggdrasilAPI "github.com/frontleaves-mc/frontleaves-yggleaf/api/yggdrasil"
+	bBucketApi "github.com/phalanx-labs/beacon-bucket-sdk/api"
 	"github.com/google/uuid"
 )
 
@@ -60,24 +62,21 @@ func (l *YggdrasilLogic) SignTexturesProperty(value string) (string, error) {
 // 根据 Yggdrasil 协议规范（§4.3），组装包含时间戳、角色标识、角色名称和
 // 材质信息的 JSON 结构。该结构需要经 Base64 编码后作为 textures 属性的 value。
 //
-// 材质 URL 格式遵循项目常量 YggdrasilTextureURLTemplate 中定义的模板，
-// 即 https://yggleaf.frontleaves.com/textures/{TextureHash}。
-//
 // 参数:
 //   - profileID: 角色的无符号 UUID（去除连字符）
 //   - profileName: 角色名称
-//   - skinURL: 皮肤材质的完整 URL，为空时省略 SKIN 字段
+//   - skinURL: 皮肤材质的完整下载 URL，为空时省略 SKIN 字段
 //   - skinModel: 皮肤模型类型，由 entity.ModelType 决定（"default" 或 "slim"）
-//   - capeURL: 披风材质的完整 URL，为空时省略 CAPE 字段
+//   - capeURL: 披风材质的完整下载 URL，为空时省略 CAPE 字段
 //
 // 返回值:
 //   - *yggdrasilAPI.TexturesPayload: 组装完成的材质信息载荷
 func (l *YggdrasilLogic) BuildTexturesPayload(
 	profileID string,
 	profileName string,
-	skinHash string,
+	skinURL string,
 	skinModel entity.ModelType,
-	capeHash string,
+	capeURL string,
 ) *yggdrasilAPI.TexturesPayload {
 	payload := &yggdrasilAPI.TexturesPayload{
 		Timestamp:   currentTimeMillis(),
@@ -87,9 +86,9 @@ func (l *YggdrasilLogic) BuildTexturesPayload(
 	}
 
 	// 填充皮肤材质信息
-	if skinHash != "" {
+	if skinURL != "" {
 		skinTexture := &yggdrasilAPI.SkinTexture{
-			URL: fmt.Sprintf(bConst.YggdrasilTextureURLTemplate, skinHash),
+			URL: skinURL,
 		}
 		// 仅纤细模型需要设置 metadata.model，经典模型省略（客户端默认 classic）
 		if skinModel == entity.ModelTypeSlim {
@@ -101,13 +100,45 @@ func (l *YggdrasilLogic) BuildTexturesPayload(
 	}
 
 	// 填充披风材质信息
-	if capeHash != "" {
+	if capeURL != "" {
 		payload.Textures.CAPE = &yggdrasilAPI.CapeTexture{
-			URL: fmt.Sprintf(bConst.YggdrasilTextureURLTemplate, capeHash),
+			URL: capeURL,
 		}
 	}
 
 	return payload
+}
+
+// resolveTextureURL 通过 beacon-bucket SDK 的 Get 方法将 Texture ID 解析为下载链接。
+//
+// 与 LibraryLogic.resolveTextureURL 保持一致的实现：使用数据库中存储的
+// int64 纹理文件 ID（即 beacon-bucket 的 FileId）调用 bucket.Normal.Get()
+// 获取真实的可访问下载链接。
+//
+// 参数:
+//   - ctx: 请求上下文
+//   - textureID: 数据库中存储的 int64 纹理文件 ID（SkinLibrary.Texture / CapeLibrary.Texture）
+//
+// 返回值:
+//   - string: 文件下载链接，获取失败时返回空字符串
+func (l *YggdrasilLogic) resolveTextureURL(ctx context.Context, textureID int64) string {
+	if l.bucket == nil {
+		l.log.Warn(ctx, "BucketClient 未初始化，无法解析纹理 URL")
+		return ""
+	}
+	fileID := strconv.FormatInt(textureID, 10)
+	resp, err := l.bucket.Normal.Get(ctx, &bBucketApi.GetRequest{
+		FileId: fileID,
+	})
+	if err != nil {
+		l.log.Warn(ctx, fmt.Sprintf("获取纹理文件信息失败(fileId=%s): %v", fileID, err))
+		return ""
+	}
+	if resp.GetObj() == nil || resp.GetObj().GetLink() == "" {
+		l.log.Warn(ctx, fmt.Sprintf("纹理文件元数据或下载链接为空(fileId=%s)", fileID))
+		return ""
+	}
+	return resp.GetObj().GetLink()
 }
 
 // EncodeUnsignedUUID 将标准 UUID 字符串转换为无连字符格式。

@@ -116,6 +116,26 @@ func (r *GameProfileYggRepo) ListByUserID(ctx context.Context, tx *gorm.DB, user
 	return profiles, nil
 }
 
+// ListByUserIDWithTextures 根据用户 ID 查询其所有游戏档案（含关联皮肤和披风）。
+//
+// 与 ListByUserID 的区别在于额外预加载 SkinLibrary 和 CapeLibrary 关联，
+// 用于需要构建含 textures 属性的 ProfileResponse 场景（如 Authenticate/Refresh）。
+func (r *GameProfileYggRepo) ListByUserIDWithTextures(ctx context.Context, tx *gorm.DB, userID xSnowflake.SnowflakeID) ([]entity.GameProfile, *xError.Error) {
+	r.log.Info(ctx, "ListByUserIDWithTextures - 根据用户 ID 获取游戏档案列表（含纹理）")
+
+	var profiles []entity.GameProfile
+	if err := r.pickDB(ctx, tx).
+		Model(&entity.GameProfile{}).
+		Preload("SkinLibrary").
+		Preload("CapeLibrary").
+		Where("user_id = ?", userID).
+		Order("created_at ASC").
+		Find(&profiles).Error; err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "查询游戏档案列表失败", true, err)
+	}
+	return profiles, nil
+}
+
 // GetByUserIDAndUUID 根据用户 ID 和 UUID 查询游戏档案。
 func (r *GameProfileYggRepo) GetByUserIDAndUUID(ctx context.Context, tx *gorm.DB, userID xSnowflake.SnowflakeID, unsignedUUID string) (*entity.GameProfile, bool, *xError.Error) {
 	r.log.Info(ctx, "GetByUserIDAndUUID - 根据用户 ID 和无符号 UUID 获取游戏档案")
@@ -127,6 +147,34 @@ func (r *GameProfileYggRepo) GetByUserIDAndUUID(ctx context.Context, tx *gorm.DB
 
 	var profile entity.GameProfile
 	err = r.pickDB(ctx, tx).Model(&entity.GameProfile{}).Where("user_id = ? AND uuid = ?", userID, standardUUID).First(&profile).Error
+	if err == nil {
+		return &profile, true, nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, nil
+	}
+	return nil, false, xError.NewError(ctx, xError.DatabaseError, "根据用户 ID 和 UUID 查询游戏档案失败", true, err)
+}
+
+// GetByUserIDAndUUIDWithTextures 根据用户 ID 和 UUID 查询游戏档案（含关联皮肤和披风）。
+//
+// 与 GetByUserIDAndUUID 的区别在于额外预加载 SkinLibrary 和 CapeLibrary 关联，
+// 用于 RefreshToken 角色选择场景中构建含 textures 属性的响应。
+func (r *GameProfileYggRepo) GetByUserIDAndUUIDWithTextures(ctx context.Context, tx *gorm.DB, userID xSnowflake.SnowflakeID, unsignedUUID string) (*entity.GameProfile, bool, *xError.Error) {
+	r.log.Info(ctx, "GetByUserIDAndUUIDWithTextures - 根据用户 ID 和无符号 UUID 获取游戏档案（含纹理）")
+
+	standardUUID, err := unsignedUUIDToStandard(unsignedUUID)
+	if err != nil {
+		return nil, false, xError.NewError(ctx, xError.ParameterError, "无连字符 UUID 格式无效", true, err)
+	}
+
+	var profile entity.GameProfile
+	err = r.pickDB(ctx, tx).
+		Model(&entity.GameProfile{}).
+		Preload("SkinLibrary").
+		Preload("CapeLibrary").
+		Where("user_id = ? AND uuid = ?", userID, standardUUID).
+		First(&profile).Error
 	if err == nil {
 		return &profile, true, nil
 	}
@@ -162,6 +210,29 @@ func (r *GameProfileYggRepo) GetByID(ctx context.Context, tx *gorm.DB, id xSnowf
 
 	var profile entity.GameProfile
 	err := r.pickDB(ctx, tx).Model(&entity.GameProfile{}).Where("id = ?", id).First(&profile).Error
+	if err == nil {
+		return &profile, true, nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, nil
+	}
+	return nil, false, xError.NewError(ctx, xError.DatabaseError, "根据 ID 查询游戏档案失败", true, err)
+}
+
+// GetByIDWithTextures 根据游戏档案 ID（SnowflakeID）查询游戏档案（含关联皮肤和披风）。
+//
+// 与 GetByID 的区别在于额外预加载 SkinLibrary 和 CapeLibrary 关联，
+// 用于 RefreshToken 角色继承场景中构建含 textures 属性的响应。
+func (r *GameProfileYggRepo) GetByIDWithTextures(ctx context.Context, tx *gorm.DB, id xSnowflake.SnowflakeID) (*entity.GameProfile, bool, *xError.Error) {
+	r.log.Info(ctx, "GetByIDWithTextures - 根据游戏档案 ID 获取记录（含纹理）")
+
+	var profile entity.GameProfile
+	err := r.pickDB(ctx, tx).
+		Model(&entity.GameProfile{}).
+		Preload("SkinLibrary").
+		Preload("CapeLibrary").
+		Where("id = ?", id).
+		First(&profile).Error
 	if err == nil {
 		return &profile, true, nil
 	}

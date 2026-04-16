@@ -25,8 +25,10 @@ import (
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	xCtxUtil "github.com/bamboo-services/bamboo-base-go/common/utility/context"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
+	bCtx "github.com/frontleaves-mc/frontleaves-yggleaf/pkg/context"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository/cache"
+	bBucket "github.com/phalanx-labs/beacon-bucket-sdk"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository/txn"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -70,6 +72,7 @@ type YggdrasilLogic struct {
 	repo      yggdrasilRepo
 	privKey   *rsa.PrivateKey            // RSA 私钥（用于 textures 属性签名）
 	pubKeyPEM string                     // RSA 公钥 PEM 字符串（用于 API 元数据响应）
+	bucket    *bBucket.BucketClient       // 对象存储客户端（用于解析纹理下载链接）
 }
 
 // NewYggdrasilLogic 创建 Yggdrasil 业务逻辑实例。
@@ -114,6 +117,7 @@ func NewYggdrasilLogic(ctx context.Context) *YggdrasilLogic {
 		},
 		privKey:   privKey,
 		pubKeyPEM: pubKeyPEM,
+		bucket:    bCtx.MustGetBucket(ctx),
 	}
 }
 

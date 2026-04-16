@@ -14,4 +14,5 @@ const (
 
 	EnvYggdrasilPrivateKeyPath xEnv.EnvKey = "YGGDRASIL_PRIVATE_KEY_PATH" // Yggdrasil RSA 私钥文件路径
 	EnvYggdrasilPublicKeyPath  xEnv.EnvKey = "YGGDRASIL_PUBLIC_KEY_PATH"  // Yggdrasil RSA 公钥文件路径
+	EnvYggdrasilSkinDomainsExtra xEnv.EnvKey = "YGGDRASIL_SKIN_DOMAINS_EXTRA" // 额外皮肤域名（逗号分隔，追加到 skinDomains 白名单）
 )

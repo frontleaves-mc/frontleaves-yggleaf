@@ -136,20 +136,20 @@ func (l *YggdrasilLogic) JoinServer(ctx context.Context, accessToken string, pro
 func (l *YggdrasilLogic) BuildProfileResponse(ctx context.Context, profile *entity.GameProfile, unsigned bool) *apiYgg.ProfileResponse {
 	profileID := EncodeUnsignedUUID(profile.UUID)
 
-	// 收集材质信息
-	var skinHash string
+	// 通过 beacon-bucket SDK 解析纹理下载链接（使用 Texture ID 而非 Hash）
+	var skinURL string
 	var skinModel entity.ModelType
-	var capeHash string
+	var capeURL string
 	if profile.SkinLibrary != nil {
-		skinHash = profile.SkinLibrary.TextureHash
+		skinURL = l.resolveTextureURL(ctx, profile.SkinLibrary.Texture)
 		skinModel = profile.SkinLibrary.Model
 	}
 	if profile.CapeLibrary != nil {
-		capeHash = profile.CapeLibrary.TextureHash
+		capeURL = l.resolveTextureURL(ctx, profile.CapeLibrary.Texture)
 	}
 
 	// 构建材质载荷并 Base64 编码
-	payload := l.BuildTexturesPayload(profileID, profile.Name, skinHash, skinModel, capeHash)
+	payload := l.BuildTexturesPayload(profileID, profile.Name, skinURL, skinModel, capeURL)
 	var value string
 	payloadBytes, marshalErr := json.Marshal(payload)
 	if marshalErr != nil {

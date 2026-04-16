@@ -8,12 +8,14 @@ package share
 
 import (
 	"net/http"
+	"strings"
 
 	apiYgg "github.com/frontleaves-mc/frontleaves-yggleaf/api/yggdrasil"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/logic/yggdrasil"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	ygghandler "github.com/frontleaves-mc/frontleaves-yggleaf/internal/handler/yggdrasil"
+	xEnv "github.com/bamboo-services/bamboo-base-go/defined/env"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,13 +31,15 @@ func NewShareHandler(base *ygghandler.YggdrasilBase) *ShareHandler {
 	return &ShareHandler{YggdrasilBase: base}
 }
 
-// APIMetadata API 元数据获取。
+// APIMetadata API 元数据获取
 //
-// GET /api/v1/yggdrasil/
-//
-// 该接口由 authlib-injector 自动发现和启动器调用。
-// 返回 API 元数据（服务名称、签名公钥、皮肤域名等），
-// authlib-injector 据此自动配置 API 位置。
+// @Summary     [公共] API 元数据
+// @Description 由 authlib-injector 自动发现和启动器调用，返回 API 元数据（服务名称、签名公钥、皮肤域名等），authlib-injector 据此自动配置 API 位置。
+// @Tags        Yggdrasil-公共接口
+// @Accept      json
+// @Produce     json
+// @Success     200   {object}  apiYgg.MetadataResponse  "获取成功"
+// @Router      / [get]
 func (h *ShareHandler) APIMetadata(ctx *gin.Context) {
 	h.Log.Info(ctx, "APIMetadata - 获取 API 元数据")
 
@@ -50,30 +54,31 @@ func (h *ShareHandler) APIMetadata(ctx *gin.Context) {
 			},
 			FeatureNonEmailLogin: true,
 		},
-		SkinDomains: []string{
-			bConst.YggdrasilSkinDomainMain,
-			bConst.YggdrasilSkinDomainSuffix,
-		},
+		SkinDomains: buildSkinDomains(),
 		SignaturePublickey: h.Service.Logic().GetPubKeyPEM(),
 	}
 
 	ctx.JSON(http.StatusOK, resp)
 }
 
-// UploadTexture 上传材质。
+// UploadTexture 上传材质
 //
-// PUT /api/v1/yggdrasil/api/user/profile/:uuid/:textureType
-//
-// 该接口由启动器调用，上传皮肤或披风材质。
-// 需通过 Bearer Token 认证，验证令牌有效且角色属于该用户。
-//
-// 路径参数:
-//   - uuid: 角色的无符号 UUID
-//   - textureType: 材质类型（"skin" 或 "cape"）
-//
-// 请求体: multipart/form-data
-//   - model: 皮肤模型（"slim" 或空字符串，仅皮肤）
-//   - file: PNG 图片文件
+// @Summary     [玩家] 上传材质
+// @Description 由启动器调用，上传皮肤或披风材质。需通过 Bearer Token 认证，验证令牌有效且角色属于该用户。当前返回 501 功能尚未实现。
+// @Tags        Yggdrasil-公共接口
+// @Accept      multipart/form-data
+// @Produce     json
+// @Param       uuid        path   string true  "角色的无符号 UUID"
+// @Param       textureType path   string true  "材质类型：skin 或 cape"
+// @Param       model       formData string false "皮肤模型（slim 或空，仅 skin 类型）"
+// @Param       file        formData file   true  "PNG 图片文件"
+// @Param       Authorization header string true "Bearer Access Token"
+// @Success     200   {object}  nil                       "上传成功"
+// @Failure     400   {object}  apiYgg.YggdrasilError  "UUID 格式错误或材质类型无效"
+// @Failure     401   {object}  apiYgg.YggdrasilError  "未授权或令牌无效"
+// @Failure     403   {object}  apiYgg.YggdrasilError  "角色不属于该用户"
+// @Failure     501   {object}  apiYgg.YggdrasilError  "功能尚未实现"
+// @Router      /api/user/profile/{uuid}/{textureType} [put]
 func (h *ShareHandler) UploadTexture(ctx *gin.Context) {
 	h.Log.Info(ctx, "UploadTexture - 上传材质")
 
@@ -116,16 +121,22 @@ func (h *ShareHandler) UploadTexture(ctx *gin.Context) {
 	apiYgg.AbortYggError(ctx, http.StatusNotImplemented, "NotImplemented", "材质上传功能尚未实现")
 }
 
-// DeleteTexture 清除材质。
+// DeleteTexture 清除材质
 //
-// DELETE /api/v1/yggdrasil/api/user/profile/:uuid/:textureType
-//
-// 该接口由启动器调用，清除指定角色的皮肤或披风材质。
-// 需通过 Bearer Token 认证，验证令牌有效且角色属于该用户。
-//
-// 路径参数:
-//   - uuid: 角色的无符号 UUID
-//   - textureType: 材质类型（"skin" 或 "cape"）
+// @Summary     [玩家] 清除材质
+// @Description 由启动器调用，清除指定角色的皮肤或披风材质。需通过 Bearer Token 认证，验证令牌有效且角色属于该用户。当前返回 501 功能尚未实现。
+// @Tags        Yggdrasil-公共接口
+// @Accept      json
+// @Produce     json
+// @Param       uuid        path    string true  "角色的无符号 UUID"
+// @Param       textureType path    string true  "材质类型：skin 或 cape"
+// @Param       Authorization header string true "Bearer Access Token"
+// @Success     204   {object}  nil                       "清除成功"
+// @Failure     400   {object}  apiYgg.YggdrasilError  "UUID 格式错误或材质类型无效"
+// @Failure     401   {object}  apiYgg.YggdrasilError  "未授权或令牌无效"
+// @Failure     403   {object}  apiYgg.YggdrasilError  "角色不属于该用户"
+// @Failure     501   {object}  apiYgg.YggdrasilError  "功能尚未实现"
+// @Router      /api/user/profile/{uuid}/{textureType} [delete]
 func (h *ShareHandler) DeleteTexture(ctx *gin.Context) {
 	h.Log.Info(ctx, "DeleteTexture - 清除材质")
 
@@ -181,4 +192,25 @@ func (h *ShareHandler) verifyOwnership(ctx *gin.Context, gameToken *entity.GameT
 	}
 
 	return profile, true
+}
+
+// buildSkinDomains 构建 skinDomains 白名单列表。
+//
+// 基础域名来自常量配置（主域名 + 后缀通配），额外域名通过环境变量
+// YGGDRASIL_SKIN_DOMAINS_EXTRA（逗号分隔）追加。
+// 这允许 beacon-bucket 等 CDN 返回的纹理 URL 域名动态加入白名单，
+// 解决 Minecraft 游戏客户端严格校验 skinDomains 导致皮肤不显示的问题。
+func buildSkinDomains() []string {
+	domains := []string{
+		bConst.YggdrasilSkinDomainMain,
+		bConst.YggdrasilSkinDomainSuffix,
+	}
+	if extra := xEnv.GetEnvString(bConst.EnvYggdrasilSkinDomainsExtra, ""); extra != "" {
+		for _, d := range strings.Split(extra, ",") {
+			if trimmed := strings.TrimSpace(d); trimmed != "" {
+				domains = append(domains, trimmed)
+			}
+		}
+	}
+	return domains
 }

@@ -104,7 +104,7 @@ func (l *YggdrasilLogic) AuthenticateUser(ctx context.Context, username string, 
 	}
 
 	// 5. 查询用户的游戏档案列表
-	profiles, xErr := l.repo.profileRepo.ListByUserID(ctx, nil, user.ID)
+	profiles, xErr := l.repo.profileRepo.ListByUserIDWithTextures(ctx, nil, user.ID)
 	if xErr != nil {
 		return "", "", nil, nil, nil, xErr
 	}
@@ -218,7 +218,7 @@ func (l *YggdrasilLogic) RefreshToken(ctx context.Context, accessToken string, c
 		}
 
 		// 验证角色属于该用户
-		profile, found, xErr := l.repo.profileRepo.GetByUserIDAndUUID(ctx, nil, oldToken.UserID, selectedProfileID)
+		profile, found, xErr := l.repo.profileRepo.GetByUserIDAndUUIDWithTextures(ctx, nil, oldToken.UserID, selectedProfileID)
 		if xErr != nil {
 			return "", "", nil, nil, xErr
 		}
@@ -241,7 +241,7 @@ func (l *YggdrasilLogic) RefreshToken(ctx context.Context, accessToken string, c
 
 	// 继承原令牌角色时，需查询绑定的角色信息用于响应
 	if selectedProfile == nil && bindProfileID != nil {
-		boundProfile, boundFound, boundErr := l.repo.profileRepo.GetByID(ctx, nil, *bindProfileID)
+		boundProfile, boundFound, boundErr := l.repo.profileRepo.GetByIDWithTextures(ctx, nil, *bindProfileID)
 		if boundErr != nil {
 			l.log.Warn(ctx, fmt.Sprintf("查询绑定角色失败: %s", boundErr.ErrorMessage))
 		} else if boundFound {

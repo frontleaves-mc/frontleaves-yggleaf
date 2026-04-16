@@ -32,12 +32,19 @@ func NewClientHandler(base *ygghandler.YggdrasilBase) *ClientHandler {
 	return &ClientHandler{YggdrasilBase: base}
 }
 
-// Authenticate 密码登录认证。
+// Authenticate 密码登录认证
 //
-// POST /api/v1/yggdrasil/authserver/authenticate
-//
-// 该接口由启动器调用，用于用户登录。支持邮箱或手机号作为登录凭证。
-// 单角色时自动绑定到令牌并返回 selectedProfile，多角色时通过 refresh 选择。
+// @Summary     [客户端] 密码登录认证
+// @Description 由启动器调用，使用邮箱或手机号+密码进行登录认证。单角色时自动绑定到令牌并返回 selectedProfile，多角色时通过 refresh 接口选择角色。
+// @Tags        Yggdrasil-认证接口
+// @Accept      json
+// @Produce     json
+// @Param       request body apiYgg.AuthenticateRequest true "登录认证请求"
+// @Success     200   {object}  apiYgg.AuthenticateResponse  "认证成功"
+// @Failure     400   {object}  apiYgg.YggdrasilError      "请求参数错误"
+// @Failure     403   {object}  apiYgg.YggdrasilError      "认证失败（密码错误/账户异常）"
+// @Failure     500   {object}  apiYgg.YggdrasilError      "服务器内部错误"
+// @Router      /authserver/authenticate [post]
 func (h *ClientHandler) Authenticate(ctx *gin.Context) {
 	h.Log.Info(ctx, "Authenticate - 密码登录认证")
 
@@ -71,13 +78,10 @@ func (h *ClientHandler) Authenticate(ctx *gin.Context) {
 		})
 	}
 
-	// 构建选中角色
+	// 构建选中角色（含 textures 属性和数字签名）
 	var selectedResp *apiYgg.ProfileResponse
 	if selectedProfile != nil {
-		selectedResp = &apiYgg.ProfileResponse{
-			ID:   yggLogic.EncodeUnsignedUUID(selectedProfile.UUID),
-			Name: selectedProfile.Name,
-		}
+		selectedResp = h.Service.Logic().BuildProfileResponse(ctx.Request.Context(), selectedProfile, false)
 	}
 
 	// 构建响应
@@ -99,12 +103,19 @@ func (h *ClientHandler) Authenticate(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
-// Refresh 刷新令牌。
+// Refresh 刷新令牌
 //
-// POST /api/v1/yggdrasil/authserver/refresh
-//
-// 该接口由启动器调用，用于刷新令牌。吊销原令牌，颁发新令牌。
-// 携带 selectedProfile 时为角色选择操作。
+// @Summary     [客户端] 刷新令牌
+// @Description 由启动器调用，使用 accessToken 刷新令牌。吊销原令牌并颁发新令牌，携带 selectedProfile 时为角色选择操作。
+// @Tags        Yggdrasil-认证接口
+// @Accept      json
+// @Produce     json
+// @Param       request body apiYgg.RefreshRequest true "刷新令牌请求"
+// @Success     200   {object}  apiYgg.RefreshResponse     "刷新成功"
+// @Failure     400   {object}  apiYgg.YggdrasilError     "参数错误（角色已绑定仍指定）"
+// @Failure     403   {object}  apiYgg.YggdrasilError     "令牌无效或已过期"
+// @Failure     500   {object}  apiYgg.YggdrasilError     "服务器内部错误"
+// @Router      /authserver/refresh [post]
 func (h *ClientHandler) Refresh(ctx *gin.Context) {
 	h.Log.Info(ctx, "Refresh - 刷新令牌")
 
@@ -139,13 +150,10 @@ func (h *ClientHandler) Refresh(ctx *gin.Context) {
 		return
 	}
 
-	// 构建选中角色
+	// 构建选中角色（含 textures 属性和数字签名）
 	var selectedResp *apiYgg.ProfileResponse
 	if selectedProfile != nil {
-		selectedResp = &apiYgg.ProfileResponse{
-			ID:   yggLogic.EncodeUnsignedUUID(selectedProfile.UUID),
-			Name: selectedProfile.Name,
-		}
+		selectedResp = h.Service.Logic().BuildProfileResponse(ctx.Request.Context(), selectedProfile, false)
 	}
 
 	// 构建响应
@@ -166,12 +174,19 @@ func (h *ClientHandler) Refresh(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
-// Validate 验证令牌有效性。
+// Validate 验证令牌有效性
 //
-// POST /api/v1/yggdrasil/authserver/validate
-//
-// 该接口由启动器调用，验证 accessToken 是否有效。
-// 有效返回 204 No Content，无效返回标准错误响应。
+// @Summary     [客户端] 验证令牌有效性
+// @Description 由启动器调用，验证 accessToken 是否有效。有效返回 204 No Content，无效返回 403 错误。
+// @Tags        Yggdrasil-认证接口
+// @Accept      json
+// @Produce     json
+// @Param       request body apiYgg.ValidateRequest true "验证令牌请求"
+// @Success     204   {object}  nil  "令牌有效"
+// @Failure     400   {object}  apiYgg.YggdrasilError  "请求参数错误"
+// @Failure     403   {object}  apiYgg.YggdrasilError  "令牌无效或 clientToken 不匹配"
+// @Failure     500   {object}  apiYgg.YggdrasilError  "服务器内部错误"
+// @Router      /authserver/validate [post]
 func (h *ClientHandler) Validate(ctx *gin.Context) {
 	h.Log.Info(ctx, "Validate - 验证令牌有效性")
 
@@ -202,12 +217,16 @@ func (h *ClientHandler) Validate(ctx *gin.Context) {
 	apiYgg.YggNoContent(ctx)
 }
 
-// Invalidate 吊销指定令牌。
+// Invalidate 吊销指定令牌
 //
-// POST /api/v1/yggdrasil/authserver/invalidate
-//
-// 该接口由启动器调用，吊销指定的 accessToken。
-// 无论是否成功，均返回 204 No Content。
+// @Summary     [客户端] 吊销指定令牌
+// @Description 由启动器调用，吊销指定的 accessToken。无论是否成功，均返回 204 No Content。
+// @Tags        Yggdrasil-认证接口
+// @Accept      json
+// @Produce     json
+// @Param       request body apiYgg.InvalidateRequest true "吊销令牌请求"
+// @Success     204   {object}  nil  "处理完成"
+// @Router      /authserver/invalidate [post]
 func (h *ClientHandler) Invalidate(ctx *gin.Context) {
 	h.Log.Info(ctx, "Invalidate - 吊销指定令牌")
 
@@ -224,12 +243,19 @@ func (h *ClientHandler) Invalidate(ctx *gin.Context) {
 	apiYgg.YggNoContent(ctx)
 }
 
-// Signout 吊销用户所有令牌。
+// Signout 吊销用户所有令牌
 //
-// POST /api/v1/yggdrasil/authserver/signout
-//
-// 该接口由启动器调用，验证用户凭证后吊销该用户的所有有效令牌。
-// 成功返回 204 No Content，密码错误返回标准错误响应。
+// @Summary     [客户端] 吊销用户所有令牌
+// @Description 由启动器调用，验证用户凭证后吊销该用户的所有有效令牌。成功返回 204 No Content，密码错误返回 403 错误。
+// @Tags        Yggdrasil-认证接口
+// @Accept      json
+// @Produce     json
+// @Param       request body apiYgg.SignoutRequest true "登出请求"
+// @Success     204   {object}  nil                       "登出成功"
+// @Failure     400   {object}  apiYgg.YggdrasilError  "请求参数错误"
+// @Failure     403   {object}  apiYgg.YggdrasilError  "密码错误或账户异常"
+// @Failure     500   {object}  apiYgg.YggdrasilError  "服务器内部错误"
+// @Router      /authserver/signout [post]
 func (h *ClientHandler) Signout(ctx *gin.Context) {
 	h.Log.Info(ctx, "Signout - 吊销用户所有令牌")
 
@@ -253,12 +279,19 @@ func (h *ClientHandler) Signout(ctx *gin.Context) {
 	apiYgg.YggNoContent(ctx)
 }
 
-// JoinServer 客户端加入服务器。
+// JoinServer 客户端加入服务器
 //
-// POST /api/v1/yggdrasil/sessionserver/session/minecraft/join
-//
-// 该接口由 Minecraft 客户端调用，记录加入服务器的会话信息。
-// 验证令牌有效且 selectedProfile 与令牌绑定角色一致。
+// @Summary     [客户端] 客户端加入服务器
+// @Description 由 Minecraft 客户端调用，记录加入服务器的会话信息。验证令牌有效且 selectedProfile 与令牌绑定角色一致。
+// @Tags        Yggdrasil-会话接口
+// @Accept      json
+// @Produce     json
+// @Param       request body apiYgg.JoinServerRequest true "加入服务器请求"
+// @Success     204   {object}  nil                       "会话记录成功"
+// @Failure     400   {object}  apiYgg.YggdrasilError  "请求参数错误"
+// @Failure     403   {object}  apiYgg.YggdrasilError  "令牌无效或角色不匹配"
+// @Failure     500   {object}  apiYgg.YggdrasilError  "服务器内部错误"
+// @Router      /sessionserver/session/minecraft/join [post]
 func (h *ClientHandler) JoinServer(ctx *gin.Context) {
 	h.Log.Info(ctx, "JoinServer - 客户端加入服务器")
 
