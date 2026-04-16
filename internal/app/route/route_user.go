@@ -16,5 +16,6 @@ func (r *route) userRouter(route gin.IRouter) {
 
 	{
 		userGroup.GET("/info", userHandler.UserCurrent)
+		userGroup.PUT("/game-password", userHandler.UpdateGamePassword)
 	}
 }

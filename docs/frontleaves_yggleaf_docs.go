@@ -322,9 +322,73 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "/user/game-password": {
+            "put": {
+                "description": "已通过 OAuth2 认证的用户可直接设置/重置游戏密码，无需旧密码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户接口"
+                ],
+                "summary": "[玩家] 更新游戏密码",
+                "parameters": [
+                    {
+                        "description": "更新游戏密码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.UpdateGamePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/user.UserCurrentResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/info": {
             "get": {
-                "description": "根据 AT 获取用户信息，获取到本程序的用户信息",
+                "description": "根据 AT 获取用户信息，获取到本程序的用户信息（含账户完善状态）",
                 "consumes": [
                     "application/json"
                 ],
@@ -337,7 +401,7 @@ const docTemplatefrontleaves_yggleaf = `{
                 "summary": "[玩家] 用户信息",
                 "responses": {
                     "200": {
-                        "description": "登录成功",
+                        "description": "获取成功",
                         "schema": {
                             "allOf": [
                                 {
@@ -347,7 +411,7 @@ const docTemplatefrontleaves_yggleaf = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/entity.User"
+                                            "$ref": "#/definitions/user.UserCurrentResponse"
                                         }
                                     }
                                 }
@@ -1028,6 +1092,57 @@ const docTemplatefrontleaves_yggleaf = `{
                 },
                 "uuid": {
                     "description": "UUIDv7 标识",
+                    "type": "string"
+                }
+            }
+        },
+        "user.UpdateGamePasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "description": "确认新密码（需与 new_password 一致）",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 6
+                },
+                "new_password": {
+                    "description": "新游戏密码（6-128 字符）",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 6
+                }
+            }
+        },
+        "user.UserCurrentResponse": {
+            "type": "object",
+            "properties": {
+                "extend": {
+                    "description": "扩展信息（含账户完善状态）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/user.UserExtend"
+                        }
+                    ]
+                },
+                "user": {
+                    "description": "用户实体信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    ]
+                }
+            }
+        },
+        "user.UserExtend": {
+            "type": "object",
+            "properties": {
+                "account_ready": {
+                    "description": "AccountReady 账户完善状态。\n\n  - \"ready\":          所有必要信息已填写完毕\n  - \"game_password\":  游戏密码未设置（返回缺失字段名）",
                     "type": "string"
                 }
             }

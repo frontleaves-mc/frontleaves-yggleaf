@@ -451,6 +451,43 @@ definitions:
         description: UUIDv7 标识
         type: string
     type: object
+  user.UpdateGamePasswordRequest:
+    properties:
+      confirm_password:
+        description: 确认新密码（需与 new_password 一致）
+        maxLength: 128
+        minLength: 6
+        type: string
+      new_password:
+        description: 新游戏密码（6-128 字符）
+        maxLength: 128
+        minLength: 6
+        type: string
+    required:
+    - confirm_password
+    - new_password
+    type: object
+  user.UserCurrentResponse:
+    properties:
+      extend:
+        allOf:
+        - $ref: '#/definitions/user.UserExtend'
+        description: 扩展信息（含账户完善状态）
+      user:
+        allOf:
+        - $ref: '#/definitions/entity.User'
+        description: 用户实体信息
+    type: object
+  user.UserExtend:
+    properties:
+      account_ready:
+        description: |-
+          AccountReady 账户完善状态。
+
+            - "ready":          所有必要信息已填写完毕
+            - "game_password":  游戏密码未设置（返回缺失字段名）
+        type: string
+    type: object
   xBase.BaseResponse:
     properties:
       code:
@@ -658,22 +695,61 @@ paths:
       summary: '[玩家] 获取游戏档案配额'
       tags:
       - 游戏档案接口
-  /user/info:
-    get:
+  /user/game-password:
+    put:
       consumes:
       - application/json
-      description: 根据 AT 获取用户信息，获取到本程序的用户信息
+      description: 已通过 OAuth2 认证的用户可直接设置/重置游戏密码，无需旧密码
+      parameters:
+      - description: 更新游戏密码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateGamePasswordRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: 登录成功
+          description: 更新成功
           schema:
             allOf:
             - $ref: '#/definitions/xBase.BaseResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/entity.User'
+                  $ref: '#/definitions/user.UserCurrentResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[玩家] 更新游戏密码'
+      tags:
+      - 用户接口
+  /user/info:
+    get:
+      consumes:
+      - application/json
+      description: 根据 AT 获取用户信息，获取到本程序的用户信息（含账户完善状态）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UserCurrentResponse'
               type: object
         "400":
           description: 请求体格式不正确

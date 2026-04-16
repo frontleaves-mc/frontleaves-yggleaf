@@ -5,11 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 	"strings"
 
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	xEnv "github.com/bamboo-services/bamboo-base-go/defined/env"
 	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 	xCtxUtil "github.com/bamboo-services/bamboo-base-go/common/utility/context"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
@@ -20,6 +22,7 @@ import (
 	bCtx "github.com/frontleaves-mc/frontleaves-yggleaf/pkg/context"
 	bBucket "github.com/phalanx-labs/beacon-bucket-sdk"
 	bBucketApi "github.com/phalanx-labs/beacon-bucket-sdk/api"
+	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 )
 
 const (
@@ -139,6 +142,33 @@ func (l *LibraryLogic) resolveTextureURL(ctx context.Context, textureID int64) (
 		return "", xError.NewError(ctx, xError.ServerInternalError, "纹理文件下载链接为空", true)
 	}
 	return link, nil
+}
+
+// cacheVerifyFile 将缓存态文件确认为永久态。
+//
+// 必须在数据库事务成功后调用。失败仅记录日志不返回错误，
+// 因为 CacheVerify 是幂等接口，已确认的文件重复调用不会产生副作用。
+func (l *LibraryLogic) cacheVerifyFile(ctx context.Context, fileId string) {
+	_, err := l.helper.bucket.Normal.CacheVerify(ctx, &bBucketApi.CacheVerifyRequest{
+		FileId: fileId,
+	})
+	if err != nil {
+		l.log.Warn(ctx, fmt.Sprintf("CacheVerify 调用失败，文件可能仍为缓存态: %v", err))
+	}
+}
+
+// deleteBucketFile 从对象存储中删除指定文件。
+//
+// 用于业务数据删除后同步清理对应文件。删除失败仅记录日志，
+// 不影响业务流程（可通过后续补偿任务清理残留）。
+func (l *LibraryLogic) deleteBucketFile(ctx context.Context, textureID int64) {
+	fileId := strconv.FormatInt(textureID, 10)
+	_, err := l.helper.bucket.Normal.Delete(ctx, &bBucketApi.DeleteRequest{
+		FileId: fileId,
+	})
+	if err != nil {
+		l.log.Warn(ctx, fmt.Sprintf("Bucket 文件删除失败(fileId=%s)，存在残留风险: %v", fileId, err))
+	}
 }
 
 // buildSkinDTO 将 SkinLibrary 实体转换为 SkinDTO。
@@ -298,8 +328,8 @@ func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.Snowfla
 
 	// 上传到对象存储（事务外执行，避免长事务占用连接）
 	uploadResp, err := l.helper.bucket.Normal.Upload(ctx, &bBucketApi.UploadRequest{
-		BucketId:      "360607182437229568",
-		PathId:        "360607485278626816",
+		BucketId:      xEnv.GetEnvString(bConst.EnvBucketSkinBucketId, ""),
+		PathId:        xEnv.GetEnvString(bConst.EnvBucketSkinPathId, ""),
 		ContentBase64: texture,
 	})
 	if err != nil {
@@ -329,8 +359,20 @@ func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.Snowfla
 		return nil, xErr
 	}
 
+	// 事务成功后确认文件转为永久态（必须在 DB 写入成功后调用）
+	l.cacheVerifyFile(ctx, uploadResp.FileId)
+
 	// 将 entity 转换为 DTO（含纹理链接解析）
-	return l.buildSkinDTO(ctx, createdSkin)
+	skinDTO, xErr := l.buildSkinDTO(ctx, createdSkin)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// M3 优化：复用 UploadResponse 中已有的下载链接，避免冗余 Get 调用
+	if uploadResp.GetObj() != nil && uploadResp.GetObj().GetLink() != "" {
+		skinDTO.TextureURL = uploadResp.GetObj().GetLink()
+	}
+	return skinDTO, nil
 }
 
 // UpdateSkin 更新皮肤（名称/公开状态）。
@@ -428,7 +470,14 @@ func (l *LibraryLogic) DeleteSkin(ctx context.Context, userID xSnowflake.Snowfla
 	}
 
 	// 委托 Repository 层在事务内完成配额释放、关联删除与记录清理
-	return l.repo.txn.DeleteSkinWithQuota(ctx, userID, skinID)
+	xErr = l.repo.txn.DeleteSkinWithQuota(ctx, userID, skinID)
+	if xErr != nil {
+		return xErr
+	}
+
+	// DB 删除成功后同步清理 Bucket 中的文件
+	l.deleteBucketFile(ctx, skin.Texture)
+	return nil
 }
 
 // ListSkins 获取市场公开皮肤列表。
@@ -501,8 +550,8 @@ func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.Snowfla
 
 	// 上传到对象存储（事务外执行，避免长事务占用连接）
 	uploadResp, err := l.helper.bucket.Normal.Upload(ctx, &bBucketApi.UploadRequest{
-		BucketId:      "yggleaf",
-		PathId:        "capes",
+		BucketId:      xEnv.GetEnvString(bConst.EnvBucketCapeBucketId, ""),
+		PathId:        xEnv.GetEnvString(bConst.EnvBucketCapePathId, ""),
 		ContentBase64: texture,
 	})
 	if err != nil {
@@ -531,8 +580,20 @@ func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.Snowfla
 		return nil, xErr
 	}
 
+	// 事务成功后确认文件转为永久态（必须在 DB 写入成功后调用）
+	l.cacheVerifyFile(ctx, uploadResp.FileId)
+
 	// 将 entity 转换为 DTO（含纹理链接解析）
-	return l.buildCapeDTO(ctx, createdCape)
+	capeDTO, xErr := l.buildCapeDTO(ctx, createdCape)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// M3 优化：复用 UploadResponse 中已有的下载链接，避免冗余 Get 调用
+	if uploadResp.GetObj() != nil && uploadResp.GetObj().GetLink() != "" {
+		capeDTO.TextureURL = uploadResp.GetObj().GetLink()
+	}
+	return capeDTO, nil
 }
 
 // UpdateCape 更新披风（名称/公开状态）。
@@ -630,7 +691,14 @@ func (l *LibraryLogic) DeleteCape(ctx context.Context, userID xSnowflake.Snowfla
 	}
 
 	// 委托 Repository 层在事务内完成配额释放、关联删除与记录清理
-	return l.repo.txn.DeleteCapeWithQuota(ctx, userID, capeID)
+	xErr = l.repo.txn.DeleteCapeWithQuota(ctx, userID, capeID)
+	if xErr != nil {
+		return xErr
+	}
+
+	// DB 删除成功后同步清理 Bucket 中的文件
+	l.deleteBucketFile(ctx, cape.Texture)
+	return nil
 }
 
 // ListCapes 获取市场公开披风列表。
