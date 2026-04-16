@@ -455,6 +455,30 @@ func (l *GameProfileLogic) UnequipCape(ctx context.Context, userID xSnowflake.Sn
 	return l.buildProfileDTO(ctx, profile)
 }
 
+// SetSkin 统一设置/卸下游戏档案的皮肤。
+//
+// 当 skinLibraryID 为 nil 或零值时执行卸下逻辑，否则执行装备逻辑。
+func (l *GameProfileLogic) SetSkin(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, skinLibraryID *xSnowflake.SnowflakeID) (*models.GameProfileDTO, *xError.Error) {
+	l.log.Info(ctx, "SetSkin - 设置/卸下皮肤")
+
+	if skinLibraryID == nil || skinLibraryID.IsZero() {
+		return l.UnequipSkin(ctx, userID, profileID)
+	}
+	return l.EquipSkin(ctx, userID, profileID, *skinLibraryID)
+}
+
+// SetCape 统一设置/卸下游戏档案的披风。
+//
+// 当 capeLibraryID 为 nil 或零值时执行卸下逻辑，否则执行装备逻辑。
+func (l *GameProfileLogic) SetCape(ctx context.Context, userID xSnowflake.SnowflakeID, profileID xSnowflake.SnowflakeID, capeLibraryID *xSnowflake.SnowflakeID) (*models.GameProfileDTO, *xError.Error) {
+	l.log.Info(ctx, "SetCape - 设置/卸下披风")
+
+	if capeLibraryID == nil || capeLibraryID.IsZero() {
+		return l.UnequipCape(ctx, userID, profileID)
+	}
+	return l.EquipCape(ctx, userID, profileID, *capeLibraryID)
+}
+
 // buildProfileDTO 将 GameProfile 实体转换为 GameProfileDTO。
 //
 // 若 profile 关联了 SkinLibrary 或 CapeLibrary（GORM Preload），则调用

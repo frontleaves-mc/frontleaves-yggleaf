@@ -43,3 +43,14 @@ type SkinListResponse struct {
 	Total int64          `json:"total"` // 总数
 	Items []SkinResponse `json:"items"` // 皮肤列表
 }
+
+// SkinSimpleResponse 皮肤精简响应（仅 ID + Name，用于选择器等场景）
+type SkinSimpleResponse struct {
+	ID   xSnowflake.SnowflakeID `json:"id"`   // 皮肤库记录 ID
+	Name string                 `json:"name"` // 皮肤名称
+}
+
+// SkinSimpleListResponse 皮肤精简列表响应
+type SkinSimpleListResponse struct {
+	Items []SkinSimpleResponse `json:"items"` // 皮肤精简列表
+}

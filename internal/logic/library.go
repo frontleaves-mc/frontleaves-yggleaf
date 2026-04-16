@@ -237,6 +237,34 @@ func (l *LibraryLogic) buildCapeDTOs(ctx context.Context, capes []entity.CapeLib
 	return responses, nil
 }
 
+// buildSkinSimpleDTOs 将 UserSkinLibrary 关联列表转换为 SkinSimpleDTO 列表（仅 ID + Name）。
+func (l *LibraryLogic) buildSkinSimpleDTOs(associations []entity.UserSkinLibrary) []models.SkinSimpleDTO {
+	items := make([]models.SkinSimpleDTO, 0, len(associations))
+	for _, assoc := range associations {
+		if assoc.SkinLibrary != nil {
+			items = append(items, models.SkinSimpleDTO{
+				ID:   assoc.SkinLibrary.ID,
+				Name: assoc.SkinLibrary.Name,
+			})
+		}
+	}
+	return items
+}
+
+// buildCapeSimpleDTOs 将 UserCapeLibrary 关联列表转换为 CapeSimpleDTO 列表（仅 ID + Name）。
+func (l *LibraryLogic) buildCapeSimpleDTOs(associations []entity.UserCapeLibrary) []models.CapeSimpleDTO {
+	items := make([]models.CapeSimpleDTO, 0, len(associations))
+	for _, assoc := range associations {
+		if assoc.CapeLibrary != nil {
+			items = append(items, models.CapeSimpleDTO{
+				ID:   assoc.CapeLibrary.ID,
+				Name: assoc.CapeLibrary.Name,
+			})
+		}
+	}
+	return items
+}
+
 // buildUserSkinAssociationDTOs 将 UserSkinLibrary 关联列表转换为 SkinDTO 列表。
 //
 // 从关联实体中提取 SkinLibrary（GORM Preload）和 AssignmentType，
@@ -519,6 +547,24 @@ func (l *LibraryLogic) ListMySkins(ctx context.Context, userID xSnowflake.Snowfl
 	return responses, total, nil
 }
 
+// ListMySkinsSimple 获取当前用户的皮肤精简列表（仅 ID + Name，不分页）。
+//
+// 用于前端皮肤选择器等轻量场景，不解析纹理链接。
+func (l *LibraryLogic) ListMySkinsSimple(ctx context.Context, userID xSnowflake.SnowflakeID) ([]models.SkinSimpleDTO, *xError.Error) {
+	l.log.Info(ctx, "ListMySkinsSimple - 获取我的皮肤精简列表")
+
+	if userID.IsZero() {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效用户 ID：不能为 0", true)
+	}
+
+	associations, xErr := l.repo.userSkinRepo.ListAllByUserID(ctx, nil, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	return l.buildSkinSimpleDTOs(associations), nil
+}
+
 // ==================== Cape Logic ====================
 
 // CreateCape 创建披风。
@@ -738,6 +784,24 @@ func (l *LibraryLogic) ListMyCapes(ctx context.Context, userID xSnowflake.Snowfl
 	}
 
 	return responses, total, nil
+}
+
+// ListMyCapesSimple 获取当前用户的披风精简列表（仅 ID + Name，不分页）。
+//
+// 用于前端披风选择器等轻量场景，不解析纹理链接。
+func (l *LibraryLogic) ListMyCapesSimple(ctx context.Context, userID xSnowflake.SnowflakeID) ([]models.CapeSimpleDTO, *xError.Error) {
+	l.log.Info(ctx, "ListMyCapesSimple - 获取我的披风精简列表")
+
+	if userID.IsZero() {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效用户 ID：不能为 0", true)
+	}
+
+	associations, xErr := l.repo.userCapeRepo.ListAllByUserID(ctx, nil, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	return l.buildCapeSimpleDTOs(associations), nil
 }
 
 // ==================== Quota Logic ====================

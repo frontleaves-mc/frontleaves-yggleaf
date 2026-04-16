@@ -90,6 +90,24 @@ func (r *UserSkinLibraryRepo) ListByUserID(ctx context.Context, tx *gorm.DB, use
 	return associations, total, nil
 }
 
+// ListAllByUserID 根据用户 ID 查询所有关联记录（Preload SkinLibrary，不分页）。
+//
+// 用于皮肤选择器等只需要 ID 和名称的场景，避免不必要的分页和纹理解析。
+func (r *UserSkinLibraryRepo) ListAllByUserID(ctx context.Context, tx *gorm.DB, userID xSnowflake.SnowflakeID) ([]entity.UserSkinLibrary, *xError.Error) {
+	r.log.Info(ctx, "ListAllByUserID - 查询用户所有皮肤关联（不分页）")
+
+	var associations []entity.UserSkinLibrary
+	if err := r.pickDB(ctx, tx).
+		Model(&entity.UserSkinLibrary{}).
+		Where("user_id = ?", userID).
+		Preload("SkinLibrary").
+		Order("created_at DESC").
+		Find(&associations).Error; err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "查询用户皮肤关联列表失败", true, err)
+	}
+	return associations, nil
+}
+
 // CountReferences 统计指定皮肤库被多少用户关联。
 func (r *UserSkinLibraryRepo) CountReferences(ctx context.Context, tx *gorm.DB, skinLibraryID xSnowflake.SnowflakeID) (int64, *xError.Error) {
 	r.log.Info(ctx, "CountReferences - 统计皮肤库关联引用数")

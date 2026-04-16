@@ -20,6 +20,7 @@ func (r *route) libraryRouter(route gin.IRouter) {
 		{
 			skinGroup.POST("", libraryHandler.CreateSkin)
 			skinGroup.GET("", libraryHandler.ListSkins)
+			skinGroup.GET("/list", libraryHandler.ListMySkinsSimple)
 			skinGroup.PATCH("/:skin_id", libraryHandler.UpdateSkin)
 			skinGroup.DELETE("/:skin_id", libraryHandler.DeleteSkin)
 		}
@@ -29,6 +30,7 @@ func (r *route) libraryRouter(route gin.IRouter) {
 		{
 			capeGroup.POST("", libraryHandler.CreateCape)
 			capeGroup.GET("", libraryHandler.ListCapes)
+			capeGroup.GET("/list", libraryHandler.ListMyCapesSimple)
 			capeGroup.PATCH("/:cape_id", libraryHandler.UpdateCape)
 			capeGroup.DELETE("/:cape_id", libraryHandler.DeleteCape)
 		}

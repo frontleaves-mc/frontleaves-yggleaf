@@ -40,3 +40,14 @@ type CapeListResponse struct {
 	Total int64          `json:"total"` // 总数
 	Items []CapeResponse `json:"items"` // 披风列表
 }
+
+// CapeSimpleResponse 披风精简响应（仅 ID + Name，用于选择器等场景）
+type CapeSimpleResponse struct {
+	ID   xSnowflake.SnowflakeID `json:"id"`   // 披风库记录 ID
+	Name string                 `json:"name"` // 披风名称
+}
+
+// CapeSimpleListResponse 披风精简列表响应
+type CapeSimpleListResponse struct {
+	Items []CapeSimpleResponse `json:"items"` // 披风精简列表
+}

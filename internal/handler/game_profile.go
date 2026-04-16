@@ -221,11 +221,24 @@ func (h *GameProfileHandler) GetQuota(ctx *gin.Context) {
 	xResult.SuccessHasData(ctx, "获取游戏档案配额成功", quota)
 }
 
-// ==================== Equip Handlers ====================
+// ==================== Set Handlers (Unified Equip/Unequip) ====================
 
-// EquipSkin 为游戏档案装备皮肤
-func (h *GameProfileHandler) EquipSkin(ctx *gin.Context) {
-	h.log.Info(ctx, "EquipSkin - 装备皮肤")
+// SetSkin 统一设置/卸下游戏档案皮肤
+//
+// @Summary     [玩家] 设置/卸下皮肤
+// @Description 统一的皮肤设置接口，传入 skin_library_id 为装备，传 null 或空字符串为卸下
+// @Tags        游戏档案接口
+// @Accept      json
+// @Produce     json
+// @Param       profile_id path string true "游戏档案 ID"
+// @Param       request body apiUser.SetSkinRequest true "设置皮肤请求"
+// @Success     200 {object} xBase.BaseResponse{data=apiUser.GameProfileResponse} "操作成功"
+// @Failure     400 {object} xBase.BaseResponse "请求参数错误"
+// @Failure     401 {object} xBase.BaseResponse "未授权"
+// @Failure     404 {object} xBase.BaseResponse "资源不存在"
+// @Router      /game-profile/{profile_id}/skin [PATCH]
+func (h *GameProfileHandler) SetSkin(ctx *gin.Context) {
+	h.log.Info(ctx, "SetSkin - 设置/卸下皮肤")
 
 	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
 	if err != nil {
@@ -233,9 +246,8 @@ func (h *GameProfileHandler) EquipSkin(ctx *gin.Context) {
 		return
 	}
 
-	skinLibraryID, err := xSnowflake.ParseSnowflakeID(ctx.Param("skin_library_id"))
-	if err != nil {
-		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析皮肤库 ID 失败", true, err))
+	req := xUtil.Bind(ctx, &apiUser.SetSkinRequest{}).Data()
+	if req == nil {
 		return
 	}
 
@@ -251,22 +263,50 @@ func (h *GameProfileHandler) EquipSkin(ctx *gin.Context) {
 		return
 	}
 
-	profile, xErr := h.service.gameProfileLogic.EquipSkin(ctx.Request.Context(), userID, profileID, skinLibraryID)
+	var skinLibraryID *xSnowflake.SnowflakeID
+	if req.SkinLibraryID != nil && *req.SkinLibraryID != "" {
+		parsed, parseErr := xSnowflake.ParseSnowflakeID(*req.SkinLibraryID)
+		if parseErr != nil {
+			_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析皮肤库 ID 失败", true, parseErr))
+			return
+		}
+		skinLibraryID = &parsed
+	}
+
+	profile, xErr := h.service.gameProfileLogic.SetSkin(ctx.Request.Context(), userID, profileID, skinLibraryID)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "装备皮肤成功", gameProfileDTOToResponse(profile))
+	xResult.SuccessHasData(ctx, "设置皮肤成功", gameProfileDTOToResponse(profile))
 }
 
-// UnequipSkin 为游戏档案卸下皮肤
-func (h *GameProfileHandler) UnequipSkin(ctx *gin.Context) {
-	h.log.Info(ctx, "UnequipSkin - 卸下皮肤")
+// SetCape 统一设置/卸下游戏档案披风
+//
+// @Summary     [玩家] 设置/卸下披风
+// @Description 统一的披风设置接口，传入 cape_library_id 为装备，传 null 或空字符串为卸下
+// @Tags        游戏档案接口
+// @Accept      json
+// @Produce     json
+// @Param       profile_id path string true "游戏档案 ID"
+// @Param       request body apiUser.SetCapeRequest true "设置披风请求"
+// @Success     200 {object} xBase.BaseResponse{data=apiUser.GameProfileResponse} "操作成功"
+// @Failure     400 {object} xBase.BaseResponse "请求参数错误"
+// @Failure     401 {object} xBase.BaseResponse "未授权"
+// @Failure     404 {object} xBase.BaseResponse "资源不存在"
+// @Router      /game-profile/{profile_id}/cape [PATCH]
+func (h *GameProfileHandler) SetCape(ctx *gin.Context) {
+	h.log.Info(ctx, "SetCape - 设置/卸下披风")
 
 	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
 	if err != nil {
 		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析游戏档案 ID 失败", true, err))
+		return
+	}
+
+	req := xUtil.Bind(ctx, &apiUser.SetCapeRequest{}).Data()
+	if req == nil {
 		return
 	}
 
@@ -282,79 +322,21 @@ func (h *GameProfileHandler) UnequipSkin(ctx *gin.Context) {
 		return
 	}
 
-	profile, xErr := h.service.gameProfileLogic.UnequipSkin(ctx.Request.Context(), userID, profileID)
+	var capeLibraryID *xSnowflake.SnowflakeID
+	if req.CapeLibraryID != nil && *req.CapeLibraryID != "" {
+		parsed, parseErr := xSnowflake.ParseSnowflakeID(*req.CapeLibraryID)
+		if parseErr != nil {
+			_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析披风库 ID 失败", true, parseErr))
+			return
+		}
+		capeLibraryID = &parsed
+	}
+
+	profile, xErr := h.service.gameProfileLogic.SetCape(ctx.Request.Context(), userID, profileID, capeLibraryID)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
 	}
 
-	xResult.SuccessHasData(ctx, "卸下皮肤成功", gameProfileDTOToResponse(profile))
-}
-
-// EquipCape 为游戏档案装备披风
-func (h *GameProfileHandler) EquipCape(ctx *gin.Context) {
-	h.log.Info(ctx, "EquipCape - 装备披风")
-
-	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
-	if err != nil {
-		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析游戏档案 ID 失败", true, err))
-		return
-	}
-
-	capeLibraryID, err := xSnowflake.ParseSnowflakeID(ctx.Param("cape_library_id"))
-	if err != nil {
-		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析披风库 ID 失败", true, err))
-		return
-	}
-
-	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
-	if xErr != nil {
-		_ = ctx.Error(xErr)
-		return
-	}
-
-	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
-	if err != nil {
-		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
-		return
-	}
-
-	profile, xErr := h.service.gameProfileLogic.EquipCape(ctx.Request.Context(), userID, profileID, capeLibraryID)
-	if xErr != nil {
-		_ = ctx.Error(xErr)
-		return
-	}
-
-	xResult.SuccessHasData(ctx, "装备披风成功", gameProfileDTOToResponse(profile))
-}
-
-// UnequipCape 为游戏档案卸下披风
-func (h *GameProfileHandler) UnequipCape(ctx *gin.Context) {
-	h.log.Info(ctx, "UnequipCape - 卸下披风")
-
-	profileID, err := xSnowflake.ParseSnowflakeID(ctx.Param("profile_id"))
-	if err != nil {
-		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析游戏档案 ID 失败", true, err))
-		return
-	}
-
-	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
-	if xErr != nil {
-		_ = ctx.Error(xErr)
-		return
-	}
-
-	userID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
-	if err != nil {
-		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析用户 ID 失败", true, err))
-		return
-	}
-
-	profile, xErr := h.service.gameProfileLogic.UnequipCape(ctx.Request.Context(), userID, profileID)
-	if xErr != nil {
-		_ = ctx.Error(xErr)
-		return
-	}
-
-	xResult.SuccessHasData(ctx, "卸下披风成功", gameProfileDTOToResponse(profile))
+	xResult.SuccessHasData(ctx, "设置披风成功", gameProfileDTOToResponse(profile))
 }

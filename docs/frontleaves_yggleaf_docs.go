@@ -15,6 +15,459 @@ const docTemplatefrontleaves_yggleaf = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/": {
+            "get": {
+                "description": "由 authlib-injector 自动发现和启动器调用，返回 API 元数据（服务名称、签名公钥、皮肤域名等），authlib-injector 据此自动配置 API 位置。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-公共接口"
+                ],
+                "summary": "[公共] API 元数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.MetadataResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/profiles/minecraft": {
+            "post": {
+                "description": "由 Minecraft 服务端调用，根据角色名称列表批量查询角色信息。仅返回无符号 UUID 和名称，不包含角色属性。不存在的角色不包含在响应中，单次最多查询 10 个。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-会话接口"
+                ],
+                "summary": "[服务端] 批量查询角色",
+                "parameters": [
+                    {
+                        "description": "角色名称列表（JSON 数组，最多 10 个）",
+                        "name": "names",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/yggdrasil.BatchProfileItem"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "请求体格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user/profile/{uuid}/{textureType}": {
+            "put": {
+                "description": "由启动器调用，上传皮肤或披风材质。需通过 Bearer Token 认证，验证令牌有效且角色属于该用户。当前返回 501 功能尚未实现。",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-公共接口"
+                ],
+                "summary": "[玩家] 上传材质",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色的无符号 UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "材质类型：skin 或 cape",
+                        "name": "textureType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "皮肤模型（slim 或空，仅 skin 类型）",
+                        "name": "model",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "PNG 图片文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer Access Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "上传成功"
+                    },
+                    "400": {
+                        "description": "UUID 格式错误或材质类型无效",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权或令牌无效",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "403": {
+                        "description": "角色不属于该用户",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "501": {
+                        "description": "功能尚未实现",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "由启动器调用，清除指定角色的皮肤或披风材质。需通过 Bearer Token 认证，验证令牌有效且角色属于该用户。当前返回 501 功能尚未实现。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-公共接口"
+                ],
+                "summary": "[玩家] 清除材质",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色的无符号 UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "材质类型：skin 或 cape",
+                        "name": "textureType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer Access Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "清除成功"
+                    },
+                    "400": {
+                        "description": "UUID 格式错误或材质类型无效",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权或令牌无效",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "403": {
+                        "description": "角色不属于该用户",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "501": {
+                        "description": "功能尚未实现",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            }
+        },
+        "/authserver/authenticate": {
+            "post": {
+                "description": "由启动器调用，使用邮箱或手机号+密码进行登录认证。单角色时自动绑定到令牌并返回 selectedProfile，多角色时通过 refresh 接口选择角色。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-认证接口"
+                ],
+                "summary": "[客户端] 密码登录认证",
+                "parameters": [
+                    {
+                        "description": "登录认证请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.AuthenticateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "认证成功",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.AuthenticateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "403": {
+                        "description": "认证失败（密码错误/账户异常）",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            }
+        },
+        "/authserver/invalidate": {
+            "post": {
+                "description": "由启动器调用，吊销指定的 accessToken。无论是否成功，均返回 204 No Content。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-认证接口"
+                ],
+                "summary": "[客户端] 吊销指定令牌",
+                "parameters": [
+                    {
+                        "description": "吊销令牌请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.InvalidateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "处理完成"
+                    }
+                }
+            }
+        },
+        "/authserver/refresh": {
+            "post": {
+                "description": "由启动器调用，使用 accessToken 刷新令牌。吊销原令牌并颁发新令牌，携带 selectedProfile 时为角色选择操作。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-认证接口"
+                ],
+                "summary": "[客户端] 刷新令牌",
+                "parameters": [
+                    {
+                        "description": "刷新令牌请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "刷新成功",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.RefreshResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（角色已绑定仍指定）",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "403": {
+                        "description": "令牌无效或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            }
+        },
+        "/authserver/signout": {
+            "post": {
+                "description": "由启动器调用，验证用户凭证后吊销该用户的所有有效令牌。成功返回 204 No Content，密码错误返回 403 错误。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-认证接口"
+                ],
+                "summary": "[客户端] 吊销用户所有令牌",
+                "parameters": [
+                    {
+                        "description": "登出请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.SignoutRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "登出成功"
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "403": {
+                        "description": "密码错误或账户异常",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            }
+        },
+        "/authserver/validate": {
+            "post": {
+                "description": "由启动器调用，验证 accessToken 是否有效。有效返回 204 No Content，无效返回 403 错误。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-认证接口"
+                ],
+                "summary": "[客户端] 验证令牌有效性",
+                "parameters": [
+                    {
+                        "description": "验证令牌请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.ValidateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "令牌有效"
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "403": {
+                        "description": "令牌无效或 clientToken 不匹配",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            }
+        },
         "/game-profile": {
             "get": {
                 "description": "获取当前用户的所有游戏档案列表",
@@ -245,6 +698,148 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "/game-profile/{profile_id}/cape": {
+            "patch": {
+                "description": "统一的披风设置接口，传入 cape_library_id 为装备，传 null 或空字符串为卸下",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "游戏档案接口"
+                ],
+                "summary": "[玩家] 设置/卸下披风",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "游戏档案 ID",
+                        "name": "profile_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "设置披风请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.SetCapeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/user.GameProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/game-profile/{profile_id}/skin": {
+            "patch": {
+                "description": "统一的皮肤设置接口，传入 skin_library_id 为装备，传 null 或空字符串为卸下",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "游戏档案接口"
+                ],
+                "summary": "[玩家] 设置/卸下皮肤",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "游戏档案 ID",
+                        "name": "profile_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "设置皮肤请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.SetSkinRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/user.GameProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/game-profile/{profile_id}/username": {
             "patch": {
                 "description": "根据档案 ID 修改游戏档案用户名",
@@ -317,6 +912,1247 @@ const docTemplatefrontleaves_yggleaf = `{
                         "description": "资源冲突",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/admin/users/{user_id}/capes": {
+            "get": {
+                "description": "管理员分页查询指定用户关联的所有披风",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[管理] 查询用户披风列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认 20，最大 100",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.CapeListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/admin/users/{user_id}/capes/gift": {
+            "post": {
+                "description": "管理员向指定用户赠送披风，支持 gift 和 admin 两种分配类型",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[管理] 赠送披风",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "赠送披风请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.GiftCapeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "赠送成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.CapeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/admin/users/{user_id}/capes/{cape_library_id}": {
+            "delete": {
+                "description": "管理员撤销指定用户的披风关联",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[管理] 撤销披风",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "披风库 ID",
+                        "name": "cape_library_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "撤销成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/admin/users/{user_id}/quota/sync": {
+            "post": {
+                "description": "管理员重新计算并同步指定用户的资源库配额",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[管理] 同步配额",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "同步成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/admin/users/{user_id}/skins": {
+            "get": {
+                "description": "管理员分页查询指定用户关联的所有皮肤",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[管理] 查询用户皮肤列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认 20，最大 100",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.SkinListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/admin/users/{user_id}/skins/gift": {
+            "post": {
+                "description": "管理员向指定用户赠送皮肤，支持 gift 和 admin 两种分配类型",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[管理] 赠送皮肤",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "赠送皮肤请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.GiftSkinRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "赠送成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.SkinResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/admin/users/{user_id}/skins/{skin_library_id}": {
+            "delete": {
+                "description": "管理员撤销指定用户的皮肤关联",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[管理] 撤销皮肤",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "皮肤库 ID",
+                        "name": "skin_library_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "撤销成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/capes": {
+            "get": {
+                "description": "分页获取披风列表，支持 mine（我的披风）和 market（市场披风）两种模式",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 获取披风列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "列表模式：mine 或 market，默认 mine",
+                        "name": "mode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认 20，最大 100",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.CapeListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "上传披风纹理文件并创建披风记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 创建披风",
+                "parameters": [
+                    {
+                        "description": "创建披风请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.CreateCapeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.CapeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/capes/list": {
+            "get": {
+                "description": "获取当前用户拥有的所有披风的精简列表，仅返回 ID 和名称",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 获取披风精简列表",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.CapeSimpleListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/capes/{cape_id}": {
+            "delete": {
+                "description": "根据披风 ID 删除披风记录及其关联的纹理文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 删除披风",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "披风 ID",
+                        "name": "cape_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "根据披风 ID 更新披风的名称和公开状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 更新披风",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "披风 ID",
+                        "name": "cape_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新披风请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.UpdateCapeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.CapeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/quota": {
+            "get": {
+                "description": "获取当前用户的资源库配额信息，包括总额度与已使用额度",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 获取资源库配额",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/entity.LibraryQuota"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/skins": {
+            "get": {
+                "description": "分页获取皮肤列表，支持 mine（我的皮肤）和 market（市场皮肤）两种模式",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 获取皮肤列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "列表模式：mine 或 market，默认 mine",
+                        "name": "mode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认 20，最大 100",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.SkinListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "上传皮肤纹理文件并创建皮肤记录，支持 classic/slim 两种模型",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 创建皮肤",
+                "parameters": [
+                    {
+                        "description": "创建皮肤请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.CreateSkinRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.SkinResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/skins/list": {
+            "get": {
+                "description": "获取当前用户拥有的所有皮肤的精简列表，仅返回 ID 和名称",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 获取皮肤精简列表",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.SkinSimpleListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/skins/{skin_id}": {
+            "delete": {
+                "description": "根据皮肤 ID 删除皮肤记录及其关联的纹理文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 删除皮肤",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "皮肤 ID",
+                        "name": "skin_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "根据皮肤 ID 更新皮肤的名称和公开状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "资源库接口"
+                ],
+                "summary": "[玩家] 更新皮肤",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "皮肤 ID",
+                        "name": "skin_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新皮肤请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.UpdateSkinRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.SkinResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessionserver/session/minecraft/hasJoined": {
+            "get": {
+                "description": "由 Minecraft 服务端调用，通过 username 和 serverId 验证客户端是否已成功加入服务器。验证通过后返回角色完整信息（含 textures 属性和数字签名）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-会话接口"
+                ],
+                "summary": "[服务端] 验证客户端会话",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色名称",
+                        "name": "username",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "服务端生成的随机标识",
+                        "name": "serverId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "客户端 IP 地址（可选，用于防止代理连接）",
+                        "name": "ip",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "验证成功，返回角色完整信息",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.ProfileResponse"
+                        }
+                    },
+                    "204": {
+                        "description": "未找到匹配的会话"
+                    },
+                    "400": {
+                        "description": "缺少必要参数或参数过长",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessionserver/session/minecraft/join": {
+            "post": {
+                "description": "由 Minecraft 客户端调用，记录加入服务器的会话信息。验证令牌有效且 selectedProfile 与令牌绑定角色一致。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-会话接口"
+                ],
+                "summary": "[客户端] 客户端加入服务器",
+                "parameters": [
+                    {
+                        "description": "加入服务器请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.JoinServerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "会话记录成功"
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "403": {
+                        "description": "令牌无效或角色不匹配",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessionserver/session/minecraft/profile/{uuid}": {
+            "get": {
+                "description": "由 Minecraft 服务端或客户端调用，查询指定 UUID 的角色信息。根据 unsigned 参数决定是否包含 textures 属性的数字签名。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Yggdrasil-会话接口"
+                ],
+                "summary": "[服务端] 查询角色属性",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色的无符号 UUID（32 位十六进制字符串）",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否不含签名，默认 true",
+                        "name": "unsigned",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功，返回角色信息（含属性）",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.ProfileResponse"
+                        }
+                    },
+                    "204": {
+                        "description": "角色不存在"
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/yggdrasil.YggdrasilError"
                         }
                     }
                 }
@@ -923,6 +2759,22 @@ const docTemplatefrontleaves_yggleaf = `{
                 "AssignmentTypeAdmin"
             ]
         },
+        "library.CapeListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "披风列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/library.CapeResponse"
+                    }
+                },
+                "total": {
+                    "description": "总数",
+                    "type": "integer"
+                }
+            }
+        },
         "library.CapeResponse": {
             "type": "object",
             "properties": {
@@ -960,6 +2812,132 @@ const docTemplatefrontleaves_yggleaf = `{
                 },
                 "user_id": {
                     "description": "创建者/上传者用户 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "library.CapeSimpleListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "披风精简列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/library.CapeSimpleResponse"
+                    }
+                }
+            }
+        },
+        "library.CapeSimpleResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "披风库记录 ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "披风名称",
+                    "type": "string"
+                }
+            }
+        },
+        "library.CreateCapeRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "texture"
+            ],
+            "properties": {
+                "is_public": {
+                    "description": "是否公开（可选，默认 false）",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "披风名称",
+                    "type": "string"
+                },
+                "texture": {
+                    "description": "披风纹理文件 base64",
+                    "type": "string"
+                }
+            }
+        },
+        "library.CreateSkinRequest": {
+            "type": "object",
+            "required": [
+                "model",
+                "name",
+                "texture"
+            ],
+            "properties": {
+                "is_public": {
+                    "description": "是否公开（可选，默认 false）",
+                    "type": "boolean"
+                },
+                "model": {
+                    "description": "皮肤模型 (1=classic, 2=slim)",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "name": {
+                    "description": "皮肤名称",
+                    "type": "string"
+                },
+                "texture": {
+                    "description": "皮肤纹理文件 base64",
+                    "type": "string"
+                }
+            }
+        },
+        "library.GiftCapeRequest": {
+            "type": "object",
+            "required": [
+                "assignment_type",
+                "cape_library_id"
+            ],
+            "properties": {
+                "assignment_type": {
+                    "description": "分配类型 (2=gift, 3=admin)",
+                    "type": "integer"
+                },
+                "cape_library_id": {
+                    "description": "披风库 ID",
+                    "type": "string"
+                }
+            }
+        },
+        "library.GiftSkinRequest": {
+            "type": "object",
+            "required": [
+                "assignment_type",
+                "skin_library_id"
+            ],
+            "properties": {
+                "assignment_type": {
+                    "description": "分配类型 (2=gift, 3=admin)",
+                    "type": "integer"
+                },
+                "skin_library_id": {
+                    "description": "皮肤库 ID",
+                    "type": "string"
+                }
+            }
+        },
+        "library.SkinListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "皮肤列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/library.SkinResponse"
+                    }
+                },
+                "total": {
+                    "description": "总数",
                     "type": "integer"
                 }
             }
@@ -1010,6 +2988,57 @@ const docTemplatefrontleaves_yggleaf = `{
                 "user_id": {
                     "description": "创建者/上传者用户 ID",
                     "type": "integer"
+                }
+            }
+        },
+        "library.SkinSimpleListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "皮肤精简列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/library.SkinSimpleResponse"
+                    }
+                }
+            }
+        },
+        "library.SkinSimpleResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "皮肤库记录 ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "皮肤名称",
+                    "type": "string"
+                }
+            }
+        },
+        "library.UpdateCapeRequest": {
+            "type": "object",
+            "properties": {
+                "is_public": {
+                    "description": "是否公开（可选）",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "披风名称（可选）",
+                    "type": "string"
+                }
+            }
+        },
+        "library.UpdateSkinRequest": {
+            "type": "object",
+            "properties": {
+                "is_public": {
+                    "description": "是否公开（可选）",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "皮肤名称（可选）",
+                    "type": "string"
                 }
             }
         },
@@ -1096,6 +3125,24 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "user.SetCapeRequest": {
+            "type": "object",
+            "properties": {
+                "cape_library_id": {
+                    "description": "披风库 ID（null 或空字符串表示卸下）",
+                    "type": "string"
+                }
+            }
+        },
+        "user.SetSkinRequest": {
+            "type": "object",
+            "properties": {
+                "skin_library_id": {
+                    "description": "皮肤库 ID（null 或空字符串表示卸下）",
+                    "type": "string"
+                }
+            }
+        },
         "user.UpdateGamePasswordRequest": {
             "type": "object",
             "required": [
@@ -1168,6 +3215,404 @@ const docTemplatefrontleaves_yggleaf = `{
                 },
                 "overhead": {
                     "type": "integer"
+                }
+            }
+        },
+        "yggdrasil.Agent": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "代理名称（如 \"Minecraft\"）",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "代理版本",
+                    "type": "integer"
+                }
+            }
+        },
+        "yggdrasil.AuthenticateRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "agent": {
+                    "description": "客户端代理信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/yggdrasil.Agent"
+                        }
+                    ]
+                },
+                "clientToken": {
+                    "description": "客户端令牌标识（可选）",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "游戏账户密码",
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "requestUser": {
+                    "description": "是否请求用户信息",
+                    "type": "boolean"
+                },
+                "username": {
+                    "description": "邮箱或手机号 (RFC 5321 max)",
+                    "type": "string",
+                    "maxLength": 320
+                }
+            }
+        },
+        "yggdrasil.AuthenticateResponse": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "description": "服务端生成的访问令牌",
+                    "type": "string"
+                },
+                "availableProfiles": {
+                    "description": "用户可用的角色列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/yggdrasil.ProfileResponse"
+                    }
+                },
+                "clientToken": {
+                    "description": "客户端令牌（与请求一致）",
+                    "type": "string"
+                },
+                "selectedProfile": {
+                    "description": "自动选中的角色（单角色时）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/yggdrasil.ProfileResponse"
+                        }
+                    ]
+                },
+                "user": {
+                    "description": "用户信息（requestUser 时返回）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/yggdrasil.UserResponse"
+                        }
+                    ]
+                }
+            }
+        },
+        "yggdrasil.BatchProfileItem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "角色无符号 UUID",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "角色名称",
+                    "type": "string"
+                }
+            }
+        },
+        "yggdrasil.InvalidateRequest": {
+            "type": "object",
+            "required": [
+                "accessToken"
+            ],
+            "properties": {
+                "accessToken": {
+                    "description": "访问令牌",
+                    "type": "string",
+                    "maxLength": 368
+                },
+                "clientToken": {
+                    "description": "客户端令牌（可选）",
+                    "type": "string",
+                    "maxLength": 368
+                }
+            }
+        },
+        "yggdrasil.JoinServerRequest": {
+            "type": "object",
+            "required": [
+                "accessToken",
+                "selectedProfile",
+                "serverId"
+            ],
+            "properties": {
+                "accessToken": {
+                    "description": "访问令牌 (UUID 格式 + 余量)",
+                    "type": "string",
+                    "maxLength": 368
+                },
+                "selectedProfile": {
+                    "description": "角色无符号 UUID (固定 32 字符)",
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "serverId": {
+                    "description": "服务端随机标识",
+                    "type": "string",
+                    "maxLength": 256
+                }
+            }
+        },
+        "yggdrasil.MetadataLinks": {
+            "type": "object",
+            "properties": {
+                "homepage": {
+                    "description": "主页地址",
+                    "type": "string"
+                },
+                "register": {
+                    "description": "注册地址",
+                    "type": "string"
+                }
+            }
+        },
+        "yggdrasil.MetadataMeta": {
+            "type": "object",
+            "properties": {
+                "feature.non_email_login": {
+                    "description": "是否支持非邮箱登录",
+                    "type": "boolean"
+                },
+                "implementationName": {
+                    "description": "实现名称",
+                    "type": "string"
+                },
+                "implementationVersion": {
+                    "description": "实现版本",
+                    "type": "string"
+                },
+                "links": {
+                    "description": "相关链接（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/yggdrasil.MetadataLinks"
+                        }
+                    ]
+                },
+                "serverName": {
+                    "description": "服务端名称",
+                    "type": "string"
+                }
+            }
+        },
+        "yggdrasil.MetadataResponse": {
+            "type": "object",
+            "properties": {
+                "meta": {
+                    "description": "元数据信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/yggdrasil.MetadataMeta"
+                        }
+                    ]
+                },
+                "signaturePublickey": {
+                    "description": "RSA 签名公钥（PEM 格式）",
+                    "type": "string"
+                },
+                "skinDomains": {
+                    "description": "皮肤域名白名单",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "yggdrasil.ProfileResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "角色无符号 UUID",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "角色名称",
+                    "type": "string"
+                },
+                "properties": {
+                    "description": "角色属性列表（含材质签名等）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/yggdrasil.PropertyResponse"
+                    }
+                }
+            }
+        },
+        "yggdrasil.ProfileSelection": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "角色 UUID（无符号）",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "角色名称",
+                    "type": "string"
+                }
+            }
+        },
+        "yggdrasil.PropertyResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "属性名称（如 \"textures\"）",
+                    "type": "string"
+                },
+                "signature": {
+                    "description": "属性签名（Base64 编码，可选）",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "属性值（Base64 编码）",
+                    "type": "string"
+                }
+            }
+        },
+        "yggdrasil.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "accessToken"
+            ],
+            "properties": {
+                "accessToken": {
+                    "description": "当前令牌",
+                    "type": "string",
+                    "maxLength": 368
+                },
+                "clientToken": {
+                    "description": "客户端令牌（可选）",
+                    "type": "string",
+                    "maxLength": 368
+                },
+                "requestUser": {
+                    "description": "是否请求用户信息",
+                    "type": "boolean"
+                },
+                "selectedProfile": {
+                    "description": "要选择的角色",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/yggdrasil.ProfileSelection"
+                        }
+                    ]
+                }
+            }
+        },
+        "yggdrasil.RefreshResponse": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "description": "新的访问令牌",
+                    "type": "string"
+                },
+                "clientToken": {
+                    "description": "客户端令牌（与原令牌一致）",
+                    "type": "string"
+                },
+                "selectedProfile": {
+                    "description": "选中的角色信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/yggdrasil.ProfileResponse"
+                        }
+                    ]
+                },
+                "user": {
+                    "description": "用户信息（requestUser 时返回）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/yggdrasil.UserResponse"
+                        }
+                    ]
+                }
+            }
+        },
+        "yggdrasil.SignoutRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "description": "密码",
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "username": {
+                    "description": "邮箱或手机号",
+                    "type": "string",
+                    "maxLength": 320
+                }
+            }
+        },
+        "yggdrasil.UserPropertyResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "属性名称（如 \"preferredLanguage\"）",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "属性值",
+                    "type": "string"
+                }
+            }
+        },
+        "yggdrasil.UserResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "用户无符号 UUID",
+                    "type": "string"
+                },
+                "properties": {
+                    "description": "用户属性列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/yggdrasil.UserPropertyResponse"
+                    }
+                }
+            }
+        },
+        "yggdrasil.ValidateRequest": {
+            "type": "object",
+            "required": [
+                "accessToken"
+            ],
+            "properties": {
+                "accessToken": {
+                    "description": "访问令牌",
+                    "type": "string",
+                    "maxLength": 368
+                },
+                "clientToken": {
+                    "description": "客户端令牌（可选）",
+                    "type": "string",
+                    "maxLength": 368
+                }
+            }
+        },
+        "yggdrasil.YggdrasilError": {
+            "type": "object",
+            "properties": {
+                "cause": {
+                    "description": "错误原因（可选）",
+                    "type": "string"
+                },
+                "error": {
+                    "description": "错误标识（机器可读）",
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "description": "错误详情（人类可读）",
+                    "type": "string"
                 }
             }
         }

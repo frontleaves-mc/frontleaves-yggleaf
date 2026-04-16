@@ -83,3 +83,37 @@ func gameProfileDTOsToResponses(dtos []models.GameProfileDTO) []apiUser.GameProf
 	}
 	return responses
 }
+
+// skinSimpleDTOToResponse 将 SkinSimpleDTO 转换为 api/library.SkinSimpleResponse。
+func skinSimpleDTOToResponse(dto models.SkinSimpleDTO) apiLibrary.SkinSimpleResponse {
+	return apiLibrary.SkinSimpleResponse{
+		ID:   dto.ID,
+		Name: dto.Name,
+	}
+}
+
+// skinSimpleDTOsToResponses 批量转换。
+func skinSimpleDTOsToResponses(dtos []models.SkinSimpleDTO) []apiLibrary.SkinSimpleResponse {
+	responses := make([]apiLibrary.SkinSimpleResponse, len(dtos))
+	for i, dto := range dtos {
+		responses[i] = skinSimpleDTOToResponse(dto)
+	}
+	return responses
+}
+
+// capeSimpleDTOToResponse 将 CapeSimpleDTO 转换为 api/library.CapeSimpleResponse。
+func capeSimpleDTOToResponse(dto models.CapeSimpleDTO) apiLibrary.CapeSimpleResponse {
+	return apiLibrary.CapeSimpleResponse{
+		ID:   dto.ID,
+		Name: dto.Name,
+	}
+}
+
+// capeSimpleDTOsToResponses 批量转换。
+func capeSimpleDTOsToResponses(dtos []models.CapeSimpleDTO) []apiLibrary.CapeSimpleResponse {
+	responses := make([]apiLibrary.CapeSimpleResponse, len(dtos))
+	for i, dto := range dtos {
+		responses[i] = capeSimpleDTOToResponse(dto)
+	}
+	return responses
+}

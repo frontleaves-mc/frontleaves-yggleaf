@@ -90,6 +90,24 @@ func (r *UserCapeLibraryRepo) ListByUserID(ctx context.Context, tx *gorm.DB, use
 	return associations, total, nil
 }
 
+// ListAllByUserID 根据用户 ID 查询所有关联记录（Preload CapeLibrary，不分页）。
+//
+// 用于披风选择器等只需要 ID 和名称的场景，避免不必要的分页和纹理解析。
+func (r *UserCapeLibraryRepo) ListAllByUserID(ctx context.Context, tx *gorm.DB, userID xSnowflake.SnowflakeID) ([]entity.UserCapeLibrary, *xError.Error) {
+	r.log.Info(ctx, "ListAllByUserID - 查询用户所有披风关联（不分页）")
+
+	var associations []entity.UserCapeLibrary
+	if err := r.pickDB(ctx, tx).
+		Model(&entity.UserCapeLibrary{}).
+		Where("user_id = ?", userID).
+		Preload("CapeLibrary").
+		Order("created_at DESC").
+		Find(&associations).Error; err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "查询用户披风关联列表失败", true, err)
+	}
+	return associations, nil
+}
+
 // CountReferences 统计指定披风库被多少用户关联。
 func (r *UserCapeLibraryRepo) CountReferences(ctx context.Context, tx *gorm.DB, capeLibraryID xSnowflake.SnowflakeID) (int64, *xError.Error) {
 	r.log.Info(ctx, "CountReferences - 统计披风库关联引用数")

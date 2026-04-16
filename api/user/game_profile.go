@@ -17,6 +17,16 @@ type ChangeUsernameRequest struct {
 	NewName string `json:"new_name" binding:"required"`
 }
 
+// SetSkinRequest 设置游戏档案皮肤请求
+type SetSkinRequest struct {
+	SkinLibraryID *string `json:"skin_library_id,omitempty"` // 皮肤库 ID（null 或空字符串表示卸下）
+}
+
+// SetCapeRequest 设置游戏档案披风请求
+type SetCapeRequest struct {
+	CapeLibraryID *string `json:"cape_library_id,omitempty"` // 披风库 ID（null 或空字符串表示卸下）
+}
+
 // GameProfileResponse 游戏档案响应 DTO。
 //
 // 不再嵌入 entity.GameProfile，改为显式字段定义。
