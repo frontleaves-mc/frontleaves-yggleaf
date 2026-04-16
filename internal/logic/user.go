@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 
+	"golang.org/x/crypto/bcrypt"
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
@@ -11,6 +12,7 @@ import (
 	xModels "github.com/bamboo-services/bamboo-base-go/major/models"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
+	"github.com/frontleaves-mc/frontleaves-yggleaf/api/user"
 	bSdkModels "github.com/phalanx-labs/beacon-sso-sdk/models"
 )
 
@@ -110,4 +112,79 @@ func (l *UserLogic) TakeUser(ctx context.Context, userinfo *bSdkModels.OAuthUser
 	}
 
 	return user, nil
+}
+
+// GetUserCurrent 获取当前用户的完整信息（含扩展状态）。
+//
+// 在 TakeUser 的基础上，额外计算账户完善度信息，
+// 构建包含 extend 字段的 UserCurrentResponse DTO。
+func (l *UserLogic) GetUserCurrent(ctx context.Context, userinfo *bSdkModels.OAuthUserinfo) (*user.UserCurrentResponse, *xError.Error) {
+	l.log.Info(ctx, "GetUserCurrent - 获取用户完整信息")
+
+	// 复用现有 TakeUser 逻辑获取/创建用户
+	userEntity, xErr := l.TakeUser(ctx, userinfo)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	// 构建响应 DTO（含账户完善状态）
+	return &user.UserCurrentResponse{
+		User:   *userEntity,
+		Extend: user.UserExtend{
+			AccountReady: l.determineAccountReady(userEntity),
+		},
+	}, nil
+}
+
+// determineAccountReady 根据用户实体判断账户完善状态。
+//
+// 当前检查项：game_password 是否已填写。
+// 未来可在该方法中追加更多检查项。
+func (_ *UserLogic) determineAccountReady(userEntity *entity.User) string {
+	if userEntity.GamePassword == "" {
+		return "game_password"
+	}
+	return "ready"
+}
+
+// UpdateGamePassword 更新当前用户的游戏密码。
+//
+// 已通过 OAuth2 AT 认证的用户可直接设置/重置 game_password，
+// 无需验证旧密码。更新后返回包含最新 account_ready 状态的 UserCurrentResponse。
+func (l *UserLogic) UpdateGamePassword(ctx context.Context, userID xSnowflake.SnowflakeID, req *user.UpdateGamePasswordRequest) (*user.UserCurrentResponse, *xError.Error) {
+	l.log.Info(ctx, "UpdateGamePassword - 更新游戏密码")
+
+	// 两次密码一致性校验
+	if req.NewPassword != req.ConfirmPassword {
+		return nil, xError.NewError(ctx, xError.ParameterError, "两次输入的密码不一致", true)
+	}
+
+	// bcrypt 加密新密码
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, xError.NewError(ctx, xError.ServerInternalError, "密码加密失败", true, err)
+	}
+
+	// 获取当前用户实体
+	userEntity, found, xErr := l.repo.user.Get(ctx, userID.String())
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "用户不存在", true)
+	}
+
+	// 更新游戏密码并持久化
+	userEntity.GamePassword = string(hashedPassword)
+	if _, xErr = l.repo.user.Set(ctx, userEntity); xErr != nil {
+		return nil, xErr
+	}
+
+	// 构建含最新账户完善状态的响应
+	return &user.UserCurrentResponse{
+		User:   *userEntity,
+		Extend: user.UserExtend{
+			AccountReady: l.determineAccountReady(userEntity),
+		},
+	}, nil
 }
