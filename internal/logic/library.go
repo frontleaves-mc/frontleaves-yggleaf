@@ -119,6 +119,8 @@ func NewLibraryLogic(ctx context.Context) *LibraryLogic {
 
 // resolveTextureURL 通过 beacon-bucket SDK 的 Get 方法将 Texture ID 解析为下载链接。
 //
+// 单条解析入口，批量场景请使用 resolveTextureURLsBatch。
+//
 // 参数说明:
 //   - ctx: 请求上下文
 //   - textureID: 数据库中存储的 int64 纹理文件 ID
@@ -142,6 +144,71 @@ func (l *LibraryLogic) resolveTextureURL(ctx context.Context, textureID int64) (
 		return "", xError.NewError(ctx, xError.ServerInternalError, "纹理文件下载链接为空", true)
 	}
 	return link, nil
+}
+
+// resolveTextureURLsBatch 通过 beacon-bucket SDK 的 GetByList 接口批量解析纹理下载链接。
+//
+// 与 resolveTextureURL（单条）的区别：
+//   - 单次 RPC 获取 N 条文件信息，避免 N+1 问题
+//   - 返回 map[int64]string 便于上层按 textureID 随机访问
+//   - 严格错误语义：任一文件元数据缺失或链接为空均返回错误
+//
+// 参数说明:
+//   - ctx: 请求上下文
+//   - textureIDs: 待解析的 int64 纹理文件 ID 列表
+//
+// 返回值:
+//   - map[int64]string: textureID -> 下载链接的映射（textureID=0 的异常条目不包含在结果中）
+//   - *xError.Error: 当 Bucket 服务不可用、任一文件缺失或链接为空时返回错误
+func (l *LibraryLogic) resolveTextureURLsBatch(ctx context.Context, textureIDs []int64) (map[int64]string, *xError.Error) {
+	if len(textureIDs) == 0 {
+		return make(map[int64]string), nil
+	}
+
+	fileIDList := make([]string, 0, len(textureIDs))
+	for _, tid := range textureIDs {
+		if tid == 0 {
+			l.log.Warn(ctx, "resolveTextureURLsBatch 发现 textureID=0 的异常数据，将跳过该条目")
+			continue
+		}
+		fileIDList = append(fileIDList, strconv.FormatInt(tid, 10))
+	}
+
+	if len(fileIDList) == 0 {
+		return make(map[int64]string), nil
+	}
+
+	resp, err := l.helper.bucket.Normal.GetByList(ctx, &bBucketApi.GetByListRequest{
+		FileIdList: fileIDList,
+	})
+	if err != nil {
+		return nil, xError.NewError(ctx, xError.ServerInternalError, "批量获取纹理文件信息失败", true, err)
+	}
+
+	fileInfoList := resp.GetFileInfoList()
+	if len(fileInfoList) != len(fileIDList) {
+		return nil, xError.NewError(ctx, xError.ServerInternalError, "批量获取纹理文件信息返回数量不匹配", true)
+	}
+
+	result := make(map[int64]string, len(fileInfoList))
+	for i, info := range fileInfoList {
+		if info.GetObj() == nil {
+			return nil, xError.NewError(ctx, xError.ServerInternalError,
+				xError.ErrMessage(fmt.Sprintf("纹理文件元数据缺失(fileId=%s)", fileIDList[i])), true)
+		}
+		link := info.GetObj().GetLink()
+		if link == "" {
+			return nil, xError.NewError(ctx, xError.ServerInternalError,
+				xError.ErrMessage(fmt.Sprintf("纹理文件下载链接为空(fileId=%s)", fileIDList[i])), true)
+		}
+		originalTid, parseErr := strconv.ParseInt(fileIDList[i], 10, 64)
+		if parseErr != nil {
+			return nil, xError.NewError(ctx, xError.ServerInternalError, "解析纹理文件 ID 失败", true, parseErr)
+		}
+		result[originalTid] = link
+	}
+
+	return result, nil
 }
 
 // cacheVerifyFile 将缓存态文件确认为永久态。
@@ -211,28 +278,70 @@ func (l *LibraryLogic) buildCapeDTO(ctx context.Context, cape *entity.CapeLibrar
 
 // buildSkinDTOs 批量将 SkinLibrary 实体列表转换为 SkinDTO 列表。
 //
-// 逐个调用 resolveTextureURL 解析纹理链接。若任一解析失败，整个批次中止并返回错误。
+// 使用 GetByList 批量接口一次性解析所有纹理链接，避免循环逐个调用 Get 导致的 N+1 RPC 问题。
+// 若任一解析失败，整个批次中止并返回错误。
 func (l *LibraryLogic) buildSkinDTOs(ctx context.Context, skins []entity.SkinLibrary) ([]models.SkinDTO, *xError.Error) {
+	if len(skins) == 0 {
+		return []models.SkinDTO{}, nil
+	}
+
+	textureIDs := make([]int64, len(skins))
+	for i, skin := range skins {
+		textureIDs[i] = skin.Texture
+	}
+
+	urlMap, xErr := l.resolveTextureURLsBatch(ctx, textureIDs)
+	if xErr != nil {
+		return nil, xErr
+	}
+
 	responses := make([]models.SkinDTO, len(skins))
 	for i, skin := range skins {
-		resp, xErr := l.buildSkinDTO(ctx, &skin)
-		if xErr != nil {
-			return nil, xErr
+		url, _ := urlMap[skin.Texture]
+		responses[i] = models.SkinDTO{
+			ID:          skin.ID,
+			UserID:      skin.UserID,
+			Name:        skin.Name,
+			TextureURL:  url,
+			TextureHash: skin.TextureHash,
+			Model:       skin.Model,
+			IsPublic:    skin.IsPublic,
+			UpdatedAt:   skin.UpdatedAt,
 		}
-		responses[i] = *resp
 	}
 	return responses, nil
 }
 
 // buildCapeDTOs 批量将 CapeLibrary 实体列表转换为 CapeDTO 列表。
+//
+// 使用 GetByList 批量接口一次性解析所有纹理链接，避免 N+1 RPC 问题。
 func (l *LibraryLogic) buildCapeDTOs(ctx context.Context, capes []entity.CapeLibrary) ([]models.CapeDTO, *xError.Error) {
+	if len(capes) == 0 {
+		return []models.CapeDTO{}, nil
+	}
+
+	textureIDs := make([]int64, len(capes))
+	for i, cape := range capes {
+		textureIDs[i] = cape.Texture
+	}
+
+	urlMap, xErr := l.resolveTextureURLsBatch(ctx, textureIDs)
+	if xErr != nil {
+		return nil, xErr
+	}
+
 	responses := make([]models.CapeDTO, len(capes))
 	for i, cape := range capes {
-		resp, xErr := l.buildCapeDTO(ctx, &cape)
-		if xErr != nil {
-			return nil, xErr
+		url, _ := urlMap[cape.Texture]
+		responses[i] = models.CapeDTO{
+			ID:          cape.ID,
+			UserID:      cape.UserID,
+			Name:        cape.Name,
+			TextureURL:  url,
+			TextureHash: cape.TextureHash,
+			IsPublic:    cape.IsPublic,
+			UpdatedAt:   cape.UpdatedAt,
 		}
-		responses[i] = *resp
 	}
 	return responses, nil
 }
@@ -268,18 +377,35 @@ func (l *LibraryLogic) buildCapeSimpleDTOs(associations []entity.UserCapeLibrary
 // buildUserSkinAssociationDTOs 将 UserSkinLibrary 关联列表转换为 SkinDTO 列表。
 //
 // 从关联实体中提取 SkinLibrary（GORM Preload）和 AssignmentType，
-// 并调用 bucket.Get 解析纹理链接。
+// 使用 GetByList 批量接口一次性解析所有纹理链接。
 func (l *LibraryLogic) buildUserSkinAssociationDTOs(ctx context.Context, associations []entity.UserSkinLibrary) ([]models.SkinDTO, *xError.Error) {
+	if len(associations) == 0 {
+		return []models.SkinDTO{}, nil
+	}
+
+	textureIDs := make([]int64, 0, len(associations))
+	for _, assoc := range associations {
+		if assoc.SkinLibrary != nil && assoc.SkinLibrary.Texture != 0 {
+			textureIDs = append(textureIDs, assoc.SkinLibrary.Texture)
+		}
+	}
+
+	var urlMap map[int64]string
+	var xErr *xError.Error
+	if len(textureIDs) > 0 {
+		urlMap, xErr = l.resolveTextureURLsBatch(ctx, textureIDs)
+		if xErr != nil {
+			return nil, xErr
+		}
+	} else {
+		urlMap = make(map[int64]string)
+	}
+
 	responses := make([]models.SkinDTO, len(associations))
 	for i, assoc := range associations {
-		resp := models.SkinDTO{
-			AssignmentType: assoc.AssignmentType,
-		}
+		resp := models.SkinDTO{AssignmentType: assoc.AssignmentType}
 		if assoc.SkinLibrary != nil {
-			url, xErr := l.resolveTextureURL(ctx, assoc.SkinLibrary.Texture)
-			if xErr != nil {
-				return nil, xErr
-			}
+			url, _ := urlMap[assoc.SkinLibrary.Texture]
 			resp.ID = assoc.SkinLibrary.ID
 			resp.UserID = assoc.SkinLibrary.UserID
 			resp.Name = assoc.SkinLibrary.Name
@@ -295,17 +421,36 @@ func (l *LibraryLogic) buildUserSkinAssociationDTOs(ctx context.Context, associa
 }
 
 // buildUserCapeAssociationDTOs 将 UserCapeLibrary 关联列表转换为 CapeDTO 列表。
+//
+// 使用 GetByList 批量接口一次性解析所有纹理链接。
 func (l *LibraryLogic) buildUserCapeAssociationDTOs(ctx context.Context, associations []entity.UserCapeLibrary) ([]models.CapeDTO, *xError.Error) {
+	if len(associations) == 0 {
+		return []models.CapeDTO{}, nil
+	}
+
+	textureIDs := make([]int64, 0, len(associations))
+	for _, assoc := range associations {
+		if assoc.CapeLibrary != nil && assoc.CapeLibrary.Texture != 0 {
+			textureIDs = append(textureIDs, assoc.CapeLibrary.Texture)
+		}
+	}
+
+	var urlMap map[int64]string
+	var xErr *xError.Error
+	if len(textureIDs) > 0 {
+		urlMap, xErr = l.resolveTextureURLsBatch(ctx, textureIDs)
+		if xErr != nil {
+			return nil, xErr
+		}
+	} else {
+		urlMap = make(map[int64]string)
+	}
+
 	responses := make([]models.CapeDTO, len(associations))
 	for i, assoc := range associations {
-		resp := models.CapeDTO{
-			AssignmentType: assoc.AssignmentType,
-		}
+		resp := models.CapeDTO{AssignmentType: assoc.AssignmentType}
 		if assoc.CapeLibrary != nil {
-			url, xErr := l.resolveTextureURL(ctx, assoc.CapeLibrary.Texture)
-			if xErr != nil {
-				return nil, xErr
-			}
+			url, _ := urlMap[assoc.CapeLibrary.Texture]
 			resp.ID = assoc.CapeLibrary.ID
 			resp.UserID = assoc.CapeLibrary.UserID
 			resp.Name = assoc.CapeLibrary.Name
@@ -390,15 +535,24 @@ func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.Snowfla
 	// 事务成功后确认文件转为永久态（必须在 DB 写入成功后调用）
 	l.cacheVerifyFile(ctx, uploadResp.FileId)
 
-	// 将 entity 转换为 DTO（含纹理链接解析）
-	skinDTO, xErr := l.buildSkinDTO(ctx, createdSkin)
-	if xErr != nil {
-		return nil, xErr
-	}
-
-	// M3 优化：复用 UploadResponse 中已有的下载链接，避免冗余 Get 调用
+	// 直接从 UploadResponse 构建 DTO，复用上传返回的下载链接，避免冗余 Get 调用
+	var skinDTO *models.SkinDTO
 	if uploadResp.GetObj() != nil && uploadResp.GetObj().GetLink() != "" {
-		skinDTO.TextureURL = uploadResp.GetObj().GetLink()
+		skinDTO = &models.SkinDTO{
+			ID:          createdSkin.ID,
+			UserID:      createdSkin.UserID,
+			Name:        createdSkin.Name,
+			TextureURL:  uploadResp.GetObj().GetLink(),
+			TextureHash: createdSkin.TextureHash,
+			Model:       createdSkin.Model,
+			IsPublic:    createdSkin.IsPublic,
+			UpdatedAt:   createdSkin.UpdatedAt,
+		}
+	} else {
+		skinDTO, xErr = l.buildSkinDTO(ctx, createdSkin)
+		if xErr != nil {
+			return nil, xErr
+		}
 	}
 	return skinDTO, nil
 }
@@ -629,15 +783,23 @@ func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.Snowfla
 	// 事务成功后确认文件转为永久态（必须在 DB 写入成功后调用）
 	l.cacheVerifyFile(ctx, uploadResp.FileId)
 
-	// 将 entity 转换为 DTO（含纹理链接解析）
-	capeDTO, xErr := l.buildCapeDTO(ctx, createdCape)
-	if xErr != nil {
-		return nil, xErr
-	}
-
-	// M3 优化：复用 UploadResponse 中已有的下载链接，避免冗余 Get 调用
+	// 直接从 UploadResponse 构建 DTO，复用上传返回的下载链接，避免冗余 Get 调用
+	var capeDTO *models.CapeDTO
 	if uploadResp.GetObj() != nil && uploadResp.GetObj().GetLink() != "" {
-		capeDTO.TextureURL = uploadResp.GetObj().GetLink()
+		capeDTO = &models.CapeDTO{
+			ID:          createdCape.ID,
+			UserID:      createdCape.UserID,
+			Name:        createdCape.Name,
+			TextureURL:  uploadResp.GetObj().GetLink(),
+			TextureHash: createdCape.TextureHash,
+			IsPublic:    createdCape.IsPublic,
+			UpdatedAt:   createdCape.UpdatedAt,
+		}
+	} else {
+		capeDTO, xErr = l.buildCapeDTO(ctx, createdCape)
+		if xErr != nil {
+			return nil, xErr
+		}
 	}
 	return capeDTO, nil
 }
