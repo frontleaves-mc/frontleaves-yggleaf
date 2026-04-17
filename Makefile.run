@@ -1,0 +1,394 @@
+# ============================================================================
+# YggLeaf Docker 运行管理脚本 (服务器端)
+# Frontleaves - Phalanx Labs
+#
+# 用途: 服务器端管理 Docker Compose 服务
+# 使用: 在服务器上将此文件重命名为 Makefile 后使用
+# ============================================================================
+
+COMPOSE_FILE ?= docker-compose.yml
+SERVICE_NAME ?= frontleaves-yggleaf
+COMPOSE_PROJECT_NAME ?= frontleaves-yggleaf
+
+DOCKER_COMPOSE := docker compose -f $(COMPOSE_FILE) -p $(COMPOSE_PROJECT_NAME)
+
+ifeq ($(shell which gum 2>/dev/null),)
+	USE_GUM := false
+else
+	USE_GUM := true
+endif
+
+.PHONY: help run update logs down restart ps shell pull stats clean backup restore create-key
+
+help:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style \
+			--foreground 45 --bold \
+			"  __  __          _   _ _____ ____  " \
+			" |  \/  |   /\   | \ | |_   _/ __ \ " \
+			" | |\/| |  /  \  |  \| | | || |  | |" \
+			" | |  | | / /\ \ | . ` | | || |  | |" \
+			" |_|  |_|/_/  \_\_|\_\_| |_||_|  |_|" \
+			"" \
+			"     YggLeaf Docker 运行管理 v1.0       " \
+			"" \
+			"          服务器端部署脚本                    "; \
+	else \
+		echo "  __  __          _   _ _____ ____  "; \
+		echo " |  \\/  |   /\\   | \\ | |_   _/ __ \\ "; \
+		echo " | |\\/| |  /  \\  |  \\| | | || |  | |"; \
+		echo " | |  | | / /\\ \\ | . \\` | | || |  | |"; \
+		echo " |_|  |_|/_/  \\_\\_|\\_\\_| |_||_|  |_|"; \
+		echo ""; \
+		echo "     YggLeaf Docker 运行管理 v1.0       "; \
+		echo ""; \
+		echo "          服务器端部署脚本                    "; \
+	fi
+	@echo ""
+	@echo "📋 核心命令:"
+	@echo ""
+	@echo "  make run       - 拉取最新镜像并启动服务 (推荐首次使用)"
+	@echo "  make update    - 拉取镜像并重启服务"
+	@echo "  make logs      - 查看容器日志"
+	@echo "  make down      - 停止并删除容器"
+	@echo "  make restart   - 重启容器服务"
+	@echo ""
+	@echo "🔧 管理命令:"
+	@echo ""
+	@echo "  make ps        - 查看服务状态"
+	@echo "  make shell     - 进入容器 Shell"
+	@echo "  make pull      - 仅拉取最新镜像"
+	@echo "  make stats     - 查看资源使用统计"
+	@echo ""
+	@echo "🛠️  维护命令:"
+	@echo ""
+	@echo "  make clean     - 清理未使用的镜像和容器"
+	@echo "  make backup    - 备份 .env 配置"
+	@echo "  make restore   - 恢复 .env 配置"
+	@echo ""
+	@echo "🔍 快捷示例:"
+	@echo ""
+	@echo "  首次启动:     make run"
+	@echo "  更新服务:     make update"
+	@echo "  查看日志:     make logs"
+	@echo "  停止服务:     make down"
+	@echo ""
+	@echo "💡 提示: 所有命令都支持环境变量覆盖"
+	@echo "   COMPOSE_FILE=docker-compose.prod.yml make run"
+	@echo ""
+
+run:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 --bold "🚀 启动服务"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "🚀 启动服务"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@echo "📋 检查 Docker 环境..."
+	@command -v docker >/dev/null 2>&1 || { \
+		if [ "$(USE_GUM)" = "true" ]; then \
+			gum style --foreground 196 "❌ Docker 未安装"; \
+		else \
+			echo "❌ Docker 未安装"; \
+		fi; \
+		exit 1; \
+	}
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 "✓ Docker 已安装"; \
+	else \
+		echo "✓ Docker 已安装"; \
+	fi
+	@echo ""
+	@echo "📋 检查 Docker Compose..."
+	@docker compose version >/dev/null 2>&1 || { \
+		if [ "$(USE_GUM)" = "true" ]; then \
+			gum style --foreground 196 "❌ Docker Compose 未安装"; \
+		else \
+			echo "❌ Docker Compose 未安装"; \
+		fi; \
+		exit 1; \
+	}
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 "✓ Docker Compose 已安装"; \
+	else \
+		echo "✓ Docker Compose 已安装"; \
+	fi
+	@echo ""
+	@echo "📋 检查配置文件..."
+	@if [ ! -f "$(COMPOSE_FILE)" ]; then \
+		if [ "$(USE_GUM)" = "true" ]; then \
+			gum style --foreground 196 "❌ docker-compose.yml 不存在"; \
+		else \
+			echo "❌ docker-compose.yml 不存在"; \
+		fi; \
+		exit 1; \
+	fi
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 "✓ docker-compose.yml 已找到"; \
+	else \
+		echo "✓ docker-compose.yml 已找到"; \
+	fi
+	@if [ ! -f .env ]; then \
+		if [ "$(USE_GUM)" = "true" ]; then \
+			gum style --foreground 214 "⚠️  .env 文件不存在，跳过环境变量加载"; \
+		else \
+			echo "⚠️  .env 文件不存在，跳过环境变量加载"; \
+		fi; \
+	else \
+		if [ "$(USE_GUM)" = "true" ]; then \
+			gum style --foreground 82 "✓ .env 已找到"; \
+		else \
+			echo "✓ .env 已找到"; \
+		fi; \
+	fi
+	@echo ""
+	@echo "📦 拉取最新镜像..."
+	@$(DOCKER_COMPOSE) pull
+	@echo ""
+	@echo "🚀 启动服务..."
+	@$(DOCKER_COMPOSE) up -d
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 --border double --padding "1 3" \
+			"✓ 服务启动成功！"; \
+	else \
+		echo "╔══════════════════════════════╗"; \
+		echo "║     ✓ 服务启动成功！          ║"; \
+		echo "╚══════════════════════════════╝"; \
+	fi
+	@echo ""
+	@echo "💡 使用 'make logs' 查看日志"
+	@echo "💡 使用 'make ps' 查看状态"
+
+update:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "🔄 更新服务"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "🔄 更新服务"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@echo "📦 拉取最新镜像..."
+	@$(DOCKER_COMPOSE) pull
+	@echo ""
+	@echo "🔄 重启服务..."
+	@$(DOCKER_COMPOSE) up -d
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 "✓ 服务更新完成！"; \
+	else \
+		echo "✓ 服务更新完成！"; \
+	fi
+
+logs:
+	@$(DOCKER_COMPOSE) logs -f --tail=100 $(SERVICE_NAME)
+
+down:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 196 --bold "🛑 停止服务"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "🛑 停止服务"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@$(DOCKER_COMPOSE) down
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 214 "⚠️  服务已停止"; \
+	else \
+		echo "⚠️  服务已停止"; \
+	fi
+
+restart:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "🔄 重启服务"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "🔄 重启服务"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@$(DOCKER_COMPOSE) restart
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 "✓ 服务已重启"; \
+	else \
+		echo "✓ 服务已重启"; \
+	fi
+
+ps:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "📊 服务状态"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "📊 服务状态"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@$(DOCKER_COMPOSE) ps
+
+shell:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "🐚 进入容器"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "🐚 进入容器"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@$(DOCKER_COMPOSE) exec $(SERVICE_NAME) /bin/sh
+
+pull:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "📦 拉取镜像"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "📦 拉取镜像"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@$(DOCKER_COMPOSE) pull
+
+stats:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "📈 资源统计"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "📈 资源统计"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@docker stats --no-stream $(COMPOSE_PROJECT_NAME)-$(SERVICE_NAME)-1 2>/dev/null || \
+		docker stats --no-stream | grep -E "CONTAINER|$(SERVICE_NAME)"
+
+clean:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 214 --bold "🧹 清理资源"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "🧹 清理资源"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@echo "⚠️  此操作将删除未使用的 Docker 镜像和容器"
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum confirm "确认继续?" && \
+			gum style --foreground 82 "✓ 清理完成" || \
+			gum style --foreground 214 "⚠️  已取消"; \
+	else \
+		read -p "确认继续? [y/N] " confirm; \
+		if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
+			docker system prune -f; \
+			echo "✓ 清理完成"; \
+		else \
+			echo "⚠️  已取消"; \
+		fi \
+	fi
+
+backup:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "💾 备份配置"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "💾 备份配置"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@if [ ! -f .env ]; then \
+		if [ "$(USE_GUM)" = "true" ]; then \
+			gum style --foreground 196 "❌ .env 文件不存在"; \
+		else \
+			echo "❌ .env 文件不存在"; \
+		fi; \
+		exit 1; \
+	fi
+	@BACKUP_FILE=".env.backup.$$(date +%Y%m%d_%H%M%S)"; \
+	cp .env "$$BACKUP_FILE"; \
+	if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 "✓ 配置已备份到: $$BACKUP_FILE"; \
+	else \
+		echo "✓ 配置已备份到: $$BACKUP_FILE"; \
+	fi
+
+restore:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "📂 恢复配置"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "📂 恢复配置"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@BACKUP_FILE=$$(ls -t .env.backup.* 2>/dev/null | head -1); \
+	if [ -z "$$BACKUP_FILE" ]; then \
+		if [ "$(USE_GUM)" = "true" ]; then \
+			gum style --foreground 196 "❌ 未找到备份文件"; \
+		else \
+			echo "❌ 未找到备份文件"; \
+		fi; \
+		exit 1; \
+	fi; \
+	echo "📋 找到备份: $$BACKUP_FILE"; \
+	cp "$$BACKUP_FILE" .env; \
+	if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 "✓ 配置已恢复"; \
+	else \
+		echo "✓ 配置已恢复"; \
+	fi
+
+# 生成 Yggdrasil RSA 密钥对
+create-key:
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 39 --bold "🔑 生成密钥对"; \
+		gum style --foreground 240 "────────────────────────────────────────"; \
+	else \
+		echo "🔑 生成密钥对"; \
+		echo "────────────────────────────────────────"; \
+	fi
+	@echo ""
+	@mkdir -p keys
+	@if [ -f keys/yggdrasil_private.pem ]; then \
+		if [ "$(USE_GUM)" = "true" ]; then \
+			gum style --foreground 214 "⚠️  已存在私钥，先备份..."; \
+		else \
+			echo "⚠️  已存在私钥，先备份..."; \
+		fi; \
+		cp keys/yggdrasil_private.pem "keys/yggdrasil_private.pem.backup.$$(date +%Y%m%d_%H%M%S)"; \
+	fi
+	@echo "📦 生成 RSA 2048 位密钥对..."
+	@openssl genrsa -traditional -out keys/yggdrasil_private.pem 2048 2>/dev/null
+	@openssl rsa -in keys/yggdrasil_private.pem -pubout -out keys/yggdrasil_public.pem 2>/dev/null
+	@chmod 600 keys/yggdrasil_private.pem
+	@chmod 644 keys/yggdrasil_public.pem
+	@echo ""
+	@if [ "$(USE_GUM)" = "true" ]; then \
+		gum style --foreground 82 --border double --padding "1 3" \
+			"✓ 密钥对生成成功！"; \
+	else \
+		echo "╔══════════════════════════════╗"; \
+		echo "║     ✓ 密钥对生成成功！          ║"; \
+		echo "╚══════════════════════════════╝"; \
+	fi
+	@echo ""
+	@echo "  📁 keys/yggdrasil_private.pem (600)"
+	@echo "  📁 keys/yggdrasil_public.pem  (644)"
+	@echo ""
+	@echo "💡 提示: 请重启服务使新密钥生效: make restart"
