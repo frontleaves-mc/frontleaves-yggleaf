@@ -12,6 +12,7 @@ services:
       - "5577:5577"
     volumes:
       - .logs:/app/.logs
+      - ./keys:/app/keys
     networks:
       - default
       - 1panel-network
