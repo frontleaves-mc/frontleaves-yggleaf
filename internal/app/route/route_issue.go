@@ -25,7 +25,9 @@ func (r *route) issueRouter(route gin.IRouter) {
 	}
 
 	// ---- 管理员路由组 ----
-	adminGroup := issueGroup.Group("/admin")
+	adminGroup := route.Group("/admin/issue")
+	adminGroup.Use(bSdkMiddle.CheckAuth(r.context))
+	adminGroup.Use(middleware.User(r.context))
 	adminGroup.Use(middleware.Admin(r.context))
 
 	{

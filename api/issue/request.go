@@ -5,9 +5,9 @@ import xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 // CreateIssueRequest 提交问题请求。
 type CreateIssueRequest struct {
 	IssueTypeID xSnowflake.SnowflakeID `json:"issue_type_id" binding:"required"`
-	Title       string                 `json:"title" binding:"required,max=128"`
+	Title       string                 `json:"title" binding:"required,min=1,max=128"`
 	Content     string                 `json:"content" binding:"required,max=10000"`
-	Priority    string                 `json:"priority" binding:"omitempty,oneof=low medium high urgent"`
+	Priority    string                 `json:"priority" binding:"omitempty,oneof=low medium high urgent"` // 值域须与 bConst.IssuePriority 常量保持同步
 }
 
 // ReplyIssueRequest 回复问题请求。
@@ -24,9 +24,10 @@ type UploadAttachmentRequest struct {
 
 // IssueListQuery 问题列表查询参数。
 type IssueListQuery struct {
-	Page     int    `form:"page" binding:"omitempty,min=1"`
-	PageSize int    `form:"page_size" binding:"omitempty,min=1,max=50"`
-	Status   string `form:"status" binding:"omitempty,oneof=registered pending processing resolved unplanned closed"`
-	Priority string `form:"priority" binding:"omitempty,oneof=low medium high urgent"`
-	Keyword  string `form:"keyword" binding:"omitempty,max=64"`
+	Page       int                  `form:"page" binding:"omitempty,min=1"`
+	PageSize   int                  `form:"page_size" binding:"omitempty,min=1,max=50"`
+	Status     string               `form:"status" binding:"omitempty,oneof=registered pending processing resolved unplanned closed"`
+	Priority   string               `form:"priority" binding:"omitempty,oneof=low medium high urgent"`
+	IssueTypeID xSnowflake.SnowflakeID `form:"issue_type_id"`
+	Keyword    string               `form:"keyword" binding:"omitempty,max=64"`
 }

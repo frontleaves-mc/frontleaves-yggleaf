@@ -20,8 +20,8 @@ type IssueHandler handler
 
 const (
 	issueDefaultPage     = 1
-	issueDefaultPageSize = 20
-	issueMaxPageSize     = 100
+	issueDefaultPageSize = 20 // 默认每页条数，用户可通过 page_size 覆盖
+	issueMaxPageSize     = 50 // 每页上限，与 IssueListQuery.PageSize binding:"max=50" 对齐
 )
 
 // ==================== 用户端接口 ====================
@@ -60,7 +60,26 @@ func (h *IssueHandler) GetIssueList(ctx *gin.Context) {
 	h.log.Info(ctx, "GetIssueList - 获取我的问题列表")
 	page, pageSize := h.parsePagination(ctx)
 	userinfo := ctx.MustGet(bConst.CtxUserinfoKey).(*entity.User)
-	items, total, xErr := h.service.issueLogic.GetIssueList(ctx.Request.Context(), userinfo.ID, page, pageSize)
+
+	var status *bConst.IssueStatus
+	if s := ctx.Query("status"); s != "" {
+		st := bConst.IssueStatus(s)
+		status = &st
+	}
+	var priority *bConst.IssuePriority
+	if p := ctx.Query("priority"); p != "" {
+		pr := bConst.IssuePriority(p)
+		priority = &pr
+	}
+	var issueTypeID *xSnowflake.SnowflakeID
+	if tidStr := ctx.Query("issue_type_id"); tidStr != "" {
+		if tid, parseErr := strconv.ParseInt(tidStr, 10, 64); parseErr == nil {
+			id := xSnowflake.SnowflakeID(tid)
+			issueTypeID = &id
+		}
+	}
+
+	items, total, xErr := h.service.issueLogic.GetIssueList(ctx.Request.Context(), userinfo.ID, page, pageSize, status, priority, issueTypeID)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -80,7 +99,9 @@ func (h *IssueHandler) GetIssueDetail(ctx *gin.Context) {
 		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "无效的问题 ID", true, err))
 		return
 	}
-	dto, xErr := h.service.issueLogic.GetIssueDetail(ctx.Request.Context(), issueID)
+	userinfo := ctx.MustGet(bConst.CtxUserinfoKey).(*entity.User)
+	isAdmin := isAdminRole(userinfo)
+	dto, xErr := h.service.issueLogic.GetIssueDetail(ctx.Request.Context(), issueID, userinfo.ID, isAdmin)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -101,7 +122,7 @@ func (h *IssueHandler) ReplyIssue(ctx *gin.Context) {
 		return
 	}
 	userinfo := ctx.MustGet(bConst.CtxUserinfoKey).(*entity.User)
-	isAdmin := userinfo.RoleName != nil && (*userinfo.RoleName == "SUPER_ADMIN" || *userinfo.RoleName == "ADMIN")
+	isAdmin := isAdminRole(userinfo)
 	dto, xErr := h.service.issueLogic.ReplyIssue(ctx.Request.Context(), issueID, userinfo.ID, req.Content, isAdmin)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
@@ -123,7 +144,8 @@ func (h *IssueHandler) UploadAttachment(ctx *gin.Context) {
 		return
 	}
 	userinfo := ctx.MustGet(bConst.CtxUserinfoKey).(*entity.User)
-	dto, xErr := h.service.issueLogic.UploadAttachment(ctx.Request.Context(), issueID, userinfo.ID, req.FileName, req.Content, req.MimeType)
+	isAdmin := isAdminRole(userinfo)
+	dto, xErr := h.service.issueLogic.UploadAttachment(ctx.Request.Context(), issueID, userinfo.ID, isAdmin, req.FileName, req.Content, req.MimeType)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
@@ -139,7 +161,9 @@ func (h *IssueHandler) DeleteAttachment(ctx *gin.Context) {
 		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "无效的附件 ID", true, err))
 		return
 	}
-	if xErr := h.service.issueLogic.DeleteAttachment(ctx.Request.Context(), attachmentID); xErr != nil {
+	userinfo := ctx.MustGet(bConst.CtxUserinfoKey).(*entity.User)
+	isAdmin := isAdminRole(userinfo)
+	if xErr := h.service.issueLogic.DeleteAttachment(ctx.Request.Context(), attachmentID, userinfo.ID, isAdmin); xErr != nil {
 		_ = ctx.Error(xErr)
 		return
 	}
@@ -307,6 +331,13 @@ func (h *IssueHandler) DeleteIssueType(ctx *gin.Context) {
 
 // ==================== Helper Methods ====================
 
+// isAdminRole 判断用户是否具有管理员角色（SUPER_ADMIN 或 ADMIN）。
+func isAdminRole(userinfo *entity.User) bool {
+	return userinfo.RoleName != nil && (*userinfo.RoleName == "SUPER_ADMIN" || *userinfo.RoleName == "ADMIN")
+}
+
+// parsePagination 从请求中解析分页参数，返回 (page, pageSize)。
+// 缺失或非法值回退到默认值（page=1, pageSize=20），pageSize 上限截断为 50。
 func (h *IssueHandler) parsePagination(ctx *gin.Context) (int, int) {
 	pageStr := ctx.DefaultQuery("page", strconv.Itoa(issueDefaultPage))
 	pageSizeStr := ctx.DefaultQuery("page_size", strconv.Itoa(issueDefaultPageSize))

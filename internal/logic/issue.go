@@ -24,10 +24,10 @@ import (
 )
 
 const (
-	minReplyLength    = 1
-	maxReplyLength    = 2000
-	maxAdminNoteLength = 500
-	maxAttachments     = 5
+	minReplyLength     = 1
+	maxReplyLength     = 5000
+	maxAdminNoteLength = 2000
+	maxAttachments     = 9
 )
 
 // issueRepo 问题数据访问适配器。
@@ -104,9 +104,6 @@ func NewIssueLogic(ctx context.Context) *IssueLogic {
 // ==================== Bucket Helper Methods ====================
 
 // cacheVerifyFile 将缓存态文件确认为永久态。
-//
-// 必须在数据库事务成功后调用。失败仅记录日志不返回错误，
-// 因为 CacheVerify 是幂等接口，已确认的文件重复调用不会产生副作用。
 func (l *IssueLogic) cacheVerifyFile(ctx context.Context, fileId string) {
 	_, err := l.helper.bucket.Normal.CacheVerify(ctx, &bBucketApi.CacheVerifyRequest{
 		FileId: fileId,
@@ -219,25 +216,28 @@ func (l *IssueLogic) decodeBase64Attachment(ctx context.Context, content string)
 // validateAttachmentMIME 校验附件 MIME 类型是否合法。
 func (l *IssueLogic) validateAttachmentMIME(mimeType string) bool {
 	allowedMIMEs := map[string]bool{
-		"image/jpeg":   true,
-		"image/png":    true,
-		"image/gif":    true,
-		"image/webp":   true,
-		"application/pdf": true,
-		"text/plain":   true,
+		"image/jpeg":                    true,
+		"image/png":                     true,
+		"image/gif":                     true,
+		"image/webp":                    true,
+		"application/pdf":               true,
+		"text/plain":                    true,
+		"application/zip":               true,
+		"application/x-rar-compressed":  true,
+		"application/x-rar":             true,
 	}
 	return allowedMIMEs[mimeType]
 }
 
 // ==================== Build Helpers ====================
 
-// buildIssueDTO 将 Issue 实体转换为 IssueDTO。
-func (l *IssueLogic) buildIssueDTO(ctx context.Context, issue *entity.Issue, replyCount, attachmentCount int) (*models.IssueDTO, *xError.Error) {
+// buildIssueDTO 将 Issue 实体转换为 IssueDTO。isAdmin 控制 AdminNote 是否暴露。
+func (l *IssueLogic) buildIssueDTO(ctx context.Context, issue *entity.Issue, replyCount, attachmentCount int, isAdmin bool) (*models.IssueDTO, *xError.Error) {
 	typeName := ""
 	if issue.IssueType != nil {
 		typeName = issue.IssueType.Name
 	}
-	return &models.IssueDTO{
+	dto := &models.IssueDTO{
 		ID:              issue.ID,
 		UserID:          issue.UserID,
 		IssueTypeID:     issue.IssueTypeID,
@@ -246,13 +246,16 @@ func (l *IssueLogic) buildIssueDTO(ctx context.Context, issue *entity.Issue, rep
 		Content:         issue.Content,
 		Status:          issue.Status,
 		Priority:        issue.Priority,
-		AdminNote:       issue.AdminNote,
 		ClosedAt:        issue.ClosedAt,
 		ReplyCount:      replyCount,
 		AttachmentCount: attachmentCount,
 		CreatedAt:       issue.CreatedAt,
 		UpdatedAt:       issue.UpdatedAt,
-	}, nil
+	}
+	if isAdmin {
+		dto.AdminNote = issue.AdminNote
+	}
+	return dto, nil
 }
 
 // buildAttachmentDTOs 将 IssueAttachment 实体列表转换为 IssueAttachmentDTO 列表。
@@ -300,6 +303,18 @@ func (l *IssueLogic) CreateIssue(
 ) (*models.IssueDTO, *xError.Error) {
 	l.log.Info(ctx, "CreateIssue - 创建问题")
 
+	// 校验 IssueTypeID 存在且启用
+	itType, found, xErr := l.repo.issueTypeRepo.GetByID(ctx, nil, issueTypeID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ParameterError, "问题类型不存在", true)
+	}
+	if !itType.IsEnabled {
+		return nil, xError.NewError(ctx, xError.ParameterError, "该问题类型已禁用", true)
+	}
+
 	issue := &entity.Issue{
 		UserID:      userID,
 		IssueTypeID: issueTypeID,
@@ -311,26 +326,33 @@ func (l *IssueLogic) CreateIssue(
 	if xErr != nil {
 		return nil, xErr
 	}
-	return l.buildIssueDTO(ctx, created, 0, 0)
+	// 写入缓存（失败仅 Warn）
+	if setErr := l.repo.cache.Set(ctx, created.ID, issue); setErr != nil {
+		l.log.Warn(ctx, fmt.Sprintf("创建 Issue 后写缓存失败(id=%d): %v", created.ID, setErr))
+	}
+	return l.buildIssueDTO(ctx, created, 0, 0, false)
 }
 
-// GetIssueList 获取当前用户的问题列表（分页）。
+// GetIssueList 获取当前用户的问题列表（分页，支持筛选）。
 func (l *IssueLogic) GetIssueList(
 	ctx context.Context,
 	userID xSnowflake.SnowflakeID,
 	page int,
 	pageSize int,
+	status *bConst.IssueStatus,
+	priority *bConst.IssuePriority,
+	issueTypeID *xSnowflake.SnowflakeID,
 ) ([]models.IssueDTO, int64, *xError.Error) {
 	l.log.Info(ctx, "GetIssueList - 获取用户问题列表")
 
-	issues, total, xErr := l.repo.issueRepo.ListByUserID(ctx, userID, page, pageSize)
+	issues, total, xErr := l.repo.issueRepo.ListByUserID(ctx, userID, page, pageSize, status, priority, issueTypeID)
 	if xErr != nil {
 		return nil, 0, xErr
 	}
 
 	dtos := make([]models.IssueDTO, len(issues))
 	for i, issue := range issues {
-		dto, buildErr := l.buildIssueDTO(ctx, &issue, 0, 0)
+		dto, buildErr := l.buildIssueDTO(ctx, &issue, 0, 0, false)
 		if buildErr != nil {
 			return nil, 0, buildErr
 		}
@@ -358,7 +380,7 @@ func (l *IssueLogic) GetIssueListAdmin(
 
 	dtos := make([]models.IssueDTO, len(issues))
 	for i, issue := range issues {
-		dto, buildErr := l.buildIssueDTO(ctx, &issue, 0, 0)
+		dto, buildErr := l.buildIssueDTO(ctx, &issue, 0, 0, true)
 		if buildErr != nil {
 			return nil, 0, buildErr
 		}
@@ -371,19 +393,51 @@ func (l *IssueLogic) GetIssueListAdmin(
 func (l *IssueLogic) GetIssueDetail(
 	ctx context.Context,
 	issueID xSnowflake.SnowflakeID,
+	userID xSnowflake.SnowflakeID,
+	isAdmin bool,
 ) (*models.IssueDetailDTO, *xError.Error) {
 	l.log.Info(ctx, "GetIssueDetail - 获取问题详情")
 
-	issue, found, xErr := l.repo.issueRepo.GetByID(ctx, nil, issueID)
-	if xErr != nil {
-		return nil, xErr
+	// 优先读缓存
+	var issue *entity.Issue
+	cachedIssue, cacheErr := l.repo.cache.Get(ctx, issueID)
+	if cacheErr != nil {
+		l.log.Warn(ctx, fmt.Sprintf("读取 Issue 缓存失败(id=%d): %v", issueID, cacheErr))
+		// 缓存失败降级到 DB 查询
 	}
-	if !found {
-		return nil, xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
+	if cachedIssue != nil {
+		issue = cachedIssue
+	} else {
+		found := false
+		var xErr *xError.Error
+		issue, found, xErr = l.repo.issueRepo.GetByID(ctx, nil, issueID)
+		if xErr != nil {
+			return nil, xErr
+		}
+		if !found {
+			return nil, xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
+		}
+		// 回写缓存（失败仅 Warn）
+		if setErr := l.repo.cache.Set(ctx, issueID, issue); setErr != nil {
+			l.log.Warn(ctx, fmt.Sprintf("写入 Issue 缓存失败(id=%d): %v", issueID, setErr))
+		}
+	}
+
+	// 补充 IssueType 关联（缓存和 GetByID 均不携带关联数据）
+	if issue.IssueType == nil && issue.IssueTypeID != 0 {
+		it, found, xErr := l.repo.issueTypeRepo.GetByID(ctx, nil, issue.IssueTypeID)
+		if xErr == nil && found {
+			issue.IssueType = it
+		}
+	}
+
+	// 权限校验：非管理员只能查看自己的问题
+	if !isAdmin && issue.UserID != userID {
+		return nil, xError.NewError(ctx, xError.PermissionDenied, "无权查看该问题", true)
 	}
 
 	// 查询回复列表
-	replies, replyTotal, xErr := l.repo.replyRepo.ListByIssueID(ctx, issueID, 1, 100)
+	replies, replyTotal, xErr := l.repo.replyRepo.ListByIssueID(ctx, issueID, 1, 20)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -410,7 +464,7 @@ func (l *IssueLogic) GetIssueDetail(
 		return nil, xErr
 	}
 
-	issueDTO, xErr := l.buildIssueDTO(ctx, issue, int(replyTotal), len(attDTOs))
+	issueDTO, xErr := l.buildIssueDTO(ctx, issue, int(replyTotal), len(attDTOs), isAdmin)
 	if xErr != nil {
 		return nil, xErr
 	}
@@ -428,7 +482,7 @@ func (l *IssueLogic) GetIssueDetail(
 	}, nil
 }
 
-// ==================== Reply Method (Task 15) ====================
+// ==================== Reply Method ====================
 
 // ReplyIssue 追加回复。
 func (l *IssueLogic) ReplyIssue(
@@ -445,12 +499,23 @@ func (l *IssueLogic) ReplyIssue(
 			xError.ErrMessage(fmt.Sprintf("回复内容长度必须在 %d~%d 字符之间", minReplyLength, maxReplyLength)), true)
 	}
 
-	_, found, xErr := l.repo.issueRepo.GetByID(ctx, nil, issueID)
-	if xErr != nil {
-		return nil, xErr
-	}
-	if !found {
-		return nil, xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
+	// 权限校验：非管理员只能回复自己的问题
+	if !isAdmin {
+		_, found, xErr := l.repo.issueRepo.GetByIDAndUserID(ctx, nil, issueID, userID)
+		if xErr != nil {
+			return nil, xErr
+		}
+		if !found {
+			return nil, xError.NewError(ctx, xError.ParameterError, "问题不存在或无权操作", true)
+		}
+	} else {
+		_, found, xErr := l.repo.issueRepo.GetByID(ctx, nil, issueID)
+		if xErr != nil {
+			return nil, xErr
+		}
+		if !found {
+			return nil, xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
+		}
 	}
 
 	reply := &entity.IssueReply{
@@ -463,9 +528,14 @@ func (l *IssueLogic) ReplyIssue(
 	created, xErr := l.repo.txn.CreateReplyAndUpdateTimestamp(ctx, reply, issueID)
 	if xErr != nil {
 		return nil, xErr
-	}
+		}
 
-	return &models.IssueReplyDTO{
+		// 清除缓存（回复更新了 issue.updated_at）
+		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
+			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
+		}
+
+		return &models.IssueReplyDTO{
 		ID:           created.ID,
 		IssueID:      created.IssueID,
 		UserID:       created.UserID,
@@ -476,7 +546,7 @@ func (l *IssueLogic) ReplyIssue(
 	}, nil
 }
 
-// ==================== Admin Operations (Task 16) ====================
+// ==================== Admin Operations ====================
 
 // UpdateStatus 修改问题状态（含流转校验）。
 func (l *IssueLogic) UpdateStatus(
@@ -499,7 +569,14 @@ func (l *IssueLogic) UpdateStatus(
 			xError.ErrMessage(fmt.Sprintf("不允许从 [%s] 转换到 [%s]", issue.Status, targetStatus)), true)
 	}
 
-	return l.repo.txn.UpdateStatusWithCloseTime(ctx, issueID, targetStatus)
+	result := l.repo.txn.UpdateStatusWithCloseTime(ctx, issueID, targetStatus)
+	// 清除缓存（状态变更）
+	if result == nil {
+		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
+			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
+		}
+	}
+	return result
 }
 
 // UpdatePriority 修改优先级。
@@ -518,7 +595,14 @@ func (l *IssueLogic) UpdatePriority(
 		return xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
 	}
 
-	return l.repo.issueRepo.UpdatePriority(ctx, nil, issueID, priority)
+	result := l.repo.issueRepo.UpdatePriority(ctx, nil, issueID, priority)
+	// 清除缓存（优先级变更）
+	if result == nil {
+		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
+			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
+		}
+	}
+	return result
 }
 
 // UpdateNote 更新内部备注。
@@ -542,28 +626,41 @@ func (l *IssueLogic) UpdateNote(
 		return xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
 	}
 
-	return l.repo.issueRepo.UpdateAdminNote(ctx, nil, issueID, note)
+	result := l.repo.issueRepo.UpdateAdminNote(ctx, nil, issueID, note)
+	// 清除缓存（备注变更）
+	if result == nil {
+		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
+			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
+		}
+	}
+	return result
 }
 
-// ==================== Attachment Upload/Delete (Task 17) ====================
+// ==================== Attachment Upload/Delete ====================
 
 // UploadAttachment 上传附件（完全对齐 LibraryLogic.UploadSkin 模式）。
 func (l *IssueLogic) UploadAttachment(
 	ctx context.Context,
 	issueID xSnowflake.SnowflakeID,
 	userID xSnowflake.SnowflakeID,
+	isAdmin bool,
 	fileName string,
 	content string,
 	mimeType string,
 ) (*models.IssueAttachmentDTO, *xError.Error) {
 	l.log.Info(ctx, "UploadAttachment - 上传附件")
 
-	_, found, xErr := l.repo.issueRepo.GetByID(ctx, nil, issueID)
+	issue, found, xErr := l.repo.issueRepo.GetByID(ctx, nil, issueID)
 	if xErr != nil {
 		return nil, xErr
 	}
 	if !found {
 		return nil, xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
+	}
+
+	// 权限校验：非管理员只能给自己的问题上传附件
+	if !isAdmin && issue.UserID != userID {
+		return nil, xError.NewError(ctx, xError.PermissionDenied, "无权向该问题上传附件", true)
 	}
 
 	count, xErr := l.repo.attachmentRepo.CountByIssueID(ctx, issueID)
@@ -578,6 +675,12 @@ func (l *IssueLogic) UploadAttachment(
 	data, xErr := l.decodeBase64Attachment(ctx, content)
 	if xErr != nil {
 		return nil, xErr
+	}
+
+	// 文件大小限制：单文件不超过 10MB
+	const maxAttachmentSize = 10 * 1024 * 1024
+	if int64(len(data)) > maxAttachmentSize {
+		return nil, xError.NewError(ctx, xError.ParameterError, "文件大小不能超过 10MB", true)
 	}
 
 	if !l.validateAttachmentMIME(mimeType) {
@@ -632,8 +735,13 @@ func (l *IssueLogic) UploadAttachment(
 	}, nil
 }
 
-// DeleteAttachment 删除附件。
-func (l *IssueLogic) DeleteAttachment(ctx context.Context, attachmentID xSnowflake.SnowflakeID) *xError.Error {
+// DeleteAttachment 删除附件（含完整权限校验）。
+func (l *IssueLogic) DeleteAttachment(
+	ctx context.Context,
+	attachmentID xSnowflake.SnowflakeID,
+	userID xSnowflake.SnowflakeID,
+	isAdmin bool,
+) *xError.Error {
 	l.log.Info(ctx, "DeleteAttachment - 删除附件")
 
 	att, found, xErr := l.repo.attachmentRepo.GetByID(ctx, nil, attachmentID)
@@ -644,15 +752,31 @@ func (l *IssueLogic) DeleteAttachment(ctx context.Context, attachmentID xSnowfla
 		return xError.NewError(ctx, xError.ParameterError, "附件不存在", true)
 	}
 
+	// 通过关联的问题 ID 校验归属权
+	issue, issueFound, xErr := l.repo.issueRepo.GetByID(ctx, nil, att.IssueID)
+	if xErr != nil {
+		return xErr
+	}
+	if !issueFound {
+		return xError.NewError(ctx, xError.ParameterError, "关联问题不存在", true)
+	}
+	if !isAdmin && issue.UserID != userID {
+		return xError.NewError(ctx, xError.PermissionDenied, "无权删除该附件", true)
+	}
+
 	if xErr := l.repo.attachmentRepo.DeleteByID(ctx, nil, attachmentID); xErr != nil {
 		return xErr
 	}
 
 	l.deleteBucketFile(ctx, att.FileID)
+	// 清除缓存（附件变更）
+	if delErr := l.repo.cache.Del(ctx, att.IssueID); delErr != nil {
+		l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", att.IssueID, delErr))
+	}
 	return nil
 }
 
-// ==================== Type Management (Task 18) ====================
+// ==================== Type Management ====================
 
 // ListIssueTypes 获取所有启用的类型列表（公开接口）。
 func (l *IssueLogic) ListIssueTypes(ctx context.Context) ([]models.IssueTypeDTO, *xError.Error) {
