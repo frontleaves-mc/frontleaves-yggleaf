@@ -62,6 +62,7 @@ func NewRoute(reg *xReg.Reg) {
 		r.userRouter(apiRouter)
 		r.gameProfileRouter(apiRouter)
 		r.libraryRouter(apiRouter)
+			r.issueRouter(apiRouter)
 	}
 
 	// Yggdrasil 外置登录协议路由

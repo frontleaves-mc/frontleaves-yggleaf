@@ -15,6 +15,7 @@ type service struct {
 	userLogic        *logic.UserLogic
 	gameProfileLogic *logic.GameProfileLogic
 	libraryLogic     *logic.LibraryLogic
+	issueLogic       *logic.IssueLogic
 	oauthLogic       *bSdkLogic.BusinessLogic
 }
 
@@ -62,6 +63,7 @@ type IHandler interface {
 func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
 	// LibraryLogic 先于 GameProfileLogic 初始化（GameProfileLogic 依赖 LibraryLogic 进行纹理解析）
 	libraryLogic := logic.NewLibraryLogic(ctx)
+	issueLogic := logic.NewIssueLogic(ctx)
 
 	return &T{
 		name: handlerName,
@@ -70,6 +72,7 @@ func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
 			userLogic:        logic.NewUserLogic(ctx),
 			gameProfileLogic: logic.NewGameProfileLogic(ctx, libraryLogic),
 			libraryLogic:     libraryLogic,
+			issueLogic:       issueLogic,
 			oauthLogic:       bSdkLogic.NewBusiness(ctx),
 		},
 	}

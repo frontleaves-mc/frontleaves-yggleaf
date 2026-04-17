@@ -11,6 +11,8 @@ const (
 	EnvBucketSkinPathId   xEnv.EnvKey = "BUCKET_SKIN_PATH_ID"   // 定义了皮肤存储路径 ID 的环境变量键名。
 	EnvBucketCapeBucketId xEnv.EnvKey = "BUCKET_CAPE_BUCKET_ID" // 定义了披风存储桶 ID 的环境变量键名。
 	EnvBucketCapePathId   xEnv.EnvKey = "BUCKET_CAPE_PATH_ID"   // 定义了披风存储路径 ID 的环境变量键名。
+	EnvBucketIssueBucketId xEnv.EnvKey = "BUCKET_ISSUE_BUCKET_ID" // Issue 附件存储桶 ID
+	EnvBucketIssuePathId   xEnv.EnvKey = "BUCKET_ISSUE_PATH_ID"   // Issue 附件存储路径 ID
 
 	EnvYggdrasilPrivateKeyPath xEnv.EnvKey = "YGGDRASIL_PRIVATE_KEY_PATH" // Yggdrasil RSA 私钥文件路径
 	EnvYggdrasilPublicKeyPath  xEnv.EnvKey = "YGGDRASIL_PUBLIC_KEY_PATH"  // Yggdrasil RSA 公钥文件路径

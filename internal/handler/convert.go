@@ -1,6 +1,7 @@
 package handler
 
 import (
+	apiIssue "github.com/frontleaves-mc/frontleaves-yggleaf/api/issue"
 	apiLibrary "github.com/frontleaves-mc/frontleaves-yggleaf/api/library"
 	apiUser "github.com/frontleaves-mc/frontleaves-yggleaf/api/user"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/models"
@@ -116,4 +117,114 @@ func capeSimpleDTOsToResponses(dtos []models.CapeSimpleDTO) []apiLibrary.CapeSim
 		responses[i] = capeSimpleDTOToResponse(dto)
 	}
 	return responses
+}
+
+// ==================== Issue Convert Functions ====================
+
+func issueDTOToResponse(dto *models.IssueDTO) apiIssue.IssueListItem {
+	return issueDTOToListItem(dto)
+}
+
+func issueDTOToListItem(dto *models.IssueDTO) apiIssue.IssueListItem {
+	return apiIssue.IssueListItem{
+		Issue: apiIssue.IssueEntityWrapper{
+			ID:          dto.ID,
+			UserID:      dto.UserID,
+			IssueTypeID: dto.IssueTypeID,
+			Title:       dto.Title,
+			Content:     dto.Content,
+			Status:      string(dto.Status),
+			Priority:    string(dto.Priority),
+			AdminNote:   dto.AdminNote,
+			ClosedAt:    dto.ClosedAt,
+			CreatedAt:   dto.CreatedAt,
+			UpdatedAt:   dto.UpdatedAt,
+		},
+		IssueTypeName: dto.IssueTypeName,
+		ReplyCount:    dto.ReplyCount,
+	}
+}
+
+func issueDetailDTOToResponse(dto *models.IssueDetailDTO) apiIssue.IssueDetailResponse {
+	replies := make([]apiIssue.IssueReplyItem, len(dto.Replies))
+	for i, r := range dto.Replies {
+		replies[i] = apiIssue.IssueReplyItem{
+			IssueReply: apiIssue.IssueReplyEntityWrapper{
+				ID:           r.ID,
+				IssueID:      r.IssueID,
+				UserID:       r.UserID,
+				Content:      r.Content,
+				IsAdminReply: r.IsAdminReply,
+				CreatedAt:    r.CreatedAt,
+			},
+			Username: r.Username,
+		}
+	}
+	attachments := make([]apiIssue.IssueAttachmentItem, len(dto.Attachments))
+	for i, a := range dto.Attachments {
+		attachments[i] = apiIssue.IssueAttachmentItem{
+			ID:       a.ID,
+			FileName: a.FileName,
+			FileSize: a.FileSize,
+			MimeType: a.MimeType,
+			FileURL:  a.FileURL,
+		}
+	}
+	return apiIssue.IssueDetailResponse{
+		Issue: apiIssue.IssueEntityWrapper{
+			ID:          dto.Issue.ID,
+			UserID:      dto.Issue.UserID,
+			IssueTypeID: dto.Issue.IssueTypeID,
+			Title:       dto.Issue.Title,
+			Content:     dto.Issue.Content,
+			Status:      string(dto.Issue.Status),
+			Priority:    string(dto.Issue.Priority),
+			AdminNote:   dto.Issue.AdminNote,
+			ClosedAt:    dto.Issue.ClosedAt,
+			CreatedAt:   dto.Issue.CreatedAt,
+			UpdatedAt:   dto.Issue.UpdatedAt,
+		},
+		IssueType: apiIssue.IssueTypeEntityWrapper{
+			ID:          dto.IssueType.ID,
+			Name:        dto.IssueType.Name,
+			Description: dto.IssueType.Description,
+			SortOrder:   dto.IssueType.SortOrder,
+			IsEnabled:   dto.IssueType.IsEnabled,
+		},
+		Replies:     replies,
+		Attachments: attachments,
+	}
+}
+
+func issueReplyDTOToResponse(dto *models.IssueReplyDTO) apiIssue.IssueReplyItem {
+	return apiIssue.IssueReplyItem{
+		IssueReply: apiIssue.IssueReplyEntityWrapper{
+			ID:           dto.ID,
+			IssueID:      dto.IssueID,
+			UserID:       dto.UserID,
+			Content:      dto.Content,
+			IsAdminReply: dto.IsAdminReply,
+			CreatedAt:    dto.CreatedAt,
+		},
+		Username: dto.Username,
+	}
+}
+
+func issueAttachmentDTOToResponse(dto *models.IssueAttachmentDTO) apiIssue.IssueAttachmentItem {
+	return apiIssue.IssueAttachmentItem{
+		ID:       dto.ID,
+		FileName: dto.FileName,
+		FileSize: dto.FileSize,
+		MimeType: dto.MimeType,
+		FileURL:  dto.FileURL,
+	}
+}
+
+func issueTypeDTOToResponse(dto *models.IssueTypeDTO) apiIssue.IssueTypeListItem {
+	return apiIssue.IssueTypeListItem{
+		ID:          dto.ID,
+		Name:        dto.Name,
+		Description: dto.Description,
+		SortOrder:   dto.SortOrder,
+	}
 }
