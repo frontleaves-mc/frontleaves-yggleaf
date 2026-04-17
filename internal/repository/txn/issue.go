@@ -92,13 +92,14 @@ func (t *IssueTxnRepo) CreateReplyAndUpdateTimestamp(
 	return created, nil
 }
 
-// UpdateStatusWithCloseTime 更新状态，若目标为 closed 则记录 closed_at。
+// UpdateStatusWithCloseTime 更新状态，若目标为 closed 则记录 closed_at（事务内执行）。
 func (t *IssueTxnRepo) UpdateStatusWithCloseTime(
 	ctx context.Context,
 	issueID xSnowflake.SnowflakeID,
 	status bConst.IssueStatus,
 ) *xError.Error {
 	t.log.Info(ctx, "UpdateStatusWithCloseTime - 事务更新状态")
+
 	var closedAt interface{}
 	if status == bConst.IssueStatusClosed {
 		tm := time.Now()
@@ -106,6 +107,20 @@ func (t *IssueTxnRepo) UpdateStatusWithCloseTime(
 	} else {
 		closedAt = nil
 	}
-	_, bizErr := t.issueRepo.UpdateStatus(ctx, nil, issueID, status, closedAt)
-	return bizErr
+
+	var bizErr *xError.Error
+	err := t.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		_, bizErr = t.issueRepo.UpdateStatus(ctx, tx, issueID, status, closedAt)
+		if bizErr != nil {
+			return bizErr
+		}
+		return nil
+	})
+	if bizErr != nil {
+		return bizErr
+	}
+	if err != nil {
+		return xError.NewError(ctx, xError.DatabaseError, "更新状态事务失败", true, err)
+	}
+	return nil
 }

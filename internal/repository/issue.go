@@ -68,12 +68,22 @@ func (r *IssueRepo) GetByIDAndUserID(ctx context.Context, tx *gorm.DB, id xSnowf
 	return nil, false, xError.NewError(ctx, xError.DatabaseError, "查询问题失败", true, err)
 }
 
-// ListByUserID 分页查询用户问题列表。
-func (r *IssueRepo) ListByUserID(ctx context.Context, userID xSnowflake.SnowflakeID, page, pageSize int) ([]entity.Issue, int64, *xError.Error) {
+// ListByUserID 分页查询用户问题列表（支持状态、优先级、类型筛选）。
+func (r *IssueRepo) ListByUserID(ctx context.Context, userID xSnowflake.SnowflakeID, page, pageSize int,
+	status *bConst.IssueStatus, priority *bConst.IssuePriority, issueTypeID *xSnowflake.SnowflakeID) ([]entity.Issue, int64, *xError.Error) {
 	r.log.Info(ctx, "ListByUserID - 分页查询用户问题列表")
 
 	var total int64
 	query := r.db.WithContext(ctx).Model(&entity.Issue{}).Where("user_id = ?", userID)
+	if status != nil {
+		query = query.Where("status = ?", *status)
+	}
+	if priority != nil {
+		query = query.Where("priority = ?", *priority)
+	}
+	if issueTypeID != nil {
+		query = query.Where("issue_type_id = ?", *issueTypeID)
+	}
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, xError.NewError(ctx, xError.DatabaseError, "查询问题总数失败", true, err)
 	}
@@ -135,11 +145,22 @@ func (r *IssueRepo) UpdateStatus(ctx context.Context, tx *gorm.DB, id xSnowflake
 		updates["closed_at"] = closedAt
 	}
 
-	var issue entity.Issue
-	if err := r.pickDB(ctx, tx).Model(&issue).Where("id = ?", id).Updates(updates).Error; err != nil {
+	db := r.pickDB(ctx, tx)
+
+	// 先执行更新
+	if err := db.Model(&entity.Issue{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return nil, xError.NewError(ctx, xError.DatabaseError, "更新问题状态失败", true, err)
 	}
-	return &issue, nil
+
+	// 再查询返回最新实体（GORM Updates 不会回填数据）
+	var updated entity.Issue
+	if err := db.Where("id = ?", id).First(&updated).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
+		}
+		return nil, xError.NewError(ctx, xError.DatabaseError, "查询更新后问题失败", true, err)
+	}
+	return &updated, nil
 }
 
 // UpdatePriority 更新问题优先级。
