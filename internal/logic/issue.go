@@ -687,13 +687,20 @@ func (l *IssueLogic) UploadAttachment(
 		return nil, xError.NewError(ctx, xError.ParameterError, xError.ErrMessage("不支持的文件类型: "+mimeType), true)
 	}
 
+	// 校验 Issue 附件 Bucket 配置
+	issueBucketId := xEnv.GetEnvString(bConst.EnvBucketIssueBucketId, "")
+	issuePathId := xEnv.GetEnvString(bConst.EnvBucketIssuePathId, "")
+	if issueBucketId == "" || issuePathId == "" {
+		return nil, xError.NewError(ctx, xError.ServerInternalError, "Issue 附件存储配置缺失，请联系管理员", true)
+	}
+
 	uploadResp, err := l.helper.bucket.Normal.Upload(ctx, &bBucketApi.UploadRequest{
-		BucketId:      xEnv.GetEnvString(bConst.EnvBucketIssueBucketId, ""),
-		PathId:        xEnv.GetEnvString(bConst.EnvBucketIssuePathId, ""),
+		BucketId:      issueBucketId,
+		PathId:        issuePathId,
 		ContentBase64: content,
 	})
 	if err != nil {
-		return nil, xError.NewError(ctx, xError.ServerInternalError, "上传附件失败", true, err)
+		return nil, mapBucketError(ctx, "上传附件失败", err)
 	}
 
 	fileID, err := strconv.ParseInt(uploadResp.FileId, 10, 64)

@@ -41,6 +41,27 @@ func (r *reg) bucketInit(ctx context.Context) (any, error) {
 		)
 	}
 
+	// 校验业务级 BucketId/PathId 配置（Skin / Cape / Issue）
+	businessBuckets := []struct {
+		name    string
+		bucketId xEnv.EnvKey
+		pathId   xEnv.EnvKey
+	}{
+		{"Skin", bConst.EnvBucketSkinBucketId, bConst.EnvBucketSkinPathId},
+		{"Cape", bConst.EnvBucketCapeBucketId, bConst.EnvBucketCapePathId},
+		{"Issue", bConst.EnvBucketIssueBucketId, bConst.EnvBucketIssuePathId},
+	}
+	for _, bb := range businessBuckets {
+		bid := xEnv.GetEnvString(bb.bucketId, "")
+		pid := xEnv.GetEnvString(bb.pathId, "")
+		if bid == "" || pid == "" {
+			return nil, fmt.Errorf(
+				"缺少必要的 %s Bucket 业务配置: %s=%s, %s=%s",
+				bb.name, bb.bucketId, bid, bb.pathId, pid,
+			)
+		}
+	}
+
 	bucketClient := bBucket.NewClient(
 		bBucket.WithConnect(bucketHost, bucketPort),
 		bBucket.WithAppAccess(appAccessID, appAccessKey),
