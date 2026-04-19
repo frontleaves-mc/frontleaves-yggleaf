@@ -65,6 +65,16 @@ func (r *GameProfileQuotaRepo) UpdateUsed(ctx context.Context, tx *gorm.DB, quot
 	return nil
 }
 
+// UpdateTotal 更新配额总额度。
+func (r *GameProfileQuotaRepo) UpdateTotal(ctx context.Context, tx *gorm.DB, quotaID xSnowflake.SnowflakeID, total int32) *xError.Error {
+	r.log.Info(ctx, "UpdateTotal - 更新游戏档案配额总额度")
+
+	if err := r.pickDB(ctx, tx).Model(&entity.GameProfileQuota{}).Where("id = ?", quotaID).Update("total", total).Error; err != nil {
+		return xError.NewError(ctx, xError.DatabaseError, "更新游戏档案配额总额度失败", true, err)
+	}
+	return nil
+}
+
 func (r *GameProfileQuotaRepo) pickDB(ctx context.Context, tx *gorm.DB) *gorm.DB {
 	if tx != nil {
 		return tx.WithContext(ctx)

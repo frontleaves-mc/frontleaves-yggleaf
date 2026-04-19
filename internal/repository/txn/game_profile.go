@@ -18,9 +18,12 @@ package txn
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 	xUtil "github.com/bamboo-services/bamboo-base-go/common/utility"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	entityType "github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity/type"
@@ -35,10 +38,10 @@ import (
 // 保证操作的原子性。所有事务的开启、提交和回滚均在此层完成，
 // 上层 Logic 无需感知事务细节。
 type GameProfileTxnRepo struct {
-	db       *gorm.DB                       // GORM 数据库实例（用于开启事务）
-	log      *xLog.LogNamedLogger            // 日志实例
-	profile  *repository.GameProfileRepo     // 游戏档案仓储
-	quota    *repository.GameProfileQuotaRepo // 游戏档案配额仓储
+	db       *gorm.DB                           // GORM 数据库实例（用于开启事务）
+	log      *xLog.LogNamedLogger               // 日志实例
+	profile  *repository.GameProfileRepo        // 游戏档案仓储
+	quota    *repository.GameProfileQuotaRepo   // 游戏档案配额仓储
 	quotaLog *repository.GameProfileQuotaLogRepo // 游戏档案配额日志仓储
 }
 
@@ -171,4 +174,92 @@ func (t *GameProfileTxnRepo) AddProfileWithQuota(
 		return nil, xError.NewError(ctx, xError.DatabaseError, "新增游戏档案失败", true, err)
 	}
 	return createdProfile, nil
+}
+
+// AdjustQuotaAdmin 在事务内完成管理员配额调整及日志记录。
+//
+// 该方法执行以下原子操作序列：
+//  1. 行锁查询用户配额记录（SELECT ... FOR UPDATE）
+//  2. 校验配额记录存在
+//  3. 计算新 Total 并校验合法性
+//  4. 更新配额 Total 字段
+//  5. 写入配额变更日志
+//
+// 任一步骤失败将触发整体回滚。
+func (t *GameProfileTxnRepo) AdjustQuotaAdmin(
+	ctx context.Context,
+	targetUserID xSnowflake.SnowflakeID,
+	delta int32,
+	operatorID xSnowflake.SnowflakeID,
+	remark *string,
+) (*entity.GameProfileQuota, *xError.Error) {
+	t.log.Info(ctx, "AdjustQuotaAdmin - 事务内管理员调整配额")
+
+	var updatedQuota *entity.GameProfileQuota
+	var bizErr *xError.Error
+
+	err := t.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. 行锁查询配额
+		quota, found, xErr := t.quota.GetByUserID(ctx, tx, targetUserID, true)
+		if xErr != nil {
+			bizErr = xErr
+			return xErr
+		}
+		if !found {
+			bizErr = xError.NewError(ctx, xError.ResourceNotFound, "用户游戏档案配额不存在", true)
+			return bizErr
+		}
+
+		// 2. 计算并校验新 Total
+		newTotal := quota.Total + delta
+		if newTotal < 0 {
+			bizErr = xError.NewError(ctx, xError.ParameterError, "调整后总额度不能小于 0", true)
+			return bizErr
+		}
+		if newTotal < quota.Used {
+			bizErr = xError.NewError(ctx, xError.ParameterError, "调整后总额度不能小于已使用额度", true)
+			return bizErr
+		}
+
+		// 3. 更新 Total
+		xErr = t.quota.UpdateTotal(ctx, tx, quota.ID, newTotal)
+		if xErr != nil {
+			bizErr = xErr
+			return xErr
+		}
+		quota.Total = newTotal
+		updatedQuota = quota
+
+		// 4. 直接写入日志（不复用 quotaLogRepo.Create，因其硬编码 AfterTotal = beforeTotal）
+		absDelta := delta
+		if absDelta < 0 {
+			absDelta = -absDelta
+		}
+		idempotencyKey := fmt.Sprintf("%s:%s:%d", entityType.ObTypeAdminAdjustQuota.String(), targetUserID.String(), time.Now().UnixNano())
+		quotaLog := &entity.GameProfileQuotaLog{
+			UserID:         targetUserID,
+			OpType:         entityType.ObTypeAdminAdjustQuota,
+			Delta:          absDelta,
+			BeforeUsed:     quota.Used,
+			AfterUsed:      quota.Used,
+			BeforeTotal:    newTotal - delta,
+			AfterTotal:     newTotal,
+			IdempotencyKey: idempotencyKey,
+			RefProfileID:   nil,
+			Remark:         remark,
+		}
+		if createErr := tx.Create(quotaLog).Error; createErr != nil {
+			bizErr = xError.NewError(ctx, xError.DatabaseError, "创建配额变更日志失败", true, createErr)
+			return bizErr
+		}
+
+		return nil
+	})
+	if bizErr != nil {
+		return nil, bizErr
+	}
+	if err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "调整游戏档案配额失败", true, err)
+	}
+	return updatedQuota, nil
 }

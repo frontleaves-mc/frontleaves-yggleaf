@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -307,6 +308,45 @@ func (l *GameProfileLogic) GetQuota(ctx context.Context, userID xSnowflake.Snowf
 	}
 
 	quota, _, xErr := l.repo.quota.GetByUserID(ctx, nil, userID, false)
+	if xErr != nil {
+		return nil, xErr
+	}
+	return quota, nil
+}
+
+// AdjustQuotaAdmin 管理员调整指定用户的游戏档案配额。
+//
+// 该方法执行以下业务流程：
+//  1. 校验目标用户 ID 和 delta 参数有效性
+//  2. 构建带操作者信息的备注
+//  3. 委托 Repository 层在事务内完成：配额查询 → 校验 → 更新 Total → 日志记录
+//
+// 参数:
+//   - ctx: 上下文对象。
+//   - operatorID: 执行操作的管理员雪花 ID。
+//   - targetUserID: 目标用户的雪花 ID。
+//   - delta: 配额变化量（正数增加，负数减少）。
+//   - remark: 可选备注。
+//
+// 返回值:
+//   - *entity.GameProfileQuota: 更新后的配额实体。
+//   - *xError.Error: 业务校验失败或数据操作错误。
+func (l *GameProfileLogic) AdjustQuotaAdmin(ctx context.Context, operatorID xSnowflake.SnowflakeID, targetUserID xSnowflake.SnowflakeID, delta int32, remark string) (*entity.GameProfileQuota, *xError.Error) {
+	l.log.Info(ctx, "AdjustQuotaAdmin - 管理员调整游戏档案配额")
+
+	if targetUserID.IsZero() {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效目标用户 ID：不能为 0", true)
+	}
+	if delta == 0 {
+		return nil, xError.NewError(ctx, xError.ParameterError, "无效变化量：delta 不能为 0", true)
+	}
+
+	finalRemark := fmt.Sprintf("管理员(ID=%s)调整配额", operatorID.String())
+	if remark != "" {
+		finalRemark = fmt.Sprintf("%s - %s", finalRemark, remark)
+	}
+
+	quota, xErr := l.repo.txn.AdjustQuotaAdmin(ctx, targetUserID, delta, operatorID, &finalRemark)
 	if xErr != nil {
 		return nil, xErr
 	}

@@ -44,6 +44,12 @@ type GameProfileResponse struct {
 	Cape          *apiLibrary.CapeResponse `json:"cape,omitempty"`            // 装备的披风信息（含 texture_url）
 }
 
+// AdminAdjustQuotaRequest 管理员调整用户游戏档案配额请求
+type AdminAdjustQuotaRequest struct {
+	Delta  int32  `json:"delta" binding:"required"`            // 配额变化量（正数增加，负数减少）
+	Remark string `json:"remark" binding:"omitempty,max=255"` // 备注（可选，最长 255 字符）
+}
+
 // GameProfileListResponse 游戏档案列表响应
 type GameProfileListResponse struct {
 	Items []GameProfileResponse `json:"items"` // 游戏档案列表

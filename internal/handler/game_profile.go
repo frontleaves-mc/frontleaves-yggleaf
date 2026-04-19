@@ -221,6 +221,56 @@ func (h *GameProfileHandler) GetQuota(ctx *gin.Context) {
 	xResult.SuccessHasData(ctx, "获取游戏档案配额成功", quota)
 }
 
+// AdjustQuotaAdmin 管理员调整指定用户的游戏档案配额
+//
+// @Summary     [管理] 调整用户游戏档案配额
+// @Description 管理员调整指定用户的游戏档案配额总额度（相对变化量）
+// @Tags        游戏档案接口
+// @Accept      json
+// @Produce     json
+// @Param       user_id path string true "目标用户 ID"
+// @Param       request body apiUser.AdminAdjustQuotaRequest true "调整配额请求"
+// @Success     200 {object} xBase.BaseResponse{data=entity.GameProfileQuota} "调整成功"
+// @Failure     400 {object} xBase.BaseResponse "请求参数错误"
+// @Failure     401 {object} xBase.BaseResponse "未授权"
+// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     404 {object} xBase.BaseResponse "用户配额不存在"
+// @Router      /admin/game-profile/users/{user_id}/quota [POST]
+func (h *GameProfileHandler) AdjustQuotaAdmin(ctx *gin.Context) {
+	h.log.Info(ctx, "AdjustQuotaAdmin - 管理员调整游戏档案配额")
+
+	targetUserID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析目标用户 ID 失败", true, err))
+		return
+	}
+
+	req := xUtil.Bind(ctx, &apiUser.AdminAdjustQuotaRequest{}).Data()
+	if req == nil {
+		return
+	}
+
+	userinfo, xErr := h.service.oauthLogic.Userinfo(ctx, bSdkUtil.GetAuthorization(ctx))
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	operatorID, err := xSnowflake.ParseSnowflakeID(userinfo.Sub)
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "解析操作者 ID 失败", true, err))
+		return
+	}
+
+	quota, xErr := h.service.gameProfileLogic.AdjustQuotaAdmin(ctx.Request.Context(), operatorID, targetUserID, req.Delta, req.Remark)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "调整游戏档案配额成功", quota)
+}
+
 // ==================== Set Handlers (Unified Equip/Unequip) ====================
 
 // SetSkin 统一设置/卸下游戏档案皮肤

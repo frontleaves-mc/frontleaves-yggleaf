@@ -6,11 +6,13 @@ type ObType struct {
 }
 
 var (
-	ObTypeAddGameProfile = ObType{Name: "ADD_GAME_PROFILE", Type: 1}
+	ObTypeAddGameProfile   = ObType{Name: "ADD_GAME_PROFILE", Type: 1}
+	ObTypeAdminAdjustQuota = ObType{Name: "ADMIN_ADJUST_QUOTA", Type: 1}
 )
 
 var gameProfileQuotaLogObTypeSet = map[ObType]string{
-	ObTypeAddGameProfile: ObTypeAddGameProfile.Name,
+	ObTypeAddGameProfile:   ObTypeAddGameProfile.Name,
+	ObTypeAdminAdjustQuota: ObTypeAdminAdjustQuota.Name,
 }
 
 func (t ObType) String() string {
