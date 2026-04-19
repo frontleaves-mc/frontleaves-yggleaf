@@ -65,7 +65,7 @@ func User(ctx context.Context) gin.HandlerFunc {
 		}
 
 		newCtx := context.WithValue(c.Request.Context(), bConst.CtxUserinfoKey, takeUser)
-		c.Request.WithContext(newCtx)
+		c.Request = c.Request.WithContext(newCtx)
 		c.Next()
 	}
 }

@@ -500,13 +500,18 @@ func (l *LibraryLogic) CreateSkin(ctx context.Context, userID xSnowflake.Snowfla
 	textureHash := l.calculateTextureHash(textureData)
 
 	// 上传到对象存储（事务外执行，避免长事务占用连接）
+	skinBucketId := xEnv.GetEnvString(bConst.EnvBucketSkinBucketId, "")
+	skinPathId := xEnv.GetEnvString(bConst.EnvBucketSkinPathId, "")
+	if skinBucketId == "" || skinPathId == "" {
+		return nil, xError.NewError(ctx, xError.ServerInternalError, "皮肤纹理存储配置缺失，请联系管理员", true)
+	}
 	uploadResp, err := l.helper.bucket.Normal.Upload(ctx, &bBucketApi.UploadRequest{
-		BucketId:      xEnv.GetEnvString(bConst.EnvBucketSkinBucketId, ""),
-		PathId:        xEnv.GetEnvString(bConst.EnvBucketSkinPathId, ""),
+		BucketId:      skinBucketId,
+		PathId:        skinPathId,
 		ContentBase64: texture,
 	})
 	if err != nil {
-		return nil, xError.NewError(ctx, xError.ServerInternalError, "上传皮肤纹理失败", true, err)
+		return nil, mapBucketError(ctx, "上传皮肤纹理失败", err)
 	}
 
 	skinId, err := strconv.ParseInt(uploadResp.FileId, 10, 64)
@@ -749,13 +754,18 @@ func (l *LibraryLogic) CreateCape(ctx context.Context, userID xSnowflake.Snowfla
 	textureHash := l.calculateTextureHash(textureData)
 
 	// 上传到对象存储（事务外执行，避免长事务占用连接）
+	capeBucketId := xEnv.GetEnvString(bConst.EnvBucketCapeBucketId, "")
+	capePathId := xEnv.GetEnvString(bConst.EnvBucketCapePathId, "")
+	if capeBucketId == "" || capePathId == "" {
+		return nil, xError.NewError(ctx, xError.ServerInternalError, "披风纹理存储配置缺失，请联系管理员", true)
+	}
 	uploadResp, err := l.helper.bucket.Normal.Upload(ctx, &bBucketApi.UploadRequest{
-		BucketId:      xEnv.GetEnvString(bConst.EnvBucketCapeBucketId, ""),
-		PathId:        xEnv.GetEnvString(bConst.EnvBucketCapePathId, ""),
+		BucketId:      capeBucketId,
+		PathId:        capePathId,
 		ContentBase64: texture,
 	})
 	if err != nil {
-		return nil, xError.NewError(ctx, xError.ServerInternalError, "上传披风纹理失败", true, err)
+		return nil, mapBucketError(ctx, "上传披风纹理失败", err)
 	}
 
 	capeId, err := strconv.ParseInt(uploadResp.FileId, 10, 64)

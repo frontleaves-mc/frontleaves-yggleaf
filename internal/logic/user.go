@@ -82,6 +82,36 @@ func (l *UserLogic) TakeUser(ctx context.Context, userinfo *bSdkModels.OAuthUser
 		return nil, err
 	}
 	if found {
+		// 同步 SSO 最新信息到本地（仅更新 SSO 来源字段，保留本地业务字段不变）
+		needUpdate := false
+
+		if user.Username != userinfo.Nickname {
+			user.Username = userinfo.Nickname
+			needUpdate = true
+		}
+
+		ssoEmail := xUtil.Ptr(userinfo.Email)
+		if (user.Email == nil && ssoEmail != nil) || (user.Email != nil && ssoEmail == nil) ||
+			(user.Email != nil && ssoEmail != nil && *user.Email != *ssoEmail) {
+			user.Email = ssoEmail
+			needUpdate = true
+		}
+
+		ssoPhone := xUtil.Ptr(userinfo.Phone)
+		if (user.Phone == nil && ssoPhone != nil) || (user.Phone != nil && ssoPhone == nil) ||
+			(user.Phone != nil && ssoPhone != nil && *user.Phone != *ssoPhone) {
+			user.Phone = ssoPhone
+			needUpdate = true
+		}
+
+		if needUpdate {
+			l.log.Info(ctx, "TakeUser - 检测到 SSO 用户信息变更，同步更新")
+			user, err = l.repo.user.Set(ctx, user)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		return user, nil
 	}
 
