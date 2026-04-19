@@ -38,6 +38,475 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "/admin/issue-type": {
+            "post": {
+                "description": "管理员创建新的问题分类类型，需指定名称和排序值",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 创建类型",
+                "parameters": [
+                    {
+                        "description": "创建问题类型请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.CreateIssueTypeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/issue.IssueTypeListItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/issue-type/{id}": {
+            "put": {
+                "description": "管理员编辑已有问题类型的名称、描述、排序或启用状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 编辑类型",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "类型 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑问题类型请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.UpdateIssueTypeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/issue.IssueTypeListItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题类型不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "管理员删除指定的问题类型，已关联的问题不受影响",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 删除类型",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "类型 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的类型 ID",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/issue/list": {
+            "get": {
+                "description": "管理员查看所有用户的问题列表，支持按状态、优先级、问题类型、关键词筛选，分页返回",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 全量问题列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 50）",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态筛选：registered/pending/processing/resolved/unplanned/closed",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "优先级筛选：low/medium/high/urgent",
+                        "name": "priority",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "问题类型 ID",
+                        "name": "issue_type_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键词搜索（匹配标题）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/issue.IssueListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/issue/{id}/note": {
+            "put": {
+                "description": "管理员更新问题的内部备注信息，备注内容长度不超过 2000 字符，仅管理员可见",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 更新备注",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "问题 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新备注请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.UpdateIssueNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "备注更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误或备注超长",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/issue/{id}/priority": {
+            "put": {
+                "description": "管理员修改问题的优先级级别（low/medium/high/urgent）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 修改优先级",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "问题 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "修改优先级请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.UpdateIssuePriorityRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "优先级更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/issue/{id}/status": {
+            "put": {
+                "description": "管理员修改问题的处理状态，系统会校验状态流转合法性并自动记录关闭时间",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 修改状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "问题 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "修改状态请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.UpdateIssueStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "状态更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误或非法的状态流转",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/profiles/minecraft": {
             "post": {
                 "description": "由 Minecraft 服务端调用，根据角色名称列表批量查询角色信息。仅返回无符号 UUID 和名称，不包含角色属性。不存在的角色不包含在响应中，单次最多查询 10 个。",
@@ -910,6 +1379,465 @@ const docTemplatefrontleaves_yggleaf = `{
                     },
                     "409": {
                         "description": "资源冲突",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/issue": {
+            "post": {
+                "description": "已登录用户提交新的问题反馈，需指定问题类型、标题和内容，可选设置优先级（默认 medium）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问题接口"
+                ],
+                "summary": "[玩家] 提交问题",
+                "parameters": [
+                    {
+                        "description": "提交问题请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/issue.CreateIssueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/issue.IssueListItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题类型不存在或已禁用",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/issue-type/list": {
+            "get": {
+                "description": "获取所有已启用的问题类型列表，无需登录即可访问",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问题类型接口"
+                ],
+                "summary": "[公开] 类型列表",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/issue.IssueTypeListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/issue/attachment/{id}": {
+            "delete": {
+                "description": "删除指定附件，同时清理对象存储中的文件；仅上传者本人或管理员可删除",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问题接口"
+                ],
+                "summary": "[玩家/管理] 删除附件",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "附件 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的附件 ID",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权删除该附件",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "附件不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/issue/list": {
+            "get": {
+                "description": "获取当前已登录用户的问题反馈列表，支持按状态、优先级、问题类型筛选，分页返回",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问题接口"
+                ],
+                "summary": "[玩家] 我的问题列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 50）",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态筛选：registered/pending/processing/resolved/unplanned/closed",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "优先级筛选：low/medium/high/urgent",
+                        "name": "priority",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "问题类型 ID",
+                        "name": "issue_type_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/issue.IssueListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/issue/{id}": {
+            "get": {
+                "description": "根据问题 ID 获取详情，包含回复列表、附件列表和类型信息；非管理员仅能查看自己的问题",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问题接口"
+                ],
+                "summary": "[玩家] 问题详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "问题 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/issue.IssueDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "无效的问题 ID",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权查看该问题",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/issue/{id}/attachment": {
+            "post": {
+                "description": "向指定问题上传附件文件（Base64 编码），支持图片、PDF、文本、压缩包格式，单文件不超过 10MB，单问题最多 9 个附件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问题接口"
+                ],
+                "summary": "[玩家/管理] 上传附件",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "问题 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "上传附件请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/issue.UploadAttachmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "上传成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/issue.IssueAttachmentItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误或不支持的文件类型",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权上传附件",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "附件数量已达上限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/issue/{id}/reply": {
+            "post": {
+                "description": "向指定问题追加回复，管理员和问题创建者均可回复，回复内容长度限制 1~5000 字符",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问题接口"
+                ],
+                "summary": "[玩家/管理] 回复问题",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "问题 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "回复问题请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/issue.ReplyIssueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "回复成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/issue.IssueReplyItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权操作该问题",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题不存在",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -2283,6 +3211,89 @@ const docTemplatefrontleaves_yggleaf = `{
         }
     },
     "definitions": {
+        "admin.CreateIssueTypeRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "admin.UpdateIssueNoteRequest": {
+            "type": "object",
+            "properties": {
+                "admin_note": {
+                    "type": "string",
+                    "maxLength": 2000
+                }
+            }
+        },
+        "admin.UpdateIssuePriorityRequest": {
+            "type": "object",
+            "required": [
+                "priority"
+            ],
+            "properties": {
+                "priority": {
+                    "type": "string",
+                    "enum": [
+                        "low",
+                        "medium",
+                        "high",
+                        "urgent"
+                    ]
+                }
+            }
+        },
+        "admin.UpdateIssueStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "registered",
+                        "pending",
+                        "processing",
+                        "resolved",
+                        "unplanned",
+                        "closed"
+                    ]
+                }
+            }
+        },
+        "admin.UpdateIssueTypeRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
         "entity.CapeLibrary": {
             "type": "object",
             "properties": {
@@ -2758,6 +3769,250 @@ const docTemplatefrontleaves_yggleaf = `{
                 "AssignmentTypeGift",
                 "AssignmentTypeAdmin"
             ]
+        },
+        "issue.CreateIssueRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "issue_type_id",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "issue_type_id": {
+                    "type": "integer"
+                },
+                "priority": {
+                    "description": "值域须与 bConst.IssuePriority 常量保持同步",
+                    "type": "string",
+                    "enum": [
+                        "low",
+                        "medium",
+                        "high",
+                        "urgent"
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
+                }
+            }
+        },
+        "issue.IssueAttachmentItem": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "type": "string"
+                },
+                "file_size": {
+                    "type": "integer"
+                },
+                "file_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mime_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "issue.IssueDetailResponse": {
+            "type": "object",
+            "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/issue.IssueAttachmentItem"
+                    }
+                },
+                "issue": {
+                    "$ref": "#/definitions/issue.IssueEntityWrapper"
+                },
+                "issue_type": {
+                    "$ref": "#/definitions/issue.IssueTypeEntityWrapper"
+                },
+                "replies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/issue.IssueReplyItem"
+                    }
+                }
+            }
+        },
+        "issue.IssueEntityWrapper": {
+            "type": "object",
+            "properties": {
+                "admin_note": {
+                    "type": "string"
+                },
+                "closed_at": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "issue_type_id": {
+                    "type": "integer"
+                },
+                "priority": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "issue.IssueListItem": {
+            "type": "object",
+            "properties": {
+                "issue": {
+                    "$ref": "#/definitions/issue.IssueEntityWrapper"
+                },
+                "issue_type_name": {
+                    "type": "string"
+                },
+                "reply_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "issue.IssueListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/issue.IssueListItem"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "issue.IssueReplyEntityWrapper": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_admin_reply": {
+                    "type": "boolean"
+                },
+                "issue_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "issue.IssueReplyItem": {
+            "type": "object",
+            "properties": {
+                "issue_reply": {
+                    "$ref": "#/definitions/issue.IssueReplyEntityWrapper"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "issue.IssueTypeEntityWrapper": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "issue.IssueTypeListItem": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "issue.ReplyIssueRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 5000
+                }
+            }
+        },
+        "issue.UploadAttachmentRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "file_name"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "mime_type": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
         },
         "library.CapeListResponse": {
             "type": "object",
