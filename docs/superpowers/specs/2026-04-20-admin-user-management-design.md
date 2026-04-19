@@ -106,8 +106,8 @@ type AdminUserBasic struct {
 
 // GameProfileQuotaInfo 游戏档案配额信息
 type GameProfileQuotaInfo struct {
-    Total int64 `json:"total"` // 总额度
-    Used  int64 `json:"used"`  // 已使用额度
+    Total int32 `json:"total"` // 总额度
+    Used  int32 `json:"used"`  // 已使用额度
 }
 
 // LibraryQuotaInfo 资源库配额信息（皮肤 + 披风）
