@@ -26,6 +26,7 @@ var migrateTables = []interface{}{
 	&entity.UserSkinLibrary{},
 	&entity.UserCapeLibrary{},
 	&entity.GameToken{},
+	&entity.GameOnlineProfile{},
 	// Issue System
 	&entity.IssueType{},
 	&entity.Issue{},

@@ -148,6 +148,27 @@ func (l *YggdrasilLogic) BuildProfileResponse(ctx context.Context, profile *enti
 		capeURL = l.resolveTextureURL(ctx, profile.CapeLibrary.Texture)
 	}
 
+	// Mojang 正版回退：本平台未设置的皮肤/披风从 Mojang 获取
+	needSkin := profile.SkinLibrary == nil && skinURL == ""
+	needCape := profile.CapeLibrary == nil && capeURL == ""
+	if needSkin || needCape {
+		onlineProfile, xErr := l.GetOnlineProfileWithFallback(ctx, profile.Name, profile.ID)
+		if xErr != nil {
+			l.log.Warn(ctx, fmt.Sprintf("获取正版档案缓存失败(可忽略): %v", xErr.ErrorMessage))
+		}
+		if onlineProfile != nil && onlineProfile.IsOnline {
+			if needSkin && onlineProfile.SkinURL != nil && *onlineProfile.SkinURL != "" {
+				skinURL = *onlineProfile.SkinURL
+				if onlineProfile.SkinModel != nil {
+					skinModel = *onlineProfile.SkinModel
+				}
+			}
+			if needCape && onlineProfile.CapeURL != nil && *onlineProfile.CapeURL != "" {
+				capeURL = *onlineProfile.CapeURL
+			}
+		}
+	}
+
 	// 构建材质载荷并 Base64 编码
 	payload := l.BuildTexturesPayload(profileID, profile.Name, skinURL, skinModel, capeURL)
 	var value string

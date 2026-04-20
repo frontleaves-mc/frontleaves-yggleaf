@@ -21,6 +21,9 @@ package yggdrasil
 import (
 	"context"
 	"crypto/rsa"
+	"net/http"
+	"sync"
+	"time"
 
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	xCtxUtil "github.com/bamboo-services/bamboo-base-go/common/utility/context"
@@ -42,9 +45,10 @@ import (
 // 注意：`db` 字段仅用于向下传递给 Repository 构造函数，Logic 层本身不应
 // 直接使用该字段执行任何数据库操作或事务管理。
 type logic struct {
-	db  *gorm.DB             // GORM 数据库实例（传递给 Repository 使用）
-	rdb *redis.Client        // Redis 客户端实例（传递给 Cache/Repository 使用）
-	log *xLog.LogNamedLogger // 日志实例
+	db        *gorm.DB             // GORM 数据库实例（传递给 Repository 使用）
+	rdb       *redis.Client        // Redis 客户端实例（传递给 Cache/Repository 使用）
+	log       *xLog.LogNamedLogger // 日志实例
+	mojangMu  sync.Map             // map[string]*sync.Mutex — per-profile-name 互斥锁，防并发重复调用 Mojang API
 }
 
 // yggdrasilRepo Yggdrasil 数据访问适配器。
@@ -52,11 +56,12 @@ type logic struct {
 // 聚合 Yggdrasil 协议相关的各仓储实例，包括游戏令牌管理、用户查询、角色查询和会话缓存，
 // 供 YggdrasilLogic 统一调用。
 type yggdrasilRepo struct {
-	gameTokenRepo    *repository.GameTokenRepo       // 游戏令牌仓储
-	gameTokenTxnRepo *txn.GameTokenTxnRepo         // 游戏令牌事务协调仓储
-	userRepo         *repository.UserRepo            // 用户仓储
-	profileRepo      *repository.GameProfileYggRepo  // Yggdrasil 角色查询仓储
-	sessionCache     *cache.SessionCache             // 会话缓存
+	gameTokenRepo      *repository.GameTokenRepo       // 游戏令牌仓储
+	gameTokenTxnRepo   *txn.GameTokenTxnRepo           // 游戏令牌事务协调仓储
+	userRepo           *repository.UserRepo            // 用户仓储
+	profileRepo        *repository.GameProfileYggRepo  // Yggdrasil 角色查询仓储
+	sessionCache       *cache.SessionCache             // 会话缓存
+	onlineProfileRepo  *repository.GameOnlineProfileRepo // 正版档案缓存仓储
 }
 
 // YggdrasilLogic Yggdrasil 协议业务逻辑处理者。
@@ -68,11 +73,12 @@ type yggdrasilRepo struct {
 // 设计约束：本层不直接操作数据库事务，所有涉及多表写入的事务性操作
 // 均委托给 Repository 层完成。
 type YggdrasilLogic struct {
-	logic                                // 嵌入基类 (db, rdb, log)
-	repo      yggdrasilRepo
-	privKey   *rsa.PrivateKey            // RSA 私钥（用于 textures 属性签名）
-	pubKeyPEM string                     // RSA 公钥 PEM 字符串（用于 API 元数据响应）
-	bucket    *bBucket.BucketClient       // 对象存储客户端（用于解析纹理下载链接）
+	logic                                // 嵌入基类 (db, rdb, log, mojangMu)
+	repo       yggdrasilRepo
+	privKey    *rsa.PrivateKey          // RSA 私钥（用于 textures 属性签名）
+	pubKeyPEM  string                   // RSA 公钥 PEM 字符串（用于 API 元数据响应）
+	bucket     *bBucket.BucketClient    // 对象存储客户端（用于解析纹理下载链接）
+	httpClient *http.Client             // HTTP 客户端（用于 Mojang API 调用）
 }
 
 // NewYggdrasilLogic 创建 Yggdrasil 业务逻辑实例。
@@ -109,15 +115,19 @@ func NewYggdrasilLogic(ctx context.Context) *YggdrasilLogic {
 			log: xLog.WithName(xLog.NamedLOGC, "YggdrasilLogic"),
 		},
 		repo: yggdrasilRepo{
-			gameTokenRepo:    repository.NewGameTokenRepo(db),
-			gameTokenTxnRepo: txn.NewGameTokenTxnRepo(db, repository.NewGameTokenRepo(db)),
-			userRepo:         repository.NewUserRepo(db, rdb),
-			profileRepo:      repository.NewGameProfileYggRepo(db),
-			sessionCache:     &cache.SessionCache{RDB: rdb},
+			gameTokenRepo:     repository.NewGameTokenRepo(db),
+			gameTokenTxnRepo:  txn.NewGameTokenTxnRepo(db, repository.NewGameTokenRepo(db)),
+			userRepo:          repository.NewUserRepo(db, rdb),
+			profileRepo:       repository.NewGameProfileYggRepo(db),
+			sessionCache:      &cache.SessionCache{RDB: rdb},
+			onlineProfileRepo: repository.NewGameOnlineProfileRepo(db),
 		},
 		privKey:   privKey,
 		pubKeyPEM: pubKeyPEM,
 		bucket:    bCtx.MustGetBucket(ctx),
+		httpClient: &http.Client{
+			Timeout: time.Duration(bConst.MojangAPITimeoutSec) * time.Second,
+		},
 	}
 }
 

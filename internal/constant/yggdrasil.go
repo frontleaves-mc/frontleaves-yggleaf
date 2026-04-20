@@ -47,4 +47,14 @@ const (
 	// Yggdrasil ALI (API Location Indication) 响应头
 	YggdrasilALIHeader = "X-Authlib-Injector-API-Location"
 	YggdrasilALIPath   = "/api/v1/yggdrasil/"
+
+	// Mojang 在线档案缓存配置
+	OnlineProfileCacheDurationMin = 30 // DB 缓存过期时间（分钟）
+
+	// Mojang API 端点
+	MojangAPIProfileLookupURL  = "https://api.minecraftservices.com/minecraft/profile/lookup/name/" // +name
+	MojangAPISessionProfileURL = "https://sessionserver.mojang.com/session/minecraft/profile/"      // +uuid
+
+	// Mojang API HTTP 客户端配置
+	MojangAPITimeoutSec = 10 // 单次请求超时（秒）
 )

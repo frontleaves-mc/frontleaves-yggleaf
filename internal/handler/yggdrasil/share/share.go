@@ -204,6 +204,7 @@ func buildSkinDomains() []string {
 	domains := []string{
 		bConst.YggdrasilSkinDomainMain,
 		bConst.YggdrasilSkinDomainSuffix,
+		"textures.minecraft.net", // Mojang 正版纹理域名（在线档案回退使用）
 	}
 	if extra := xEnv.GetEnvString(bConst.EnvYggdrasilSkinDomainsExtra, ""); extra != "" {
 		for _, d := range strings.Split(extra, ",") {
