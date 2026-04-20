@@ -38,6 +38,83 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "/admin/game-profile/users/{user_id}/quota": {
+            "post": {
+                "description": "管理员调整指定用户的游戏档案配额总额度（相对变化量）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "游戏档案接口"
+                ],
+                "summary": "[管理] 调整用户游戏档案配额",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "调整配额请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.AdminAdjustQuotaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "调整成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/entity.GameProfileQuota"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户配额不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/issue-type": {
             "post": {
                 "description": "管理员创建新的问题分类类型，需指定名称和排序值",
@@ -500,6 +577,167 @@ const docTemplatefrontleaves_yggleaf = `{
                     },
                     "404": {
                         "description": "问题不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users": {
+            "get": {
+                "description": "管理员分页查询用户列表，支持角色、关键词、时间范围筛选",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员-用户接口"
+                ],
+                "summary": "[管理] 用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数(最大100)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "角色筛选(SUPER_ADMIN/ADMIN/PLAYER)",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键词搜索(用户名/邮箱)",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "注册时间起始(RFC3339)",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "注册时间截止(RFC3339)",
+                        "name": "end_time",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/admin.AdminUserListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{user_id}": {
+            "get": {
+                "description": "获取用户完整详情，包含账户信息、游戏档案配额、资源库配额及皮肤/披风资源列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员-用户接口"
+                ],
+                "summary": "[管理] 用户详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/admin.AdminUserDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -3211,6 +3449,151 @@ const docTemplatefrontleaves_yggleaf = `{
         }
     },
     "definitions": {
+        "admin.AdminCapeItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_public": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "texture_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "admin.AdminSkinItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_public": {
+                    "type": "boolean"
+                },
+                "model": {
+                    "description": "\"STEVE\" 或 \"ALEX\"",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "texture_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "admin.AdminUserBasic": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "has_ban": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "jailed_at": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "admin.AdminUserDetailResponse": {
+            "type": "object",
+            "properties": {
+                "cape_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.AdminCapeItem"
+                    }
+                },
+                "game_profile": {
+                    "$ref": "#/definitions/admin.GameProfileQuotaInfo"
+                },
+                "library_quota": {
+                    "$ref": "#/definitions/admin.LibraryQuotaInfo"
+                },
+                "skin_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.AdminSkinItem"
+                    }
+                },
+                "user": {
+                    "$ref": "#/definitions/admin.AdminUserBasic"
+                }
+            }
+        },
+        "admin.AdminUserItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "has_ban": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "role_name": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "admin.AdminUserListResponse": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.AdminUserItem"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "admin.CreateIssueTypeRequest": {
             "type": "object",
             "required": [
@@ -3226,6 +3609,46 @@ const docTemplatefrontleaves_yggleaf = `{
                     "maxLength": 32
                 },
                 "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "admin.GameProfileQuotaInfo": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
+                },
+                "used": {
+                    "type": "integer"
+                }
+            }
+        },
+        "admin.LibraryQuotaInfo": {
+            "type": "object",
+            "properties": {
+                "capes_private_total": {
+                    "type": "integer"
+                },
+                "capes_private_used": {
+                    "type": "integer"
+                },
+                "capes_public_total": {
+                    "type": "integer"
+                },
+                "capes_public_used": {
+                    "type": "integer"
+                },
+                "skins_private_total": {
+                    "type": "integer"
+                },
+                "skins_private_used": {
+                    "type": "integer"
+                },
+                "skins_public_total": {
+                    "type": "integer"
+                },
+                "skins_public_used": {
                     "type": "integer"
                 }
             }
@@ -4305,6 +4728,23 @@ const docTemplatefrontleaves_yggleaf = `{
             "properties": {
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "user.AdminAdjustQuotaRequest": {
+            "type": "object",
+            "required": [
+                "delta"
+            ],
+            "properties": {
+                "delta": {
+                    "description": "配额变化量（正数增加，负数减少）",
+                    "type": "integer"
+                },
+                "remark": {
+                    "description": "备注（可选，最长 255 字符）",
+                    "type": "string",
+                    "maxLength": 255
                 }
             }
         },

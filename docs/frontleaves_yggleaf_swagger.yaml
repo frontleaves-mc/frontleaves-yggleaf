@@ -1,4 +1,99 @@
 definitions:
+  admin.AdminCapeItem:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_public:
+        type: boolean
+      name:
+        type: string
+      texture_url:
+        type: string
+    type: object
+  admin.AdminSkinItem:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_public:
+        type: boolean
+      model:
+        description: '"STEVE" 或 "ALEX"'
+        type: string
+      name:
+        type: string
+      texture_url:
+        type: string
+    type: object
+  admin.AdminUserBasic:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      has_ban:
+        type: boolean
+      id:
+        type: string
+      jailed_at:
+        type: string
+      phone:
+        type: string
+      role_name:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  admin.AdminUserDetailResponse:
+    properties:
+      cape_list:
+        items:
+          $ref: '#/definitions/admin.AdminCapeItem'
+        type: array
+      game_profile:
+        $ref: '#/definitions/admin.GameProfileQuotaInfo'
+      library_quota:
+        $ref: '#/definitions/admin.LibraryQuotaInfo'
+      skin_list:
+        items:
+          $ref: '#/definitions/admin.AdminSkinItem'
+        type: array
+      user:
+        $ref: '#/definitions/admin.AdminUserBasic'
+    type: object
+  admin.AdminUserItem:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      has_ban:
+        type: boolean
+      id:
+        type: string
+      role_name:
+        type: string
+      username:
+        type: string
+    type: object
+  admin.AdminUserListResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/admin.AdminUserItem'
+        type: array
+      page:
+        type: integer
+      size:
+        type: integer
+      total:
+        type: integer
+    type: object
   admin.CreateIssueTypeRequest:
     properties:
       description:
@@ -11,6 +106,32 @@ definitions:
         type: integer
     required:
     - name
+    type: object
+  admin.GameProfileQuotaInfo:
+    properties:
+      total:
+        type: integer
+      used:
+        type: integer
+    type: object
+  admin.LibraryQuotaInfo:
+    properties:
+      capes_private_total:
+        type: integer
+      capes_private_used:
+        type: integer
+      capes_public_total:
+        type: integer
+      capes_public_used:
+        type: integer
+      skins_private_total:
+        type: integer
+      skins_private_used:
+        type: integer
+      skins_public_total:
+        type: integer
+      skins_public_used:
+        type: integer
     type: object
   admin.UpdateIssueNoteRequest:
     properties:
@@ -760,6 +881,18 @@ definitions:
     required:
     - name
     type: object
+  user.AdminAdjustQuotaRequest:
+    properties:
+      delta:
+        description: 配额变化量（正数增加，负数减少）
+        type: integer
+      remark:
+        description: 备注（可选，最长 255 字符）
+        maxLength: 255
+        type: string
+    required:
+    - delta
+    type: object
   user.ChangeUsernameRequest:
     properties:
       new_name:
@@ -1161,6 +1294,54 @@ paths:
       summary: '[公共] API 元数据'
       tags:
       - Yggdrasil-公共接口
+  /admin/game-profile/users/{user_id}/quota:
+    post:
+      consumes:
+      - application/json
+      description: 管理员调整指定用户的游戏档案配额总额度（相对变化量）
+      parameters:
+      - description: 目标用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: 调整配额请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.AdminAdjustQuotaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 调整成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.GameProfileQuota'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 用户配额不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[管理] 调整用户游戏档案配额'
+      tags:
+      - 游戏档案接口
   /admin/issue-type:
     post:
       consumes:
@@ -1462,6 +1643,107 @@ paths:
       summary: '[管理] 全量问题列表'
       tags:
       - 管理员问题接口
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: 管理员分页查询用户列表，支持角色、关键词、时间范围筛选
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页条数(最大100)
+        in: query
+        name: page_size
+        type: integer
+      - description: 角色筛选(SUPER_ADMIN/ADMIN/PLAYER)
+        in: query
+        name: role
+        type: string
+      - description: 关键词搜索(用户名/邮箱)
+        in: query
+        name: keyword
+        type: string
+      - description: 注册时间起始(RFC3339)
+        in: query
+        name: start_time
+        type: string
+      - description: 注册时间截止(RFC3339)
+        in: query
+        name: end_time
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/admin.AdminUserListResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 权限不足
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[管理] 用户列表'
+      tags:
+      - 管理员-用户接口
+  /admin/users/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户完整详情，包含账户信息、游戏档案配额、资源库配额及皮肤/披风资源列表
+      parameters:
+      - description: 目标用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/admin.AdminUserDetailResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 权限不足
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[管理] 用户详情'
+      tags:
+      - 管理员-用户接口
   /api/profiles/minecraft:
     post:
       consumes:

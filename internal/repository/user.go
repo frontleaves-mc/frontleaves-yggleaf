@@ -181,3 +181,146 @@ func (r *UserRepo) pickDB(ctx context.Context, tx *gorm.DB) *gorm.DB {
 	}
 	return r.db.WithContext(ctx)
 }
+
+// AdminUserFilter 管理员用户列表筛选条件。
+type AdminUserFilter struct {
+	Role      *string
+	Keyword   *string
+	StartTime *time.Time
+	EndTime   *time.Time
+}
+
+// List 分页查询用户列表（管理员用）。
+//
+// 支持按角色、关键词（用户名/邮箱模糊匹配）、注册时间范围筛选，
+// 默认按注册时间降序排列。
+func (r *UserRepo) List(ctx context.Context, page, pageSize int, filter AdminUserFilter) ([]entity.User, int64, *xError.Error) {
+	r.log.Info(ctx, "List - 管理员分页查询用户列表")
+
+	query := r.db.WithContext(ctx).Model(&entity.User{})
+
+	if filter.Role != nil && *filter.Role != "" {
+		query = query.Where("role_name = ?", *filter.Role)
+	}
+	if filter.Keyword != nil && *filter.Keyword != "" {
+		keyword := "%" + *filter.Keyword + "%"
+		query = query.Where("username ILIKE ? OR email ILIKE ?", keyword, keyword)
+	}
+	if filter.StartTime != nil {
+		query = query.Where("created_at >= ?", *filter.StartTime)
+	}
+	if filter.EndTime != nil {
+		query = query.Where("created_at <= ?", *filter.EndTime)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, xError.NewError(ctx, xError.DatabaseError, "查询用户总数失败", true, err)
+	}
+
+	var users []entity.User
+	offset := (page - 1) * pageSize
+	if err := query.Select("id, username, email, role_name, has_ban, created_at").
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&users).Error; err != nil {
+		return nil, 0, xError.NewError(ctx, xError.DatabaseError, "查询用户列表失败", true, err)
+	}
+
+	return users, total, nil
+}
+
+// AdminUserDetailAggregates 用户详情聚合数据（不含纹理 URL 解析）。
+type AdminUserDetailAggregates struct {
+	User          *entity.User
+	GameProfile   *entity.GameProfileQuota
+	LibraryQuota  *entity.LibraryQuota
+	SkinLibraries []entity.SkinLibrary
+	CapeLibraries []entity.CapeLibrary
+}
+
+// GetAdminDetailAggregates 并行获取用户详情所需的全部聚合数据。
+//
+// 该方法执行 5 个独立查询：用户基本信息、游戏档案配额、资源库配额、
+// 皮肤库列表、披风库列表。调用方负责后续的纹理 URL 批量解析。
+func (r *UserRepo) GetAdminDetailAggregates(ctx context.Context, userID string) (*AdminUserDetailAggregates, *xError.Error) {
+	r.log.Info(ctx, "GetAdminDetailAggregates - 获取用户详情聚合数据")
+
+	user, found, err := r.Get(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, nil
+	}
+
+	result := &AdminUserDetailAggregates{User: user}
+
+	type quotaResult struct {
+		gp    *entity.GameProfileQuota
+		lq    *entity.LibraryQuota
+		skins []entity.SkinLibrary
+		capes []entity.CapeLibrary
+		err   *xError.Error
+	}
+
+	ch := make(chan quotaResult, 1)
+	go func() {
+		qr := quotaResult{}
+
+		gpRepo := NewGameProfileQuotaRepo(r.db)
+		gp, gpFound, gpErr := gpRepo.GetByUserID(ctx, nil, user.ID, false)
+		if gpErr != nil {
+			qr.err = gpErr
+			ch <- qr
+			return
+		}
+		if gpFound {
+			qr.gp = gp
+		}
+
+		lqRepo := NewLibraryQuotaRepo(r.db)
+		lq, lqFound, lqErr := lqRepo.GetByUserID(ctx, nil, user.ID, false)
+		if lqErr != nil {
+			qr.err = lqErr
+			ch <- qr
+			return
+		}
+		if lqFound {
+			qr.lq = lq
+		}
+
+		skinRepo := NewSkinLibraryRepo(r.db)
+		skins, _, skinErr := skinRepo.ListByUserID(ctx, nil, user.ID, 1, 1000)
+		if skinErr != nil {
+			qr.err = skinErr
+			ch <- qr
+			return
+		}
+		qr.skins = skins
+
+		capeRepo := NewCapeLibraryRepo(r.db)
+		capes, _, capeErr := capeRepo.ListByUserID(ctx, nil, user.ID, 1, 1000)
+		if capeErr != nil {
+			qr.err = capeErr
+			ch <- qr
+			return
+		}
+		qr.capes = capes
+
+		ch <- qr
+	}()
+
+	qr := <-ch
+	if qr.err != nil {
+		return nil, qr.err
+	}
+
+	result.GameProfile = qr.gp
+	result.LibraryQuota = qr.lq
+	result.SkinLibraries = qr.skins
+	result.CapeLibraries = qr.capes
+
+	return result, nil
+}

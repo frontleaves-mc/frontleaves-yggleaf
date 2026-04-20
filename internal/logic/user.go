@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
@@ -12,6 +13,7 @@ import (
 	xModels "github.com/bamboo-services/bamboo-base-go/major/models"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/repository"
+	apiAdmin "github.com/frontleaves-mc/frontleaves-yggleaf/api/admin"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/api/user"
 	bSdkModels "github.com/phalanx-labs/beacon-sso-sdk/models"
 )
@@ -217,4 +219,105 @@ func (l *UserLogic) UpdateGamePassword(ctx context.Context, userID xSnowflake.Sn
 			AccountReady: l.determineAccountReady(userEntity),
 		},
 	}, nil
+}
+
+// ListAdminUsers 管理员分页查询用户列表。
+func (l *UserLogic) ListAdminUsers(ctx context.Context, req *apiAdmin.AdminUserListRequest) (*apiAdmin.AdminUserListResponse, *xError.Error) {
+	l.log.Info(ctx, "ListAdminUsers - 管理员分页查询用户列表")
+
+	page := req.Page
+	if page < 1 {
+		page = 1
+	}
+	pageSize := req.PageSize
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	filter := repository.AdminUserFilter{}
+	if req.Role != "" {
+		filter.Role = &req.Role
+	}
+	if req.Keyword != "" {
+		filter.Keyword = &req.Keyword
+	}
+	if req.StartTime != "" {
+		if t, err := time.Parse(time.RFC3339, req.StartTime); err == nil {
+			filter.StartTime = &t
+		}
+	}
+	if req.EndTime != "" {
+		if t, err := time.Parse(time.RFC3339, req.EndTime); err == nil {
+			filter.EndTime = &t
+		}
+	}
+
+	users, total, xErr := l.repo.user.List(ctx, page, pageSize, filter)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	items := make([]apiAdmin.AdminUserItem, len(users))
+	for i, u := range users {
+		items[i] = apiAdmin.AdminUserItem{
+			ID:        u.ID.String(),
+			Username:  u.Username,
+			Email:     u.Email,
+			RoleName:  u.RoleName,
+			HasBan:    u.HasBan,
+			CreatedAt: u.CreatedAt,
+		}
+	}
+
+	return &apiAdmin.AdminUserListResponse{
+		List:  items,
+		Total: total,
+		Page:  page,
+		Size:  pageSize,
+	}, nil
+}
+
+// AdminUserDetailRaw 用户详情原始聚合数据（供 Handler 层组装最终响应）。
+type AdminUserDetailRaw struct {
+	User          *entity.User
+	GameProfile   *entity.GameProfileQuota
+	LibraryQuota  *entity.LibraryQuota
+	SkinLibraries []entity.SkinLibrary
+	CapeLibraries []entity.CapeLibrary
+}
+
+// GetAdminUserDetailRaw 获取用户详情的原始聚合数据（不含纹理 URL）。
+func (l *UserLogic) GetAdminUserDetailRaw(ctx context.Context, userID string) (*AdminUserDetailRaw, *xError.Error) {
+	l.log.Info(ctx, "GetAdminUserDetailRaw - 获取用户详情聚合数据")
+
+	aggregates, xErr := l.repo.user.GetAdminDetailAggregates(ctx, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+	if aggregates == nil || aggregates.User == nil {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "用户不存在", true)
+	}
+
+	return &AdminUserDetailRaw{
+		User:          aggregates.User,
+		GameProfile:   aggregates.GameProfile,
+		LibraryQuota:  aggregates.LibraryQuota,
+		SkinLibraries: aggregates.SkinLibraries,
+		CapeLibraries: aggregates.CapeLibraries,
+	}, nil
+}
+
+// modelTypeToString 将 entity.ModelType 转为可读字符串。
+func modelTypeToString(mt entity.ModelType) string {
+	switch mt {
+	case entity.ModelTypeClassic:
+		return "STEVE"
+	case entity.ModelTypeSlim:
+		return "ALEX"
+	default:
+		return "UNKNOWN"
+	}
 }

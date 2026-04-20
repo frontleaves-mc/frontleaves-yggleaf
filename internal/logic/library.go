@@ -211,6 +211,11 @@ func (l *LibraryLogic) resolveTextureURLsBatch(ctx context.Context, textureIDs [
 	return result, nil
 }
 
+// ResolveTextureURLsBatchForAdmin 管理员接口专用的批量纹理 URL 解析公开方法。
+func (l *LibraryLogic) ResolveTextureURLsBatchForAdmin(ctx context.Context, textureIDs []int64) (map[int64]string, *xError.Error) {
+	return l.resolveTextureURLsBatch(ctx, textureIDs)
+}
+
 // cacheVerifyFile 将缓存态文件确认为永久态。
 //
 // 必须在数据库事务成功后调用。失败仅记录日志不返回错误，
