@@ -40,7 +40,7 @@ func (r *route) libraryRouter(route gin.IRouter) {
 
 		// 管理员接口
 		adminGroup := libraryGroup.Group("/admin")
-		adminGroup.Use(middleware.Admin(r.context))
+		adminGroup.Use(middleware.SuperAdmin(r.context))
 		{
 			// 管理员赠送/撤销皮肤
 			adminGroup.POST("/users/:user_id/skins/gift", libraryHandler.GiftSkin)

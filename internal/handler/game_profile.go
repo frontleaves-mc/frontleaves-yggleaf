@@ -223,9 +223,9 @@ func (h *GameProfileHandler) GetQuota(ctx *gin.Context) {
 
 // AdjustQuotaAdmin 管理员调整指定用户的游戏档案配额
 //
-// @Summary     [管理] 调整用户游戏档案配额
+// @Summary     [超管] 调整用户游戏档案配额
 // @Description 管理员调整指定用户的游戏档案配额总额度（相对变化量）
-// @Tags        游戏档案接口
+// @Tags        管理员-游戏档案接口
 // @Accept      json
 // @Produce     json
 // @Param       user_id path string true "目标用户 ID"
@@ -233,8 +233,9 @@ func (h *GameProfileHandler) GetQuota(ctx *gin.Context) {
 // @Success     200 {object} xBase.BaseResponse{data=entity.GameProfileQuota} "调整成功"
 // @Failure     400 {object} xBase.BaseResponse "请求参数错误"
 // @Failure     401 {object} xBase.BaseResponse "未授权"
-// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     403 {object} xBase.BaseResponse "需要超级管理员权限"
 // @Failure     404 {object} xBase.BaseResponse "用户配额不存在"
+// @Security    BearerAuth
 // @Router      /admin/game-profile/users/{user_id}/quota [POST]
 func (h *GameProfileHandler) AdjustQuotaAdmin(ctx *gin.Context) {
 	h.log.Info(ctx, "AdjustQuotaAdmin - 管理员调整游戏档案配额")

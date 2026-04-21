@@ -1,3 +1,8 @@
+// @securityDefinitions.bearer BearerAuth
+// @in header
+// @name Authorization
+// @description 输入 "Bearer <accessToken>" 进行 OAuth2 认证
+
 package route
 
 import (

@@ -526,9 +526,9 @@ func (h *LibraryHandler) GetQuota(ctx *gin.Context) {
 
 // GiftSkin 管理员赠送皮肤
 //
-// @Summary     [管理] 赠送皮肤
+// @Summary     [超管] 赠送皮肤
 // @Description 管理员向指定用户赠送皮肤，支持 gift 和 admin 两种分配类型
-// @Tags        资源库接口
+// @Tags        管理员-资源库接口
 // @Accept      json
 // @Produce     json
 // @Param       user_id path string true "目标用户 ID"
@@ -536,8 +536,9 @@ func (h *LibraryHandler) GetQuota(ctx *gin.Context) {
 // @Success     200 {object} xBase.BaseResponse{data=apiLibrary.SkinResponse} "赠送成功"
 // @Failure     400 {object} xBase.BaseResponse "请求参数错误"
 // @Failure     401 {object} xBase.BaseResponse "未授权"
-// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     403 {object} xBase.BaseResponse "需要超级管理员权限"
 // @Failure     404 {object} xBase.BaseResponse "资源不存在"
+// @Security    BearerAuth
 // @Router      /library/admin/users/{user_id}/skins/gift [POST]
 func (h *LibraryHandler) GiftSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "GiftSkin - 管理员赠送皮肤")
@@ -583,9 +584,9 @@ func (h *LibraryHandler) GiftSkin(ctx *gin.Context) {
 
 // RevokeSkin 管理员撤销皮肤
 //
-// @Summary     [管理] 撤销皮肤
+// @Summary     [超管] 撤销皮肤
 // @Description 管理员撤销指定用户的皮肤关联
-// @Tags        资源库接口
+// @Tags        管理员-资源库接口
 // @Accept      json
 // @Produce     json
 // @Param       user_id path string true "目标用户 ID"
@@ -593,8 +594,9 @@ func (h *LibraryHandler) GiftSkin(ctx *gin.Context) {
 // @Success     200 {object} xBase.BaseResponse "撤销成功"
 // @Failure     400 {object} xBase.BaseResponse "请求参数错误"
 // @Failure     401 {object} xBase.BaseResponse "未授权"
-// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     403 {object} xBase.BaseResponse "需要超级管理员权限"
 // @Failure     404 {object} xBase.BaseResponse "资源不存在"
+// @Security    BearerAuth
 // @Router      /library/admin/users/{user_id}/skins/{skin_library_id} [DELETE]
 func (h *LibraryHandler) RevokeSkin(ctx *gin.Context) {
 	h.log.Info(ctx, "RevokeSkin - 管理员撤销皮肤")
@@ -622,9 +624,9 @@ func (h *LibraryHandler) RevokeSkin(ctx *gin.Context) {
 
 // GiftCape 管理员赠送披风
 //
-// @Summary     [管理] 赠送披风
+// @Summary     [超管] 赠送披风
 // @Description 管理员向指定用户赠送披风，支持 gift 和 admin 两种分配类型
-// @Tags        资源库接口
+// @Tags        管理员-资源库接口
 // @Accept      json
 // @Produce     json
 // @Param       user_id path string true "目标用户 ID"
@@ -632,8 +634,9 @@ func (h *LibraryHandler) RevokeSkin(ctx *gin.Context) {
 // @Success     200 {object} xBase.BaseResponse{data=apiLibrary.CapeResponse} "赠送成功"
 // @Failure     400 {object} xBase.BaseResponse "请求参数错误"
 // @Failure     401 {object} xBase.BaseResponse "未授权"
-// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     403 {object} xBase.BaseResponse "需要超级管理员权限"
 // @Failure     404 {object} xBase.BaseResponse "资源不存在"
+// @Security    BearerAuth
 // @Router      /library/admin/users/{user_id}/capes/gift [POST]
 func (h *LibraryHandler) GiftCape(ctx *gin.Context) {
 	h.log.Info(ctx, "GiftCape - 管理员赠送披风")
@@ -679,9 +682,9 @@ func (h *LibraryHandler) GiftCape(ctx *gin.Context) {
 
 // RevokeCape 管理员撤销披风
 //
-// @Summary     [管理] 撤销披风
+// @Summary     [超管] 撤销披风
 // @Description 管理员撤销指定用户的披风关联
-// @Tags        资源库接口
+// @Tags        管理员-资源库接口
 // @Accept      json
 // @Produce     json
 // @Param       user_id path string true "目标用户 ID"
@@ -689,8 +692,9 @@ func (h *LibraryHandler) GiftCape(ctx *gin.Context) {
 // @Success     200 {object} xBase.BaseResponse "撤销成功"
 // @Failure     400 {object} xBase.BaseResponse "请求参数错误"
 // @Failure     401 {object} xBase.BaseResponse "未授权"
-// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     403 {object} xBase.BaseResponse "需要超级管理员权限"
 // @Failure     404 {object} xBase.BaseResponse "资源不存在"
+// @Security    BearerAuth
 // @Router      /library/admin/users/{user_id}/capes/{cape_library_id} [DELETE]
 func (h *LibraryHandler) RevokeCape(ctx *gin.Context) {
 	h.log.Info(ctx, "RevokeCape - 管理员撤销披风")
@@ -718,16 +722,17 @@ func (h *LibraryHandler) RevokeCape(ctx *gin.Context) {
 
 // SyncQuota 管理员同步用户配额
 //
-// @Summary     [管理] 同步配额
+// @Summary     [超管] 同步配额
 // @Description 管理员重新计算并同步指定用户的资源库配额
-// @Tags        资源库接口
+// @Tags        管理员-资源库接口
 // @Accept      json
 // @Produce     json
 // @Param       user_id path string true "目标用户 ID"
 // @Success     200 {object} xBase.BaseResponse "同步成功"
 // @Failure     400 {object} xBase.BaseResponse "请求参数错误"
 // @Failure     401 {object} xBase.BaseResponse "未授权"
-// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     403 {object} xBase.BaseResponse "需要超级管理员权限"
+// @Security    BearerAuth
 // @Router      /library/admin/users/{user_id}/quota/sync [POST]
 func (h *LibraryHandler) SyncQuota(ctx *gin.Context) {
 	h.log.Info(ctx, "SyncQuota - 管理员同步配额")
@@ -750,9 +755,9 @@ func (h *LibraryHandler) SyncQuota(ctx *gin.Context) {
 
 // ListUserSkins 查询指定用户的皮肤列表（管理员）
 //
-// @Summary     [管理] 查询用户皮肤列表
+// @Summary     [超管] 查询用户皮肤列表
 // @Description 管理员分页查询指定用户关联的所有皮肤
-// @Tags        资源库接口
+// @Tags        管理员-资源库接口
 // @Accept      json
 // @Produce     json
 // @Param       user_id path string true "目标用户 ID"
@@ -761,7 +766,8 @@ func (h *LibraryHandler) SyncQuota(ctx *gin.Context) {
 // @Success     200 {object} xBase.BaseResponse{data=apiLibrary.SkinListResponse} "获取成功"
 // @Failure     400 {object} xBase.BaseResponse "请求参数错误"
 // @Failure     401 {object} xBase.BaseResponse "未授权"
-// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     403 {object} xBase.BaseResponse "需要超级管理员权限"
+// @Security    BearerAuth
 // @Router      /library/admin/users/{user_id}/skins [GET]
 func (h *LibraryHandler) ListUserSkins(ctx *gin.Context) {
 	h.log.Info(ctx, "ListUserSkins - 查询用户皮肤列表")
@@ -789,9 +795,9 @@ func (h *LibraryHandler) ListUserSkins(ctx *gin.Context) {
 
 // ListUserCapes 查询指定用户的披风列表（管理员）
 //
-// @Summary     [管理] 查询用户披风列表
+// @Summary     [超管] 查询用户披风列表
 // @Description 管理员分页查询指定用户关联的所有披风
-// @Tags        资源库接口
+// @Tags        管理员-资源库接口
 // @Accept      json
 // @Produce     json
 // @Param       user_id path string true "目标用户 ID"
@@ -800,7 +806,8 @@ func (h *LibraryHandler) ListUserSkins(ctx *gin.Context) {
 // @Success     200 {object} xBase.BaseResponse{data=apiLibrary.CapeListResponse} "获取成功"
 // @Failure     400 {object} xBase.BaseResponse "请求参数错误"
 // @Failure     401 {object} xBase.BaseResponse "未授权"
-// @Failure     403 {object} xBase.BaseResponse "无权限"
+// @Failure     403 {object} xBase.BaseResponse "需要超级管理员权限"
+// @Security    BearerAuth
 // @Router      /library/admin/users/{user_id}/capes [GET]
 func (h *LibraryHandler) ListUserCapes(ctx *gin.Context) {
 	h.log.Info(ctx, "ListUserCapes - 查询用户披风列表")

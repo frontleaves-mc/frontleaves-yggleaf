@@ -269,6 +269,7 @@ func (h *IssueHandler) DeleteAttachment(ctx *gin.Context) {
 // @Success     200   {object}  xBase.BaseResponse{data=apiIssue.IssueListResponse} "获取成功"
 // @Failure     401   {object}  xBase.BaseResponse                               "未授权"
 // @Failure     403   {object}  xBase.BaseResponse                               "需要管理员权限"
+// @Security    BearerAuth
 // @Router      /admin/issue/list [GET]
 func (h *IssueHandler) GetIssueListAdmin(ctx *gin.Context) {
 	h.log.Info(ctx, "GetIssueListAdmin - 管理员全量列表")
@@ -316,6 +317,7 @@ func (h *IssueHandler) GetIssueListAdmin(ctx *gin.Context) {
 // @Failure     401   {object}  xBase.BaseResponse "未授权"
 // @Failure     403   {object}  xBase.BaseResponse "需要管理员权限"
 // @Failure     404   {object}  xBase.BaseResponse "问题不存在"
+// @Security    BearerAuth
 // @Router      /admin/issue/{id}/status [PUT]
 func (h *IssueHandler) UpdateIssueStatus(ctx *gin.Context) {
 	h.log.Info(ctx, "UpdateIssueStatus - 修改问题状态")
@@ -349,6 +351,7 @@ func (h *IssueHandler) UpdateIssueStatus(ctx *gin.Context) {
 // @Failure     401   {object}  xBase.BaseResponse "未授权"
 // @Failure     403   {object}  xBase.BaseResponse "需要管理员权限"
 // @Failure     404   {object}  xBase.BaseResponse "问题不存在"
+// @Security    BearerAuth
 // @Router      /admin/issue/{id}/priority [PUT]
 func (h *IssueHandler) UpdateIssuePriority(ctx *gin.Context) {
 	h.log.Info(ctx, "UpdateIssuePriority - 修改优先级")
@@ -382,6 +385,7 @@ func (h *IssueHandler) UpdateIssuePriority(ctx *gin.Context) {
 // @Failure     401   {object}  xBase.BaseResponse "未授权"
 // @Failure     403   {object}  xBase.BaseResponse "需要管理员权限"
 // @Failure     404   {object}  xBase.BaseResponse "问题不存在"
+// @Security    BearerAuth
 // @Router      /admin/issue/{id}/note [PUT]
 func (h *IssueHandler) UpdateIssueNote(ctx *gin.Context) {
 	h.log.Info(ctx, "UpdateIssueNote - 更新内部备注")
@@ -428,7 +432,7 @@ func (h *IssueHandler) ListIssueTypes(ctx *gin.Context) {
 
 // CreateIssueType 创建问题类型
 //
-// @Summary     [管理] 创建类型
+// @Summary     [超管] 创建类型
 // @Description 管理员创建新的问题分类类型，需指定名称和排序值
 // @Tags        管理员问题接口
 // @Accept      json
@@ -437,7 +441,8 @@ func (h *IssueHandler) ListIssueTypes(ctx *gin.Context) {
 // @Success     200   {object}  xBase.BaseResponse{data=apiIssue.IssueTypeListItem} "创建成功"
 // @Failure     400   {object}  xBase.BaseResponse                              "请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse                              "未授权"
-// @Failure     403   {object}  xBase.BaseResponse                              "需要管理员权限"
+// @Failure     403   {object}  xBase.BaseResponse                              "需要超级管理员权限"
+// @Security    BearerAuth
 // @Router      /admin/issue-type [POST]
 func (h *IssueHandler) CreateIssueType(ctx *gin.Context) {
 	h.log.Info(ctx, "CreateIssueType - 创建问题类型")
@@ -455,7 +460,7 @@ func (h *IssueHandler) CreateIssueType(ctx *gin.Context) {
 
 // UpdateIssueType 编辑问题类型
 //
-// @Summary     [管理] 编辑类型
+// @Summary     [超管] 编辑类型
 // @Description 管理员编辑已有问题类型的名称、描述、排序或启用状态
 // @Tags        管理员问题接口
 // @Accept      json
@@ -465,8 +470,9 @@ func (h *IssueHandler) CreateIssueType(ctx *gin.Context) {
 // @Success     200   {object}  xBase.BaseResponse{data=apiIssue.IssueTypeListItem} "更新成功"
 // @Failure     400   {object}  xBase.BaseResponse                              "请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse                              "未授权"
-// @Failure     403   {object}  xBase.BaseResponse                              "需要管理员权限"
+// @Failure     403   {object}  xBase.BaseResponse                              "需要超级管理员权限"
 // @Failure     404   {object}  xBase.BaseResponse                              "问题类型不存在"
+// @Security    BearerAuth
 // @Router      /admin/issue-type/{id} [PUT]
 func (h *IssueHandler) UpdateIssueType(ctx *gin.Context) {
 	h.log.Info(ctx, "UpdateIssueType - 编辑问题类型")
@@ -489,7 +495,7 @@ func (h *IssueHandler) UpdateIssueType(ctx *gin.Context) {
 
 // DeleteIssueType 删除问题类型
 //
-// @Summary     [管理] 删除类型
+// @Summary     [超管] 删除类型
 // @Description 管理员删除指定的问题类型，已关联的问题不受影响
 // @Tags        管理员问题接口
 // @Accept      json
@@ -498,7 +504,8 @@ func (h *IssueHandler) UpdateIssueType(ctx *gin.Context) {
 // @Success     200   {object}  xBase.BaseResponse "删除成功"
 // @Failure     400   {object}  xBase.BaseResponse "无效的类型 ID"
 // @Failure     401   {object}  xBase.BaseResponse "未授权"
-// @Failure     403   {object}  xBase.BaseResponse "需要管理员权限"
+// @Failure     403   {object}  xBase.BaseResponse "需要超级管理员权限"
+// @Security    BearerAuth
 // @Router      /admin/issue-type/{id} [DELETE]
 func (h *IssueHandler) DeleteIssueType(ctx *gin.Context) {
 	h.log.Info(ctx, "DeleteIssueType - 删除问题类型")

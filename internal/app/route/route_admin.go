@@ -13,7 +13,7 @@ func (r *route) adminRouter(route gin.IRouter) {
 	adminGroup := route.Group("/admin/users")
 	adminGroup.Use(bSdkMiddle.CheckAuth(r.context))
 	adminGroup.Use(middleware.User(r.context))
-	adminGroup.Use(middleware.Admin(r.context))
+	adminGroup.Use(middleware.SuperAdmin(r.context))
 	{
 		adminGroup.GET("", userHandler.ListAdminUsers)
 		adminGroup.GET("/:user_id", userHandler.GetAdminUserDetail)

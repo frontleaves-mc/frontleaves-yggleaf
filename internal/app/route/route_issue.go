@@ -47,7 +47,7 @@ func (r *route) issueRouter(route gin.IRouter) {
 	adminTypeGroup := route.Group("/admin/issue-type")
 	adminTypeGroup.Use(bSdkMiddle.CheckAuth(r.context))
 	adminTypeGroup.Use(middleware.User(r.context))
-	adminTypeGroup.Use(middleware.Admin(r.context))
+	adminTypeGroup.Use(middleware.SuperAdmin(r.context))
 
 	{
 		adminTypeGroup.POST("", issueHandler.CreateIssueType)

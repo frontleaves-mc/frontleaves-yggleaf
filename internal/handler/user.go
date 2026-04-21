@@ -85,7 +85,7 @@ func (h *UserHandler) UpdateGamePassword(ctx *gin.Context) {
 
 // ListAdminUsers 管理员获取用户分页列表
 //
-// @Summary 	[管理] 用户列表
+// @Summary 	[超管] 用户列表
 // @Description 管理员分页查询用户列表，支持角色、关键词、时间范围筛选
 // @Tags        管理员-用户接口
 // @Accept      json
@@ -99,7 +99,8 @@ func (h *UserHandler) UpdateGamePassword(ctx *gin.Context) {
 // @Success     200   {object}  xBase.BaseResponse{data=admin.AdminUserListResponse}	"查询成功"
 // @Failure     400   {object}  xBase.BaseResponse          			"请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse         				"未授权"
-// @Failure     403   {object}  xBase.BaseResponse          			"权限不足"
+// @Failure     403   {object}  xBase.BaseResponse          			"需要超级管理员权限"
+// @Security    BearerAuth
 // @Router       /admin/users [GET]
 func (h *UserHandler) ListAdminUsers(ctx *gin.Context) {
 	h.log.Info(ctx, "ListAdminUsers - 管理员获取用户分页列表")
@@ -121,7 +122,7 @@ func (h *UserHandler) ListAdminUsers(ctx *gin.Context) {
 
 // GetAdminUserDetail 管理员获取用户详情
 //
-// @Summary 	[管理] 用户详情
+// @Summary 	[超管] 用户详情
 // @Description 获取用户完整详情，包含账户信息、游戏档案配额、资源库配额及皮肤/披风资源列表
 // @Tags        管理员-用户接口
 // @Accept      json
@@ -130,8 +131,9 @@ func (h *UserHandler) ListAdminUsers(ctx *gin.Context) {
 // @Success     200   {object}  xBase.BaseResponse{data=admin.AdminUserDetailResponse}	"查询成功"
 // @Failure     400   {object}  xBase.BaseResponse          			"请求参数错误"
 // @Failure     401   {object}  xBase.BaseResponse         				"未授权"
-// @Failure     403   {object}  xBase.BaseResponse          			"权限不足"
+// @Failure     403   {object}  xBase.BaseResponse          			"需要超级管理员权限"
 // @Failure     404   {object}  xBase.BaseResponse          			"用户不存在"
+// @Security    BearerAuth
 // @Router       /admin/users/{user_id} [GET]
 func (h *UserHandler) GetAdminUserDetail(ctx *gin.Context) {
 	h.log.Info(ctx, "GetAdminUserDetail - 管理员获取用户详情")

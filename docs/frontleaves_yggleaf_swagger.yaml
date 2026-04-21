@@ -1332,16 +1332,18 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 无权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "404":
           description: 用户配额不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 调整用户游戏档案配额'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 调整用户游戏档案配额'
       tags:
-      - 游戏档案接口
+      - 管理员-游戏档案接口
   /admin/issue-type:
     post:
       consumes:
@@ -1375,10 +1377,12 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 需要管理员权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 创建类型'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 创建类型'
       tags:
       - 管理员问题接口
   /admin/issue-type/{id}:
@@ -1408,10 +1412,12 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 需要管理员权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 删除类型'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 删除类型'
       tags:
       - 管理员问题接口
     put:
@@ -1451,14 +1457,16 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 需要管理员权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "404":
           description: 问题类型不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 编辑类型'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 编辑类型'
       tags:
       - 管理员问题接口
   /admin/issue/{id}/note:
@@ -1501,6 +1509,8 @@ paths:
           description: 问题不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
+      security:
+      - BearerAuth: []
       summary: '[管理] 更新备注'
       tags:
       - 管理员问题接口
@@ -1544,6 +1554,8 @@ paths:
           description: 问题不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
+      security:
+      - BearerAuth: []
       summary: '[管理] 修改优先级'
       tags:
       - 管理员问题接口
@@ -1587,6 +1599,8 @@ paths:
           description: 问题不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
+      security:
+      - BearerAuth: []
       summary: '[管理] 修改状态'
       tags:
       - 管理员问题接口
@@ -1640,6 +1654,8 @@ paths:
           description: 需要管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
+      security:
+      - BearerAuth: []
       summary: '[管理] 全量问题列表'
       tags:
       - 管理员问题接口
@@ -1696,10 +1712,12 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 权限不足
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 用户列表'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 用户列表'
       tags:
       - 管理员-用户接口
   /admin/users/{user_id}:
@@ -1734,14 +1752,16 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 权限不足
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "404":
           description: 用户不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 用户详情'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 用户详情'
       tags:
       - 管理员-用户接口
   /api/profiles/minecraft:
@@ -2632,12 +2652,14 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 无权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 查询用户披风列表'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 查询用户披风列表'
       tags:
-      - 资源库接口
+      - 管理员-资源库接口
   /library/admin/users/{user_id}/capes/{cape_library_id}:
     delete:
       consumes:
@@ -2670,16 +2692,18 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 无权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "404":
           description: 资源不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 撤销披风'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 撤销披风'
       tags:
-      - 资源库接口
+      - 管理员-资源库接口
   /library/admin/users/{user_id}/capes/gift:
     post:
       consumes:
@@ -2718,16 +2742,18 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 无权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "404":
           description: 资源不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 赠送披风'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 赠送披风'
       tags:
-      - 资源库接口
+      - 管理员-资源库接口
   /library/admin/users/{user_id}/quota/sync:
     post:
       consumes:
@@ -2755,12 +2781,14 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 无权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 同步配额'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 同步配额'
       tags:
-      - 资源库接口
+      - 管理员-资源库接口
   /library/admin/users/{user_id}/skins:
     get:
       consumes:
@@ -2801,12 +2829,14 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 无权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 查询用户皮肤列表'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 查询用户皮肤列表'
       tags:
-      - 资源库接口
+      - 管理员-资源库接口
   /library/admin/users/{user_id}/skins/{skin_library_id}:
     delete:
       consumes:
@@ -2839,16 +2869,18 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 无权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "404":
           description: 资源不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 撤销皮肤'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 撤销皮肤'
       tags:
-      - 资源库接口
+      - 管理员-资源库接口
   /library/admin/users/{user_id}/skins/gift:
     post:
       consumes:
@@ -2887,16 +2919,18 @@ paths:
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "403":
-          description: 无权限
+          description: 需要超级管理员权限
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
         "404":
           description: 资源不存在
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
-      summary: '[管理] 赠送皮肤'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 赠送皮肤'
       tags:
-      - 资源库接口
+      - 管理员-资源库接口
   /library/capes:
     get:
       consumes:

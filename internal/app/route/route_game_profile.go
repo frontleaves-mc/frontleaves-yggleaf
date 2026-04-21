@@ -30,7 +30,7 @@ func (r *route) gameProfileRouter(route gin.IRouter) {
 	adminGroup := route.Group("/admin/game-profile")
 	adminGroup.Use(bSdkMiddle.CheckAuth(r.context))
 	adminGroup.Use(middleware.User(r.context))
-	adminGroup.Use(middleware.Admin(r.context))
+	adminGroup.Use(middleware.SuperAdmin(r.context))
 	{
 		adminGroup.POST("/users/:user_id/quota", gameProfileHandler.AdjustQuotaAdmin)
 	}

@@ -40,6 +40,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/game-profile/users/{user_id}/quota": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员调整指定用户的游戏档案配额总额度（相对变化量）",
                 "consumes": [
                     "application/json"
@@ -48,9 +53,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "application/json"
                 ],
                 "tags": [
-                    "游戏档案接口"
+                    "管理员-游戏档案接口"
                 ],
-                "summary": "[管理] 调整用户游戏档案配额",
+                "summary": "[超管] 调整用户游戏档案配额",
                 "parameters": [
                     {
                         "type": "string",
@@ -101,7 +106,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "无权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -117,6 +122,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/issue-type": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员创建新的问题分类类型，需指定名称和排序值",
                 "consumes": [
                     "application/json"
@@ -127,7 +137,7 @@ const docTemplatefrontleaves_yggleaf = `{
                 "tags": [
                     "管理员问题接口"
                 ],
-                "summary": "[管理] 创建类型",
+                "summary": "[超管] 创建类型",
                 "parameters": [
                     {
                         "description": "创建问题类型请求",
@@ -171,7 +181,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "需要管理员权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -181,6 +191,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/issue-type/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员编辑已有问题类型的名称、描述、排序或启用状态",
                 "consumes": [
                     "application/json"
@@ -191,7 +206,7 @@ const docTemplatefrontleaves_yggleaf = `{
                 "tags": [
                     "管理员问题接口"
                 ],
-                "summary": "[管理] 编辑类型",
+                "summary": "[超管] 编辑类型",
                 "parameters": [
                     {
                         "type": "integer",
@@ -242,7 +257,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "需要管理员权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -256,6 +271,11 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员删除指定的问题类型，已关联的问题不受影响",
                 "consumes": [
                     "application/json"
@@ -266,7 +286,7 @@ const docTemplatefrontleaves_yggleaf = `{
                 "tags": [
                     "管理员问题接口"
                 ],
-                "summary": "[管理] 删除类型",
+                "summary": "[超管] 删除类型",
                 "parameters": [
                     {
                         "type": "integer",
@@ -296,7 +316,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "需要管理员权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -306,6 +326,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/issue/list": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员查看所有用户的问题列表，支持按状态、优先级、问题类型、关键词筛选，分页返回",
                 "consumes": [
                     "application/json"
@@ -391,6 +416,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/issue/{id}/note": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员更新问题的内部备注信息，备注内容长度不超过 2000 字符，仅管理员可见",
                 "consumes": [
                     "application/json"
@@ -456,6 +486,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/issue/{id}/priority": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员修改问题的优先级级别（low/medium/high/urgent）",
                 "consumes": [
                     "application/json"
@@ -521,6 +556,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/issue/{id}/status": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员修改问题的处理状态，系统会校验状态流转合法性并自动记录关闭时间",
                 "consumes": [
                     "application/json"
@@ -586,6 +626,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/users": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员分页查询用户列表，支持角色、关键词、时间范围筛选",
                 "consumes": [
                     "application/json"
@@ -596,7 +641,7 @@ const docTemplatefrontleaves_yggleaf = `{
                 "tags": [
                     "管理员-用户接口"
                 ],
-                "summary": "[管理] 用户列表",
+                "summary": "[超管] 用户列表",
                 "parameters": [
                     {
                         "type": "integer",
@@ -669,7 +714,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "权限不足",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -679,6 +724,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/admin/users/{user_id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "获取用户完整详情，包含账户信息、游戏档案配额、资源库配额及皮肤/披风资源列表",
                 "consumes": [
                     "application/json"
@@ -689,7 +739,7 @@ const docTemplatefrontleaves_yggleaf = `{
                 "tags": [
                     "管理员-用户接口"
                 ],
-                "summary": "[管理] 用户详情",
+                "summary": "[超管] 用户详情",
                 "parameters": [
                     {
                         "type": "string",
@@ -731,7 +781,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "权限不足",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -2085,6 +2135,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/library/admin/users/{user_id}/capes": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员分页查询指定用户关联的所有披风",
                 "consumes": [
                     "application/json"
@@ -2093,9 +2148,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "application/json"
                 ],
                 "tags": [
-                    "资源库接口"
+                    "管理员-资源库接口"
                 ],
-                "summary": "[管理] 查询用户披风列表",
+                "summary": "[超管] 查询用户披风列表",
                 "parameters": [
                     {
                         "type": "string",
@@ -2149,7 +2204,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "无权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -2159,6 +2214,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/library/admin/users/{user_id}/capes/gift": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员向指定用户赠送披风，支持 gift 和 admin 两种分配类型",
                 "consumes": [
                     "application/json"
@@ -2167,9 +2227,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "application/json"
                 ],
                 "tags": [
-                    "资源库接口"
+                    "管理员-资源库接口"
                 ],
-                "summary": "[管理] 赠送披风",
+                "summary": "[超管] 赠送披风",
                 "parameters": [
                     {
                         "type": "string",
@@ -2220,7 +2280,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "无权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -2236,6 +2296,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/library/admin/users/{user_id}/capes/{cape_library_id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员撤销指定用户的披风关联",
                 "consumes": [
                     "application/json"
@@ -2244,9 +2309,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "application/json"
                 ],
                 "tags": [
-                    "资源库接口"
+                    "管理员-资源库接口"
                 ],
-                "summary": "[管理] 撤销披风",
+                "summary": "[超管] 撤销披风",
                 "parameters": [
                     {
                         "type": "string",
@@ -2283,7 +2348,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "无权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -2299,6 +2364,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/library/admin/users/{user_id}/quota/sync": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员重新计算并同步指定用户的资源库配额",
                 "consumes": [
                     "application/json"
@@ -2307,9 +2377,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "application/json"
                 ],
                 "tags": [
-                    "资源库接口"
+                    "管理员-资源库接口"
                 ],
-                "summary": "[管理] 同步配额",
+                "summary": "[超管] 同步配额",
                 "parameters": [
                     {
                         "type": "string",
@@ -2339,7 +2409,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "无权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -2349,6 +2419,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/library/admin/users/{user_id}/skins": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员分页查询指定用户关联的所有皮肤",
                 "consumes": [
                     "application/json"
@@ -2357,9 +2432,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "application/json"
                 ],
                 "tags": [
-                    "资源库接口"
+                    "管理员-资源库接口"
                 ],
-                "summary": "[管理] 查询用户皮肤列表",
+                "summary": "[超管] 查询用户皮肤列表",
                 "parameters": [
                     {
                         "type": "string",
@@ -2413,7 +2488,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "无权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -2423,6 +2498,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/library/admin/users/{user_id}/skins/gift": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员向指定用户赠送皮肤，支持 gift 和 admin 两种分配类型",
                 "consumes": [
                     "application/json"
@@ -2431,9 +2511,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "application/json"
                 ],
                 "tags": [
-                    "资源库接口"
+                    "管理员-资源库接口"
                 ],
-                "summary": "[管理] 赠送皮肤",
+                "summary": "[超管] 赠送皮肤",
                 "parameters": [
                     {
                         "type": "string",
@@ -2484,7 +2564,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "无权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -2500,6 +2580,11 @@ const docTemplatefrontleaves_yggleaf = `{
         },
         "/library/admin/users/{user_id}/skins/{skin_library_id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "管理员撤销指定用户的皮肤关联",
                 "consumes": [
                     "application/json"
@@ -2508,9 +2593,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "application/json"
                 ],
                 "tags": [
-                    "资源库接口"
+                    "管理员-资源库接口"
                 ],
-                "summary": "[管理] 撤销皮肤",
+                "summary": "[超管] 撤销皮肤",
                 "parameters": [
                     {
                         "type": "string",
@@ -2547,7 +2632,7 @@ const docTemplatefrontleaves_yggleaf = `{
                         }
                     },
                     "403": {
-                        "description": "无权限",
+                        "description": "需要超级管理员权限",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
