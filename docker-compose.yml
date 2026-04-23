@@ -13,6 +13,7 @@ services:
     volumes:
       - .logs:/app/.logs
       - ./keys:/app/keys
+      - ./minecraft_client:/app/minecraft_client
     networks:
       - default
       - 1panel-network

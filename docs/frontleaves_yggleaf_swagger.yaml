@@ -874,6 +874,32 @@ definitions:
         description: 皮肤名称（可选）
         type: string
     type: object
+  sync.FileMetadata:
+    properties:
+      hash:
+        description: '"sha256:<hex>"'
+        type: string
+      name:
+        description: 文件名，如 "jei-1.20.1.jar"
+        type: string
+      path:
+        description: 相对路径，如 "mods/jei-1.20.1.jar"
+        type: string
+      size:
+        description: 文件大小（字节）
+        type: integer
+    type: object
+  sync.SyncMetadataResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/sync.FileMetadata'
+        type: array
+      scanned_at:
+        type: string
+      total:
+        type: integer
+    type: object
   user.AddGameProfileRequest:
     properties:
       name:
@@ -3410,6 +3436,99 @@ paths:
       summary: '[服务端] 查询角色属性'
       tags:
       - Yggdrasil-会话接口
+  /sync/config/metadata:
+    get:
+      description: 递归扫描服务端 config 目录下所有文件，返回文件列表及 SHA-256 哈希
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/sync.SyncMetadataResponse'
+              type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[公开] Config 元数据'
+      tags:
+      - 同步接口
+  /sync/download:
+    get:
+      description: 根据相对路径下载 mods 或 config 下的指定文件，支持流式传输
+      parameters:
+      - description: 文件相对路径（如 mods/jei-1.20.1.jar）
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 文件流
+          schema:
+            type: file
+        "400":
+          description: 参数错误或非法路径
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 文件不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[公开] 下载文件'
+      tags:
+      - 同步接口
+  /sync/mods/metadata:
+    get:
+      description: 扫描服务端 mods 目录下所有 .jar 文件，返回文件列表及 SHA-256 哈希
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/sync.SyncMetadataResponse'
+              type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[公开] Mods 元数据'
+      tags:
+      - 同步接口
+  /sync/scripts/metadata:
+    get:
+      description: 扫描服务端 scripts 目录下所有文件，返回文件列表及 SHA-256 哈希
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/sync.SyncMetadataResponse'
+              type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[公开] Scripts 元数据'
+      tags:
+      - 同步接口
   /user/game-password:
     put:
       consumes:

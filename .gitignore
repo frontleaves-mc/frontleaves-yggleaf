@@ -48,6 +48,7 @@ mono_crash.*.json
 
 ### Logger ###
 .logs/
+minecraft_client/
 
 ### Build ###
 /build/
