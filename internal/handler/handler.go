@@ -16,6 +16,7 @@ type service struct {
 	gameProfileLogic *logic.GameProfileLogic
 	libraryLogic     *logic.LibraryLogic
 	issueLogic       *logic.IssueLogic
+	syncLogic        *logic.SyncLogic
 	oauthLogic       *bSdkLogic.BusinessLogic
 }
 
@@ -64,6 +65,7 @@ func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
 	// LibraryLogic 先于 GameProfileLogic 初始化（GameProfileLogic 依赖 LibraryLogic 进行纹理解析）
 	libraryLogic := logic.NewLibraryLogic(ctx)
 	issueLogic := logic.NewIssueLogic(ctx)
+	syncLogic := logic.NewSyncLogic(ctx)
 
 	return &T{
 		name: handlerName,
@@ -73,6 +75,7 @@ func NewHandler[T IHandler](ctx context.Context, handlerName string) *T {
 			gameProfileLogic: logic.NewGameProfileLogic(ctx, libraryLogic),
 			libraryLogic:     libraryLogic,
 			issueLogic:       issueLogic,
+			syncLogic:        syncLogic,
 			oauthLogic:       bSdkLogic.NewBusiness(ctx),
 		},
 	}
@@ -90,3 +93,6 @@ type GameProfileHandler handler
 
 // LibraryHandler 资源库接口
 type LibraryHandler handler
+
+// SyncHandler 模组同步接口
+type SyncHandler handler

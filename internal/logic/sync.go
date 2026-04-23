@@ -1,0 +1,162 @@
+package logic
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+
+	xError "github.com/bamboo-services/bamboo-base-go/common/error"
+	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
+	apiSync "github.com/frontleaves-mc/frontleaves-yggleaf/api/sync"
+)
+
+const (
+	baseDir        = "minecraft_client"
+	modsSubDir     = "mods"
+	configSubDir   = "config"
+	scriptsSubDir  = "scripts"
+)
+
+// SyncLogic 模组同步业务逻辑。
+type SyncLogic struct {
+	ctx      context.Context
+	log      *xLog.LogNamedLogger
+	basePath string
+}
+
+// NewSyncLogic 创建 SyncLogic 实例，自动确保 minecraft_client 目录存在。
+func NewSyncLogic(ctx context.Context) *SyncLogic {
+	l := &SyncLogic{
+		ctx:      ctx,
+		log:      xLog.WithName(xLog.NamedCONT, "SyncLogic"),
+		basePath: baseDir,
+	}
+	l.ensureBaseDir()
+	return l
+}
+
+// ensureBaseDir 确保 minecraft_client 目录存在。
+func (l *SyncLogic) ensureBaseDir() {
+	if err := os.MkdirAll(l.basePath, 0o755); err != nil {
+		l.log.Error(l.ctx, fmt.Sprintf("创建 minecraft_client 目录失败: %v", err))
+	}
+}
+
+// ScanMods 扫描 mods 目录下所有 .jar 文件（不递归子目录）。
+func (l *SyncLogic) ScanMods() ([]apiSync.FileMetadata, error) {
+	modsPath := filepath.Join(l.basePath, modsSubDir)
+	return l.scanDirectory(modsPath, modsSubDir, false)
+}
+
+// ScanConfig 递归扫描 config 目录下所有文件。
+func (l *SyncLogic) ScanConfig() ([]apiSync.FileMetadata, error) {
+	configPath := filepath.Join(l.basePath, configSubDir)
+	return l.scanDirectory(configPath, configSubDir, true)
+}
+
+// ScanScripts 扫描 scripts 目录下所有文件（不递归子目录）。
+func (l *SyncLogic) ScanScripts() ([]apiSync.FileMetadata, error) {
+	scriptsPath := filepath.Join(l.basePath, scriptsSubDir)
+	return l.scanDirectory(scriptsPath, scriptsSubDir, false)
+}
+
+// scanDirectory 扫描指定目录，生成文件元数据列表。
+func (l *SyncLogic) scanDirectory(dirPath, prefix string, recursive bool) ([]apiSync.FileMetadata, error) {
+	var files []apiSync.FileMetadata
+
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return files, nil
+		}
+		return nil, xError.NewError(l.ctx, xError.ServerInternalError, xError.ErrMessage(fmt.Sprintf("读取 %s 目录失败", prefix)), true, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			if recursive {
+				subFiles, err := l.scanDirectory(filepath.Join(dirPath, entry.Name()), filepath.Join(prefix, entry.Name()), true)
+				if err != nil {
+					return nil, err
+				}
+				files = append(files, subFiles...)
+			}
+			continue
+		}
+
+		// mods 目录只处理 .jar 文件
+		if prefix == modsSubDir && !strings.HasSuffix(strings.ToLower(entry.Name()), ".jar") {
+			continue
+		}
+
+		fullPath := filepath.Join(dirPath, entry.Name())
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+
+		hash, err := l.computeFileHash(fullPath)
+		if err != nil {
+			continue
+		}
+
+		files = append(files, apiSync.FileMetadata{
+			Path: filepath.Join(prefix, entry.Name()),
+			Name: entry.Name(),
+			Hash: "sha256:" + hash,
+			Size: info.Size(),
+		})
+	}
+
+	return files, nil
+}
+
+// computeFileHash 计算文件 SHA-256 哈希。
+func (l *SyncLogic) computeFileHash(filePath string) (string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// DownloadFile 根据相对路径打开文件并返回文件流。
+func (l *SyncLogic) DownloadFile(relPath string) (*os.File, int64, error) {
+	cleaned := filepath.Clean(relPath)
+	if strings.Contains(cleaned, "..") {
+		return nil, 0, xError.NewError(l.ctx, xError.ParameterError, "非法路径", true, nil)
+	}
+
+	if !strings.HasPrefix(cleaned, modsSubDir+string(filepath.Separator)) &&
+		!strings.HasPrefix(cleaned, configSubDir+string(filepath.Separator)) &&
+		!strings.HasPrefix(cleaned, scriptsSubDir+string(filepath.Separator)) {
+		return nil, 0, xError.NewError(l.ctx, xError.ParameterError, "路径必须以 mods/、config/ 或 scripts/ 开头", true, nil)
+	}
+
+	fullPath := filepath.Join(l.basePath, cleaned)
+	info, err := os.Stat(fullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, 0, xError.NewError(l.ctx, xError.NotFound, "文件不存在", true, err)
+		}
+		return nil, 0, xError.NewError(l.ctx, xError.ServerInternalError, "读取文件失败", true, err)
+	}
+
+	f, err := os.Open(fullPath)
+	if err != nil {
+		return nil, 0, xError.NewError(l.ctx, xError.ServerInternalError, "打开文件失败", true, err)
+	}
+
+	return f, info.Size(), nil
+}
