@@ -16,10 +16,12 @@ import (
 )
 
 const (
-	baseDir        = "minecraft_client"
-	modsSubDir     = "mods"
-	configSubDir   = "config"
-	scriptsSubDir  = "scripts"
+	baseDir             = "minecraft_client"
+	modsSubDir          = "mods"
+	configSubDir        = "config"
+	scriptsSubDir       = "scripts"
+	resourcepacksSubDir = "resourcepacks"
+	extendsSubDir       = "extends"
 )
 
 // SyncLogic 模组同步业务逻辑。
@@ -63,6 +65,18 @@ func (l *SyncLogic) ScanConfig() ([]apiSync.FileMetadata, error) {
 func (l *SyncLogic) ScanScripts() ([]apiSync.FileMetadata, error) {
 	scriptsPath := filepath.Join(l.basePath, scriptsSubDir)
 	return l.scanDirectory(scriptsPath, scriptsSubDir, false)
+}
+
+// ScanResourcepacks 递归扫描 resourcepacks 目录下所有文件。
+func (l *SyncLogic) ScanResourcepacks() ([]apiSync.FileMetadata, error) {
+	rpPath := filepath.Join(l.basePath, resourcepacksSubDir)
+	return l.scanDirectory(rpPath, resourcepacksSubDir, true)
+}
+
+// ScanExtends 递归扫描 extends 目录下所有文件。
+func (l *SyncLogic) ScanExtends() ([]apiSync.FileMetadata, error) {
+	extPath := filepath.Join(l.basePath, extendsSubDir)
+	return l.scanDirectory(extPath, extendsSubDir, true)
 }
 
 // scanDirectory 扫描指定目录，生成文件元数据列表。
@@ -140,8 +154,10 @@ func (l *SyncLogic) DownloadFile(relPath string) (*os.File, int64, error) {
 
 	if !strings.HasPrefix(cleaned, modsSubDir+string(filepath.Separator)) &&
 		!strings.HasPrefix(cleaned, configSubDir+string(filepath.Separator)) &&
-		!strings.HasPrefix(cleaned, scriptsSubDir+string(filepath.Separator)) {
-		return nil, 0, xError.NewError(l.ctx, xError.ParameterError, "路径必须以 mods/、config/ 或 scripts/ 开头", true, nil)
+		!strings.HasPrefix(cleaned, scriptsSubDir+string(filepath.Separator)) &&
+		!strings.HasPrefix(cleaned, resourcepacksSubDir+string(filepath.Separator)) &&
+		!strings.HasPrefix(cleaned, extendsSubDir+string(filepath.Separator)) {
+		return nil, 0, xError.NewError(l.ctx, xError.ParameterError, "路径必须以 mods/、config/、scripts/、resourcepacks/ 或 extends/ 开头", true, nil)
 	}
 
 	fullPath := filepath.Join(l.basePath, cleaned)

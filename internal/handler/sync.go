@@ -92,6 +92,60 @@ func (h *SyncHandler) ScriptsMetadata(ctx *gin.Context) {
 	})
 }
 
+// ==================== Resourcepacks Metadata ====================
+
+// ResourcepacksMetadata 获取 resourcepacks 目录文件元数据
+//
+// @Summary     [公开] Resourcepacks 元数据
+// @Description 递归扫描服务端 resourcepacks 目录下所有文件，返回文件列表及 SHA-256 哈希
+// @Tags        同步接口
+// @Produce     json
+// @Success     200 {object} xBase.BaseResponse{data=apiSync.SyncMetadataResponse} "获取成功"
+// @Failure     500 {object} xBase.BaseResponse "服务器内部错误"
+// @Router      /sync/resourcepacks/metadata [GET]
+func (h *SyncHandler) ResourcepacksMetadata(ctx *gin.Context) {
+	h.log.Info(ctx, "ResourcepacksMetadata - 获取 resourcepacks 元数据")
+
+	files, xErr := h.service.syncLogic.ScanResourcepacks()
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "获取成功", apiSync.SyncMetadataResponse{
+		Files:     files,
+		Total:     len(files),
+		ScannedAt: time.Now(),
+	})
+}
+
+// ==================== Extends Metadata ====================
+
+// ExtendsMetadata 获取 extends 目录文件元数据
+//
+// @Summary     [公开] Extends 元数据
+// @Description 递归扫描服务端 extends 目录下所有文件，返回文件列表及 SHA-256 哈希
+// @Tags        同步接口
+// @Produce     json
+// @Success     200 {object} xBase.BaseResponse{data=apiSync.SyncMetadataResponse} "获取成功"
+// @Failure     500 {object} xBase.BaseResponse "服务器内部错误"
+// @Router      /sync/extends/metadata [GET]
+func (h *SyncHandler) ExtendsMetadata(ctx *gin.Context) {
+	h.log.Info(ctx, "ExtendsMetadata - 获取 extends 元数据")
+
+	files, xErr := h.service.syncLogic.ScanExtends()
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "获取成功", apiSync.SyncMetadataResponse{
+		Files:     files,
+		Total:     len(files),
+		ScannedAt: time.Now(),
+	})
+}
+
 // ==================== File Download ====================
 
 // Download 下载指定文件
