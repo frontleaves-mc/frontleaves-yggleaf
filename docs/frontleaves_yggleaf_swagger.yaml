@@ -3485,9 +3485,9 @@ paths:
       summary: '[公开] 下载文件'
       tags:
       - 同步接口
-  /sync/mods/metadata:
+  /sync/extends/metadata:
     get:
-      description: 扫描服务端 mods 目录下所有 .jar 文件，返回文件列表及 SHA-256 哈希
+      description: 递归扫描服务端 extends 目录下所有文件，返回文件列表及 SHA-256 哈希
       produces:
       - application/json
       responses:
@@ -3504,7 +3504,65 @@ paths:
           description: 服务器内部错误
           schema:
             $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[公开] Extends 元数据'
+      tags:
+      - 同步接口
+  /sync/mods/metadata:
+    get:
+      description: 根据 mode 扫描服务端 mods 目录下指定子目录的 .jar 文件，返回文件列表及 SHA-256 哈希
+      parameters:
+      - default: all
+        description: '扫描模式: server-服务端必须模组, client-客户端推荐模组, all-全部'
+        enum:
+        - server
+        - client
+        - all
+        in: query
+        name: mode
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/sync.SyncMetadataResponse'
+              type: object
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
       summary: '[公开] Mods 元数据'
+      tags:
+      - 同步接口
+  /sync/resourcepacks/metadata:
+    get:
+      description: 递归扫描服务端 resourcepacks 目录下所有文件，返回文件列表及 SHA-256 哈希
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/sync.SyncMetadataResponse'
+              type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[公开] Resourcepacks 元数据'
       tags:
       - 同步接口
   /sync/scripts/metadata:

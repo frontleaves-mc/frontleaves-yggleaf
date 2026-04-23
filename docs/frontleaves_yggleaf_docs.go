@@ -3488,9 +3488,47 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "/sync/extends/metadata": {
+            "get": {
+                "description": "递归扫描服务端 extends 目录下所有文件，返回文件列表及 SHA-256 哈希",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "同步接口"
+                ],
+                "summary": "[公开] Extends 元数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/sync.SyncMetadataResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/sync/mods/metadata": {
             "get": {
-                "description": "扫描服务端 mods 目录下所有 .jar 文件，返回文件列表及 SHA-256 哈希",
+                "description": "根据 mode 扫描服务端 mods 目录下指定子目录的 .jar 文件，返回文件列表及 SHA-256 哈希",
                 "produces": [
                     "application/json"
                 ],
@@ -3498,6 +3536,64 @@ const docTemplatefrontleaves_yggleaf = `{
                     "同步接口"
                 ],
                 "summary": "[公开] Mods 元数据",
+                "parameters": [
+                    {
+                        "enum": [
+                            "server",
+                            "client",
+                            "all"
+                        ],
+                        "type": "string",
+                        "default": "all",
+                        "description": "扫描模式: server-服务端必须模组, client-客户端推荐模组, all-全部",
+                        "name": "mode",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/sync.SyncMetadataResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sync/resourcepacks/metadata": {
+            "get": {
+                "description": "递归扫描服务端 resourcepacks 目录下所有文件，返回文件列表及 SHA-256 哈希",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "同步接口"
+                ],
+                "summary": "[公开] Resourcepacks 元数据",
                 "responses": {
                     "200": {
                         "description": "获取成功",

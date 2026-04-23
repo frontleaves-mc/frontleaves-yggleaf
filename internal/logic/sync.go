@@ -49,10 +49,37 @@ func (l *SyncLogic) ensureBaseDir() {
 	}
 }
 
-// ScanMods 扫描 mods 目录下所有 .jar 文件（不递归子目录）。
-func (l *SyncLogic) ScanMods() ([]apiSync.FileMetadata, error) {
-	modsPath := filepath.Join(l.basePath, modsSubDir)
-	return l.scanDirectory(modsPath, modsSubDir, false)
+// ScanMods 扫描 mods 目录下所有 .jar 文件，支持按 mode 筛选子目录。
+// mode: "server" 扫描 mods/server，"client" 扫描 mods/client，"all" 合并扫描两者。
+func (l *SyncLogic) ScanMods(mode string) ([]apiSync.FileMetadata, error) {
+	var allFiles []apiSync.FileMetadata
+
+	subDirs := l.modsSubDirs(mode)
+	for _, sub := range subDirs {
+		dirPath := filepath.Join(l.basePath, sub)
+		files, err := l.scanDirectory(dirPath, sub, false)
+		if err != nil {
+			return nil, err
+		}
+		allFiles = append(allFiles, files...)
+	}
+
+	return allFiles, nil
+}
+
+// modsSubDirs 根据 mode 返回需要扫描的 mods 子目录列表。
+func (l *SyncLogic) modsSubDirs(mode string) []string {
+	switch mode {
+	case "server":
+		return []string{filepath.Join(modsSubDir, "server")}
+	case "client":
+		return []string{filepath.Join(modsSubDir, "client")}
+	default: // "all" 或空
+		return []string{
+			filepath.Join(modsSubDir, "server"),
+			filepath.Join(modsSubDir, "client"),
+		}
+	}
 }
 
 // ScanConfig 递归扫描 config 目录下所有文件。
@@ -103,8 +130,8 @@ func (l *SyncLogic) scanDirectory(dirPath, prefix string, recursive bool) ([]api
 			continue
 		}
 
-		// mods 目录只处理 .jar 文件
-		if prefix == modsSubDir && !strings.HasSuffix(strings.ToLower(entry.Name()), ".jar") {
+		// mods 目录及其子目录只处理 .jar 文件
+		if strings.HasPrefix(prefix, modsSubDir) && !strings.HasSuffix(strings.ToLower(entry.Name()), ".jar") {
 			continue
 		}
 

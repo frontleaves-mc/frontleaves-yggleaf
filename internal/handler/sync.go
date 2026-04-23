@@ -16,16 +16,26 @@ import (
 // ModsMetadata 获取 mods 目录文件元数据
 //
 // @Summary     [公开] Mods 元数据
-// @Description 扫描服务端 mods 目录下所有 .jar 文件，返回文件列表及 SHA-256 哈希
+// @Description 根据 mode 扫描服务端 mods 目录下指定子目录的 .jar 文件，返回文件列表及 SHA-256 哈希
 // @Tags        同步接口
 // @Produce     json
+// @Param       mode query string false "扫描模式: server-服务端必须模组, client-客户端推荐模组, all-全部" Enums(server, client, all) default(all)
 // @Success     200 {object} xBase.BaseResponse{data=apiSync.SyncMetadataResponse} "获取成功"
+// @Failure     400 {object} xBase.BaseResponse "参数错误"
 // @Failure     500 {object} xBase.BaseResponse "服务器内部错误"
 // @Router      /sync/mods/metadata [GET]
 func (h *SyncHandler) ModsMetadata(ctx *gin.Context) {
 	h.log.Info(ctx, "ModsMetadata - 获取 mods 元数据")
 
-	files, xErr := h.service.syncLogic.ScanMods()
+	mode := ctx.DefaultQuery("mode", "all")
+	switch mode {
+	case "server", "client", "all":
+	default:
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "mode 参数只接受 server、client 或 all", true, nil))
+		return
+	}
+
+	files, xErr := h.service.syncLogic.ScanMods(mode)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return
