@@ -146,6 +146,12 @@ func (l *UserLogic) TakeUser(ctx context.Context, userinfo *bSdkModels.OAuthUser
 	return user, nil
 }
 
+// GetByID 根据 ID 字符串获取用户实体
+func (l *UserLogic) GetByID(ctx context.Context, id string) (*entity.User, bool, *xError.Error) {
+	l.log.Info(ctx, "GetByID - 根据 ID 获取用户")
+	return l.repo.user.Get(ctx, id)
+}
+
 // GetUserCurrent 获取当前用户的完整信息（含扩展状态）。
 //
 // 在 TakeUser 的基础上，额外计算账户完善度信息，

@@ -7,7 +7,7 @@ SCRIPT_DIR = script
 
 .DEFAULT_GOAL := help
 
-.PHONY: help swag run dev tidy docker docker-build upload
+.PHONY: help swag run dev tidy docker docker-build upload proto proto-init
 
 # 显示帮助信息
 help:
@@ -18,6 +18,8 @@ help:
 	@echo "  make run        - 运行程序"
 	@echo "  make dev        - 生成文档并运行 (推荐)"
 	@echo "  make tidy       - 整理依赖"
+	@echo "  make proto-init - 初始化 proto 符号链接"
+	@echo "  make proto      - 生成 protobuf Go 代码"
 	@echo ""
 	@echo "Docker 构建:"
 	@echo "  make docker USER=<user> PASS=<pass> [VERSION=<ver>] - 构建 Docker 镜像"
@@ -74,3 +76,22 @@ docker-build:
 upload:
 	@echo "🚀 正在上传到服务器$(if $(DEPLOY_SERVER), $(DEPLOY_SERVER), (默认配置))..."
 	@$(SCRIPT_DIR)/upload-to-server.sh "$(DEPLOY_SERVER)" "$(DEPLOY_USER)" "$(DEPLOY_PATH)"
+
+# Proto 符号链接初始化
+BASE_GO_MODULE_DIR := $(shell go list -m -f '{{.Dir}}' github.com/bamboo-services/bamboo-base-go/plugins/grpc 2>/dev/null)
+XBASE_LINK := proto/link/base.proto
+
+proto-init:
+	@mkdir -p $(dir $(XBASE_LINK))
+	@if [ -z "$(BASE_GO_MODULE_DIR)" ]; then \
+		echo "错误: 找不到 bamboo-base-go gRPC 模块，请先运行 go mod download"; \
+		exit 1; \
+	fi
+	@ln -sf $(BASE_GO_MODULE_DIR)/proto/base.proto $(XBASE_LINK)
+	@echo "符号链接已创建: $(XBASE_LINK) -> $(BASE_GO_MODULE_DIR)/proto/base.proto"
+
+# 生成 protobuf Go 代码
+proto:
+	@cd proto && buf generate
+	@rm -f proto/link/base.pb.go
+	@echo "protobuf 代码生成完成"

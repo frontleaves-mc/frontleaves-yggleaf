@@ -7,6 +7,8 @@ require (
 	github.com/bamboo-services/bamboo-base-go/common v1.0.0-202604011538
 	github.com/bamboo-services/bamboo-base-go/defined v1.0.0-202603141642
 	github.com/bamboo-services/bamboo-base-go/major v1.0.0-202604011539
+	github.com/bamboo-services/bamboo-base-go/plugins/grpc v1.0.0-202604011543
+	github.com/frontleaves-mc/frontleaves-yggleaf/proto v0.0.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	github.com/phalanx-labs/beacon-bucket-sdk v1.0.0-202604170444
@@ -16,13 +18,13 @@ require (
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
 	golang.org/x/crypto v0.50.0
+	google.golang.org/grpc v1.80.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/bamboo-services/bamboo-base-go/plugins/grpc v1.0.0-202604011543 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
@@ -76,5 +78,8 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
+
+replace github.com/frontleaves-mc/frontleaves-yggleaf/proto => ./proto

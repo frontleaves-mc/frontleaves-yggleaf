@@ -1,0 +1,10 @@
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: .
+    opt:
+      - paths=source_relative
+      - Mlink/base.proto=github.com/bamboo-services/bamboo-base-go/plugins/grpc/generate
+  - remote: buf.build/grpc/go
+    out: .
+    opt: paths=source_relative

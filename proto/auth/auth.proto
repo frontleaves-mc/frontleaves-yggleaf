@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package frontleaves.auth.v1;
+
+option go_package = "github.com/frontleaves-mc/frontleaves-yggleaf/proto/auth;authpb";
+
+import "link/base.proto";
+
+// AuthService 认证授权服务
+//
+// 提供基于 SSO AccessToken 的身份验证和角色查询能力，
+// 供内部微服务（如 frontleaves-plugin）通过 gRPC 调用。
+// 所有方法需要在 metadata 中携带 app-access-id 和 app-secret-key。
+service AuthService {
+  // ValidateToken 验证 AccessToken 有效性并返回用户完整信息。
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+
+  // GetUserRole 根据 user_id 获取用户角色信息。
+  rpc GetUserRole(GetUserRoleRequest) returns (GetUserRoleResponse);
+
+  // CheckPermission 检查用户是否具有指定角色权限。
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+}
+
+// ==================== ValidateToken ====================
+
+message ValidateTokenRequest {
+  // OAuth2 AccessToken
+  string access_token = 11;
+}
+
+message ValidateTokenResponse {
+  // 基础响应信息
+  xBase.BaseResponse base_response = 1;
+  // 用户 ID（Snowflake ID 字符串）
+  string user_id = 11;
+  // 用户名
+  string username = 12;
+  // 角色名称: SUPER_ADMIN / ADMIN / PLAYER
+  string role_name = 13;
+  // 是否被封禁
+  bool has_ban = 14;
+}
+
+// ==================== GetUserRole ====================
+
+message GetUserRoleRequest {
+  // 用户 ID（Snowflake ID 字符串）
+  string user_id = 11;
+}
+
+message GetUserRoleResponse {
+  // 基础响应信息
+  xBase.BaseResponse base_response = 1;
+  // 角色名称
+  string role_name = 11;
+  // 是否被封禁
+  bool has_ban = 12;
+}
+
+// ==================== CheckPermission ====================
+
+message CheckPermissionRequest {
+  // 用户 ID（Snowflake ID 字符串）
+  string user_id = 11;
+  // 允许的角色列表
+  repeated string allowed_roles = 12;
+}
+
+message CheckPermissionResponse {
+  // 基础响应信息
+  xBase.BaseResponse base_response = 1;
+  // 是否通过权限检查
+  bool allowed = 11;
+  // 用户的实际角色
+  string role_name = 12;
+}
