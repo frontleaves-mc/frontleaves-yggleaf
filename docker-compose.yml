@@ -10,6 +10,7 @@ services:
       TZ: Asia/Shanghai
     ports:
       - "5577:5577"
+      - "5578:5578"
     volumes:
       - .logs:/app/.logs
       - ./keys:/app/keys
