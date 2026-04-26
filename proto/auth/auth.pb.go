@@ -373,6 +373,186 @@ func (x *CheckPermissionResponse) GetRoleName() string {
 	return ""
 }
 
+type GetUserInfoRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 用户 ID（Snowflake ID 字符串）
+	UserId        string `protobuf:"bytes,11,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserInfoRequest) Reset() {
+	*x = GetUserInfoRequest{}
+	mi := &file_auth_auth_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserInfoRequest) ProtoMessage() {}
+
+func (x *GetUserInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_auth_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetUserInfoRequest) Descriptor() ([]byte, []int) {
+	return file_auth_auth_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetUserInfoRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type GetUserInfoResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 基础响应信息
+	BaseResponse *generate.BaseResponse `protobuf:"bytes,1,opt,name=base_response,json=baseResponse,proto3" json:"base_response,omitempty"`
+	// 用户 ID（Snowflake ID 字符串）
+	UserId string `protobuf:"bytes,11,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// 用户名
+	Username string `protobuf:"bytes,12,opt,name=username,proto3" json:"username,omitempty"`
+	// GameProfile 列表
+	GameProfiles  []*GameProfileInfo `protobuf:"bytes,13,rep,name=game_profiles,json=gameProfiles,proto3" json:"game_profiles,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserInfoResponse) Reset() {
+	*x = GetUserInfoResponse{}
+	mi := &file_auth_auth_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserInfoResponse) ProtoMessage() {}
+
+func (x *GetUserInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_auth_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetUserInfoResponse) Descriptor() ([]byte, []int) {
+	return file_auth_auth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetUserInfoResponse) GetBaseResponse() *generate.BaseResponse {
+	if x != nil {
+		return x.BaseResponse
+	}
+	return nil
+}
+
+func (x *GetUserInfoResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetGameProfiles() []*GameProfileInfo {
+	if x != nil {
+		return x.GameProfiles
+	}
+	return nil
+}
+
+type GameProfileInfo struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// GameProfile UUID
+	Uuid string `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	// MC 用户名
+	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	// 权限组名称
+	GroupName     string `protobuf:"bytes,3,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GameProfileInfo) Reset() {
+	*x = GameProfileInfo{}
+	mi := &file_auth_auth_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GameProfileInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GameProfileInfo) ProtoMessage() {}
+
+func (x *GameProfileInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_auth_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GameProfileInfo.ProtoReflect.Descriptor instead.
+func (*GameProfileInfo) Descriptor() ([]byte, []int) {
+	return file_auth_auth_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GameProfileInfo) GetUuid() string {
+	if x != nil {
+		return x.Uuid
+	}
+	return ""
+}
+
+func (x *GameProfileInfo) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *GameProfileInfo) GetGroupName() string {
+	if x != nil {
+		return x.GroupName
+	}
+	return ""
+}
+
 var File_auth_auth_proto protoreflect.FileDescriptor
 
 const file_auth_auth_proto_rawDesc = "" +
@@ -398,11 +578,24 @@ const file_auth_auth_proto_rawDesc = "" +
 	"\x17CheckPermissionResponse\x128\n" +
 	"\rbase_response\x18\x01 \x01(\v2\x13.xBase.BaseResponseR\fbaseResponse\x12\x18\n" +
 	"\aallowed\x18\v \x01(\bR\aallowed\x12\x1b\n" +
-	"\trole_name\x18\f \x01(\tR\broleName2\xc5\x02\n" +
+	"\trole_name\x18\f \x01(\tR\broleName\"-\n" +
+	"\x12GetUserInfoRequest\x12\x17\n" +
+	"\auser_id\x18\v \x01(\tR\x06userId\"\xcf\x01\n" +
+	"\x13GetUserInfoResponse\x128\n" +
+	"\rbase_response\x18\x01 \x01(\v2\x13.xBase.BaseResponseR\fbaseResponse\x12\x17\n" +
+	"\auser_id\x18\v \x01(\tR\x06userId\x12\x1a\n" +
+	"\busername\x18\f \x01(\tR\busername\x12I\n" +
+	"\rgame_profiles\x18\r \x03(\v2$.frontleaves.auth.v1.GameProfileInfoR\fgameProfiles\"`\n" +
+	"\x0fGameProfileInfo\x12\x12\n" +
+	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12\x1d\n" +
+	"\n" +
+	"group_name\x18\x03 \x01(\tR\tgroupName2\xa7\x03\n" +
 	"\vAuthService\x12f\n" +
 	"\rValidateToken\x12).frontleaves.auth.v1.ValidateTokenRequest\x1a*.frontleaves.auth.v1.ValidateTokenResponse\x12`\n" +
 	"\vGetUserRole\x12'.frontleaves.auth.v1.GetUserRoleRequest\x1a(.frontleaves.auth.v1.GetUserRoleResponse\x12l\n" +
-	"\x0fCheckPermission\x12+.frontleaves.auth.v1.CheckPermissionRequest\x1a,.frontleaves.auth.v1.CheckPermissionResponseBAZ?github.com/frontleaves-mc/frontleaves-yggleaf/proto/auth;authpbb\x06proto3"
+	"\x0fCheckPermission\x12+.frontleaves.auth.v1.CheckPermissionRequest\x1a,.frontleaves.auth.v1.CheckPermissionResponse\x12`\n" +
+	"\vGetUserInfo\x12'.frontleaves.auth.v1.GetUserInfoRequest\x1a(.frontleaves.auth.v1.GetUserInfoResponseBAZ?github.com/frontleaves-mc/frontleaves-yggleaf/proto/auth;authpbb\x06proto3"
 
 var (
 	file_auth_auth_proto_rawDescOnce sync.Once
@@ -416,7 +609,7 @@ func file_auth_auth_proto_rawDescGZIP() []byte {
 	return file_auth_auth_proto_rawDescData
 }
 
-var file_auth_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_auth_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_auth_auth_proto_goTypes = []any{
 	(*ValidateTokenRequest)(nil),    // 0: frontleaves.auth.v1.ValidateTokenRequest
 	(*ValidateTokenResponse)(nil),   // 1: frontleaves.auth.v1.ValidateTokenResponse
@@ -424,23 +617,30 @@ var file_auth_auth_proto_goTypes = []any{
 	(*GetUserRoleResponse)(nil),     // 3: frontleaves.auth.v1.GetUserRoleResponse
 	(*CheckPermissionRequest)(nil),  // 4: frontleaves.auth.v1.CheckPermissionRequest
 	(*CheckPermissionResponse)(nil), // 5: frontleaves.auth.v1.CheckPermissionResponse
-	(*generate.BaseResponse)(nil),   // 6: xBase.BaseResponse
+	(*GetUserInfoRequest)(nil),      // 6: frontleaves.auth.v1.GetUserInfoRequest
+	(*GetUserInfoResponse)(nil),     // 7: frontleaves.auth.v1.GetUserInfoResponse
+	(*GameProfileInfo)(nil),         // 8: frontleaves.auth.v1.GameProfileInfo
+	(*generate.BaseResponse)(nil),   // 9: xBase.BaseResponse
 }
 var file_auth_auth_proto_depIdxs = []int32{
-	6, // 0: frontleaves.auth.v1.ValidateTokenResponse.base_response:type_name -> xBase.BaseResponse
-	6, // 1: frontleaves.auth.v1.GetUserRoleResponse.base_response:type_name -> xBase.BaseResponse
-	6, // 2: frontleaves.auth.v1.CheckPermissionResponse.base_response:type_name -> xBase.BaseResponse
-	0, // 3: frontleaves.auth.v1.AuthService.ValidateToken:input_type -> frontleaves.auth.v1.ValidateTokenRequest
-	2, // 4: frontleaves.auth.v1.AuthService.GetUserRole:input_type -> frontleaves.auth.v1.GetUserRoleRequest
-	4, // 5: frontleaves.auth.v1.AuthService.CheckPermission:input_type -> frontleaves.auth.v1.CheckPermissionRequest
-	1, // 6: frontleaves.auth.v1.AuthService.ValidateToken:output_type -> frontleaves.auth.v1.ValidateTokenResponse
-	3, // 7: frontleaves.auth.v1.AuthService.GetUserRole:output_type -> frontleaves.auth.v1.GetUserRoleResponse
-	5, // 8: frontleaves.auth.v1.AuthService.CheckPermission:output_type -> frontleaves.auth.v1.CheckPermissionResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	9, // 0: frontleaves.auth.v1.ValidateTokenResponse.base_response:type_name -> xBase.BaseResponse
+	9, // 1: frontleaves.auth.v1.GetUserRoleResponse.base_response:type_name -> xBase.BaseResponse
+	9, // 2: frontleaves.auth.v1.CheckPermissionResponse.base_response:type_name -> xBase.BaseResponse
+	9, // 3: frontleaves.auth.v1.GetUserInfoResponse.base_response:type_name -> xBase.BaseResponse
+	8, // 4: frontleaves.auth.v1.GetUserInfoResponse.game_profiles:type_name -> frontleaves.auth.v1.GameProfileInfo
+	0, // 5: frontleaves.auth.v1.AuthService.ValidateToken:input_type -> frontleaves.auth.v1.ValidateTokenRequest
+	2, // 6: frontleaves.auth.v1.AuthService.GetUserRole:input_type -> frontleaves.auth.v1.GetUserRoleRequest
+	4, // 7: frontleaves.auth.v1.AuthService.CheckPermission:input_type -> frontleaves.auth.v1.CheckPermissionRequest
+	6, // 8: frontleaves.auth.v1.AuthService.GetUserInfo:input_type -> frontleaves.auth.v1.GetUserInfoRequest
+	1, // 9: frontleaves.auth.v1.AuthService.ValidateToken:output_type -> frontleaves.auth.v1.ValidateTokenResponse
+	3, // 10: frontleaves.auth.v1.AuthService.GetUserRole:output_type -> frontleaves.auth.v1.GetUserRoleResponse
+	5, // 11: frontleaves.auth.v1.AuthService.CheckPermission:output_type -> frontleaves.auth.v1.CheckPermissionResponse
+	7, // 12: frontleaves.auth.v1.AuthService.GetUserInfo:output_type -> frontleaves.auth.v1.GetUserInfoResponse
+	9, // [9:13] is the sub-list for method output_type
+	5, // [5:9] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_auth_auth_proto_init() }
@@ -454,7 +654,7 @@ func file_auth_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_auth_proto_rawDesc), len(file_auth_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

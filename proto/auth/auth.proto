@@ -20,6 +20,9 @@ service AuthService {
 
   // CheckPermission 检查用户是否具有指定角色权限。
   rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+
+  // GetUserInfo 获取用户基本信息及所有 GameProfile。
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
 }
 
 // ==================== ValidateToken ====================
@@ -74,4 +77,31 @@ message CheckPermissionResponse {
   bool allowed = 11;
   // 用户的实际角色
   string role_name = 12;
+}
+
+// ==================== GetUserInfo ====================
+
+message GetUserInfoRequest {
+  // 用户 ID（Snowflake ID 字符串）
+  string user_id = 11;
+}
+
+message GetUserInfoResponse {
+  // 基础响应信息
+  xBase.BaseResponse base_response = 1;
+  // 用户 ID（Snowflake ID 字符串）
+  string user_id = 11;
+  // 用户名
+  string username = 12;
+  // GameProfile 列表
+  repeated GameProfileInfo game_profiles = 13;
+}
+
+message GameProfileInfo {
+  // GameProfile UUID
+  string uuid = 1;
+  // MC 用户名
+  string username = 2;
+  // 权限组名称
+  string group_name = 3;
 }
