@@ -13,6 +13,8 @@ WORKDIR /build
 RUN apk add --no-cache git ca-certificates tzdata
 
 COPY go.mod go.sum ./
+COPY proto/ ./proto/
+
 RUN go mod download
 
 COPY . .
