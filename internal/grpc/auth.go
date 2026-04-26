@@ -1,46 +1,29 @@
-package handler
+package grpc
 
 import (
 	"context"
 	"slices"
 
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
-	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	xSnowflake "github.com/bamboo-services/bamboo-base-go/common/snowflake"
 	xGrpcMiddle "github.com/bamboo-services/bamboo-base-go/plugins/grpc/middleware"
 	xGrpcResult "github.com/bamboo-services/bamboo-base-go/plugins/grpc/result"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/app/grpc/middleware"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
-	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/logic"
 	authpb "github.com/frontleaves-mc/frontleaves-yggleaf/proto/auth"
-	bSdkLogic "github.com/phalanx-labs/beacon-sso-sdk/logic"
 	"google.golang.org/grpc"
 )
 
-// GRPCAuthHandler 认证服务 gRPC Handler
-type GRPCAuthHandler struct {
-	log     *xLog.LogNamedLogger
-	service *grpcAuthService
+// AuthHandler 认证服务 Handler
+type AuthHandler struct {
+	grpcHandler
 	authpb.UnimplementedAuthServiceServer
 }
 
-// grpcAuthService gRPC 认证服务的业务依赖
-type grpcAuthService struct {
-	userLogic       *logic.UserLogic
-	accessUserLogic *logic.AccessUserLogic
-	oauthLogic      *bSdkLogic.BusinessLogic
-}
-
-// NewGRPCAuthHandler 创建认证服务 gRPC Handler
-func NewGRPCAuthHandler(ctx context.Context, server grpc.ServiceRegistrar) *GRPCAuthHandler {
-	h := &GRPCAuthHandler{
-		log: xLog.WithName(xLog.NamedGRPC, "GRPCAuthHandler"),
-		service: &grpcAuthService{
-			userLogic:       logic.NewUserLogic(ctx),
-			accessUserLogic: logic.NewAccessUserLogic(ctx),
-			oauthLogic:      bSdkLogic.NewBusiness(ctx),
-		},
-	}
+// NewAuthHandler 创建认证服务 gRPC Handler
+func NewAuthHandler(ctx context.Context, server grpc.ServiceRegistrar) *AuthHandler {
+	base := NewGRPCHandler[grpcHandler](ctx, "AuthHandler")
+	h := &AuthHandler{grpcHandler: *base}
 
 	authpb.RegisterAuthServiceServer(server, h)
 	xGrpcMiddle.UseUnary(authpb.AuthService_ServiceDesc, middleware.UnaryAppVerify(ctx))
@@ -49,7 +32,7 @@ func NewGRPCAuthHandler(ctx context.Context, server grpc.ServiceRegistrar) *GRPC
 }
 
 // ValidateToken 验证 AccessToken 并返回用户信息
-func (h *GRPCAuthHandler) ValidateToken(
+func (h *AuthHandler) ValidateToken(
 	ctx context.Context, req *authpb.ValidateTokenRequest,
 ) (*authpb.ValidateTokenResponse, error) {
 	h.log.Info(ctx, "ValidateToken - 验证 AccessToken")
@@ -103,7 +86,7 @@ func (h *GRPCAuthHandler) ValidateToken(
 }
 
 // GetUserRole 根据 user_id 获取角色
-func (h *GRPCAuthHandler) GetUserRole(
+func (h *AuthHandler) GetUserRole(
 	ctx context.Context, req *authpb.GetUserRoleRequest,
 ) (*authpb.GetUserRoleResponse, error) {
 	h.log.Info(ctx, "GetUserRole - 获取用户角色")
@@ -139,7 +122,7 @@ func (h *GRPCAuthHandler) GetUserRole(
 }
 
 // CheckPermission 检查用户权限
-func (h *GRPCAuthHandler) CheckPermission(
+func (h *AuthHandler) CheckPermission(
 	ctx context.Context, req *authpb.CheckPermissionRequest,
 ) (*authpb.CheckPermissionResponse, error) {
 	h.log.Info(ctx, "CheckPermission - 检查用户权限")
@@ -169,6 +152,56 @@ func (h *GRPCAuthHandler) CheckPermission(
 		resp.Allowed = slices.Contains(allowedRoles, *userEntity.RoleName)
 	} else {
 		resp.Allowed = false
+	}
+
+	return resp, nil
+}
+
+// GetUserInfo 获取用户基本信息及所有 GameProfile
+func (h *AuthHandler) GetUserInfo(
+	ctx context.Context, req *authpb.GetUserInfoRequest,
+) (*authpb.GetUserInfoResponse, error) {
+	h.log.Info(ctx, "GetUserInfo - 获取用户信息及游戏档案")
+
+	userIDStr := req.GetUserId()
+	if userIDStr == "" {
+		return nil, xError.NewError(ctx, xError.ParameterEmpty, "user_id 不能为空", true)
+	}
+
+	userID, err := xSnowflake.ParseSnowflakeID(userIDStr)
+	if err != nil {
+		return nil, xError.NewError(ctx, xError.ParameterError, "user_id 格式无效", true, err)
+	}
+
+	userLogic := h.service.userLogic
+	userEntity, found, xErr := userLogic.GetByID(ctx, userID.String())
+	if xErr != nil {
+		return nil, xErr
+	}
+	if !found {
+		return nil, xError.NewError(ctx, xError.ResourceNotFound, "用户不存在", true)
+	}
+
+	profiles, xErr := h.service.gameProfileLogic.ListGameProfiles(ctx, userID)
+	if xErr != nil {
+		return nil, xErr
+	}
+
+	groupName := "PLAYER"
+	if userEntity.RoleName != nil {
+		groupName = *userEntity.RoleName
+	}
+
+	resp := xGrpcResult.SuccessWith[*authpb.GetUserInfoResponse](ctx, "查询成功")
+	resp.UserId = userEntity.ID.String()
+	resp.Username = userEntity.Username
+	resp.GameProfiles = make([]*authpb.GameProfileInfo, len(profiles))
+	for i, p := range profiles {
+		resp.GameProfiles[i] = &authpb.GameProfileInfo{
+			Uuid:      p.UUID,
+			Username:  p.Name,
+			GroupName: groupName,
+		}
 	}
 
 	return resp, nil
