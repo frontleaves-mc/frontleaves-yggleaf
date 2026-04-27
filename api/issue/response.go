@@ -10,6 +10,7 @@ import (
 type IssueEntityWrapper struct {
 	ID           xSnowflake.SnowflakeID `json:"id"`
 	UserID       xSnowflake.SnowflakeID `json:"user_id"`
+	Username     string                 `json:"username"`
 	IssueTypeID  xSnowflake.SnowflakeID `json:"issue_type_id"`
 	Title        string                 `json:"title"`
 	Content      string                 `json:"content"`

@@ -104,12 +104,16 @@ func (r *IssueRepo) ListAdmin(
 	priority *bConst.IssuePriority,
 	issueTypeID *xSnowflake.SnowflakeID,
 	keyword string,
+	noFinal bool,
 ) ([]entity.Issue, int64, *xError.Error) {
 	r.log.Info(ctx, "ListAdmin - 管理员全量分页查询")
 
 	query := r.db.WithContext(ctx).Model(&entity.Issue{})
 	if status != nil {
 		query = query.Where("status = ?", *status)
+	}
+	if noFinal {
+		query = query.Where("status NOT IN ?", bConst.FinalStatuses)
 	}
 	if priority != nil {
 		query = query.Where("priority = ?", *priority)
@@ -128,7 +132,8 @@ func (r *IssueRepo) ListAdmin(
 
 	var list []entity.Issue
 	offset := (page - 1) * pageSize
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&list).Error; err != nil {
+	if err := query.Preload("User").Preload("IssueType").
+		Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&list).Error; err != nil {
 		return nil, 0, xError.NewError(ctx, xError.DatabaseError, "查询问题列表失败", true, err)
 	}
 	return list, total, nil

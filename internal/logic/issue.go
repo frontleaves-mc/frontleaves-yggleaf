@@ -39,6 +39,7 @@ type issueRepo struct {
 	replyRepo      *repository.IssueReplyRepo      // 回复仓储
 	attachmentRepo *repository.IssueAttachmentRepo // 附件仓储
 	issueTypeRepo  *repository.IssueTypeRepo       // 类型仓储
+	userRepo       *repository.UserRepo            // 用户仓储
 	cache          *repocache.IssueCache           // Redis 缓存层
 	txn            *repotxn.IssueTxnRepo           // 事务协调仓储
 }
@@ -79,6 +80,7 @@ func NewIssueLogic(ctx context.Context) *IssueLogic {
 	replyRepo := repository.NewIssueReplyRepo(db)
 	attachmentRepo := repository.NewIssueAttachmentRepo(db)
 	issueTypeRepo := repository.NewIssueTypeRepo(db)
+	userRepo := repository.NewUserRepo(db, rdb)
 
 	return &IssueLogic{
 		logic: logic{
@@ -90,6 +92,7 @@ func NewIssueLogic(ctx context.Context) *IssueLogic {
 			replyRepo:      replyRepo,
 			attachmentRepo: attachmentRepo,
 			issueTypeRepo:  issueTypeRepo,
+			userRepo:       userRepo,
 			cache:          repocache.NewIssueCache(rdb),
 			txn: repotxn.NewIssueTxnRepo(
 				db, issueRepoInst, replyRepo, attachmentRepo,
@@ -237,9 +240,14 @@ func (l *IssueLogic) buildIssueDTO(ctx context.Context, issue *entity.Issue, rep
 	if issue.IssueType != nil {
 		typeName = issue.IssueType.Name
 	}
+	username := ""
+	if issue.User != nil {
+		username = issue.User.Username
+	}
 	dto := &models.IssueDTO{
 		ID:              issue.ID,
 		UserID:          issue.UserID,
+		Username:        username,
 		IssueTypeID:     issue.IssueTypeID,
 		IssueTypeName:   typeName,
 		Title:           issue.Title,
@@ -370,17 +378,32 @@ func (l *IssueLogic) GetIssueListAdmin(
 	priority *bConst.IssuePriority,
 	issueTypeID *xSnowflake.SnowflakeID,
 	keyword string,
+	noFinal bool,
 ) ([]models.IssueDTO, int64, *xError.Error) {
 	l.log.Info(ctx, "GetIssueListAdmin - 管理员查询问题列表")
 
-	issues, total, xErr := l.repo.issueRepo.ListAdmin(ctx, page, pageSize, status, priority, issueTypeID, keyword)
+	issues, total, xErr := l.repo.issueRepo.ListAdmin(ctx, page, pageSize, status, priority, issueTypeID, keyword, noFinal)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
+	// 批量查询回复数量，避免 N+1
+	issueIDs := make([]xSnowflake.SnowflakeID, len(issues))
+	for i, issue := range issues {
+		issueIDs[i] = issue.ID
+	}
+	replyCountMap, xErr := l.repo.replyRepo.CountBatchByIssueIDs(ctx, issueIDs)
 	if xErr != nil {
 		return nil, 0, xErr
 	}
 
 	dtos := make([]models.IssueDTO, len(issues))
 	for i, issue := range issues {
-		dto, buildErr := l.buildIssueDTO(ctx, &issue, 0, 0, true)
+		replyCount := 0
+		if c, ok := replyCountMap[issue.ID]; ok {
+			replyCount = int(c)
+		}
+		dto, buildErr := l.buildIssueDTO(ctx, &issue, replyCount, 0, true)
 		if buildErr != nil {
 			return nil, 0, buildErr
 		}
@@ -443,11 +466,15 @@ func (l *IssueLogic) GetIssueDetail(
 	}
 	replyDTOs := make([]models.IssueReplyDTO, len(replies))
 	for i, r := range replies {
+		username := ""
+		if r.User != nil {
+			username = r.User.Username
+		}
 		replyDTOs[i] = models.IssueReplyDTO{
 			ID:           r.ID,
 			IssueID:      r.IssueID,
 			UserID:       r.UserID,
-			Username:     "",
+			Username:     username,
 			Content:      r.Content,
 			IsAdminReply: r.IsAdminReply,
 			CreatedAt:    r.CreatedAt,
@@ -535,11 +562,17 @@ func (l *IssueLogic) ReplyIssue(
 			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
 		}
 
-		return &models.IssueReplyDTO{
+
+username := ""
+	if u, found, _ := l.repo.userRepo.Get(ctx, userID.String()); found {
+		username = u.Username
+	}
+
+	return &models.IssueReplyDTO{
 		ID:           created.ID,
 		IssueID:      created.IssueID,
 		UserID:       created.UserID,
-		Username:     "",
+		Username:     username,
 		Content:      created.Content,
 		IsAdminReply: created.IsAdminReply,
 		CreatedAt:    created.CreatedAt,

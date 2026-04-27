@@ -130,6 +130,7 @@ func issueDTOToListItem(dto *models.IssueDTO) apiIssue.IssueListItem {
 		Issue: apiIssue.IssueEntityWrapper{
 			ID:          dto.ID,
 			UserID:      dto.UserID,
+			Username:    dto.Username,
 			IssueTypeID: dto.IssueTypeID,
 			Title:       dto.Title,
 			Content:     dto.Content,

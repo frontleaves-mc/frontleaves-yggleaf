@@ -24,32 +24,42 @@ var ValidStatuses = []string{
 	string(IssueStatusResolved),
 	string(IssueStatusUnplanned),
 	string(IssueStatusClosed),
+	"nofinal", // 虚拟筛选值：排除所有终态（resolved/unplanned/closed）
+}
+
+// FinalStatuses 终态列表（已处理/未计划/已关闭），用于 nofinal 筛选。
+var FinalStatuses = []IssueStatus{
+	IssueStatusResolved,
+	IssueStatusUnplanned,
+	IssueStatusClosed,
 }
 
 // IsValidTransition 判断状态转换是否合法。
 func (s IssueStatus) IsValidTransition(target IssueStatus) bool {
 	transitions := map[IssueStatus]map[IssueStatus]bool{
 		IssueStatusRegistered: {
-			IssueStatusPending: true, IssueStatusProcessing: true,
-			IssueStatusUnplanned: true, IssueStatusClosed: true,
+			IssueStatusPending:    true, // G1 → G2
+			IssueStatusProcessing: true, // G1 → G2
+			IssueStatusUnplanned:  true, // 特殊：未开始可直接标记无计划
+			IssueStatusClosed:     true, // G1 → G3
 		},
 		IssueStatusPending: {
-			IssueStatusProcessing: true, IssueStatusResolved: true,
-			IssueStatusUnplanned: true, IssueStatusClosed: true,
+			IssueStatusProcessing: true, // G2 组内互切
+			IssueStatusResolved:   true, // G2 → G3
+			IssueStatusClosed:     true, // G2 → G3
 		},
 		IssueStatusProcessing: {
-			IssueStatusPending: true, IssueStatusResolved: true,
-			IssueStatusUnplanned: true, IssueStatusRegistered: true, IssueStatusClosed: true,
+			IssueStatusPending:  true, // G2 组内互切
+			IssueStatusResolved: true, // G2 → G3
+			IssueStatusClosed:   true, // G2 → G3
 		},
 		IssueStatusResolved: {
-			IssueStatusClosed: true, IssueStatusRegistered: true,
+			IssueStatusClosed: true, // G3 → G3
 		},
 		IssueStatusUnplanned: {
-			IssueStatusPending: true, IssueStatusProcessing: true, IssueStatusClosed: true,
+			IssueStatusClosed: true, // G3 → G3
 		},
-		IssueStatusClosed: {
-			IssueStatusRegistered: true,
-		},
+		IssueStatusClosed: {}, // 终态，不允许任何转出
 	}
 	if targets, ok := transitions[s]; ok {
 		return targets[target]

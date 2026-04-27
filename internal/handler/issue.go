@@ -275,9 +275,14 @@ func (h *IssueHandler) GetIssueListAdmin(ctx *gin.Context) {
 	h.log.Info(ctx, "GetIssueListAdmin - 管理员全量列表")
 	page, pageSize := h.parsePagination(ctx)
 	var status *bConst.IssueStatus
+	noFinal := false
 	if s := ctx.Query("status"); s != "" {
-		st := bConst.IssueStatus(s)
-		status = &st
+		if s == "nofinal" {
+			noFinal = true
+		} else {
+			st := bConst.IssueStatus(s)
+			status = &st
+		}
 	}
 	var priority *bConst.IssuePriority
 	if p := ctx.Query("priority"); p != "" {
@@ -291,7 +296,7 @@ func (h *IssueHandler) GetIssueListAdmin(ctx *gin.Context) {
 			issueTypeID = &id
 		}
 	}
-	items, total, xErr := h.service.issueLogic.GetIssueListAdmin(ctx.Request.Context(), page, pageSize, status, priority, issueTypeID, ctx.Query("keyword"))
+	items, total, xErr := h.service.issueLogic.GetIssueListAdmin(ctx.Request.Context(), page, pageSize, status, priority, issueTypeID, ctx.Query("keyword"), noFinal)
 	if xErr != nil {
 		_ = ctx.Error(xErr)
 		return

@@ -12,6 +12,7 @@ import (
 type IssueDTO struct {
 	ID               xSnowflake.SnowflakeID
 	UserID           xSnowflake.SnowflakeID
+	Username         string
 	IssueTypeID      xSnowflake.SnowflakeID
 	IssueTypeName    string
 	Title            string

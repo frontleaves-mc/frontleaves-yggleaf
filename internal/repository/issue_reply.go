@@ -46,7 +46,7 @@ func (r *IssueReplyRepo) ListByIssueID(ctx context.Context, issueID xSnowflake.S
 
 	var list []entity.IssueReply
 	offset := (page - 1) * pageSize
-	if err := query.Order("created_at ASC").Offset(offset).Limit(pageSize).Find(&list).Error; err != nil {
+	if err := query.Preload("User").Order("created_at ASC").Offset(offset).Limit(pageSize).Find(&list).Error; err != nil {
 		return nil, 0, xError.NewError(ctx, xError.DatabaseError, "查询回复列表失败", true, err)
 	}
 	return list, total, nil
@@ -62,6 +62,34 @@ func (r *IssueReplyRepo) CountByIssueID(ctx context.Context, issueID xSnowflake.
 		return 0, xError.NewError(ctx, xError.DatabaseError, "统计回复数量失败", true, err)
 	}
 	return count, nil
+}
+
+// CountBatchByIssueIDs 批量统计多个问题的回复数量，返回 issueID → count 映射。
+func (r *IssueReplyRepo) CountBatchByIssueIDs(ctx context.Context, issueIDs []xSnowflake.SnowflakeID) (map[xSnowflake.SnowflakeID]int64, *xError.Error) {
+	r.log.Info(ctx, "CountBatchByIssueIDs - 批量统计回复数量")
+
+	if len(issueIDs) == 0 {
+		return make(map[xSnowflake.SnowflakeID]int64), nil
+	}
+
+	var results []struct {
+		IssueID xSnowflake.SnowflakeID
+		Count   int64
+	}
+	err := r.db.WithContext(ctx).Model(&entity.IssueReply{}).
+		Select("issue_id, COUNT(*) as count").
+		Where("issue_id IN ?", issueIDs).
+		Group("issue_id").
+		Find(&results).Error
+	if err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "批量统计回复数量失败", true, err)
+	}
+
+	countMap := make(map[xSnowflake.SnowflakeID]int64, len(issueIDs))
+	for _, res := range results {
+		countMap[res.IssueID] = res.Count
+	}
+	return countMap, nil
 }
 
 func (r *IssueReplyRepo) pickDB(ctx context.Context, tx *gorm.DB) *gorm.DB {
