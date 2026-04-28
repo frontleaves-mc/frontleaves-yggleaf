@@ -27,14 +27,16 @@ var gameProfileNameRegex = regexp.MustCompile(`^[A-Za-z0-9_]+$`)
 // gameProfileRepo 游戏档案数据访问适配器。
 //
 // 聚合游戏档案相关的各仓储实例，包括档案本体、配额和配额日志，
-// 用户资源关联仓储，以及事务协调仓储（TxnRepo），供 GameProfileLogic 统一调用。
+// 用户资源关联仓储，正版档案缓存仓储，以及事务协调仓储（TxnRepo），
+// 供 GameProfileLogic 统一调用。
 type gameProfileRepo struct {
-	profile     *repository.GameProfileRepo         // 游戏档案仓储
-	quota       *repository.GameProfileQuotaRepo     // 游戏档案配额仓储
-	quotaLog    *repository.GameProfileQuotaLogRepo  // 游戏档案配额日志仓储
-	userSkinLib *repository.UserSkinLibraryRepo      // 用户皮肤关联仓储
-	userCapeLib *repository.UserCapeLibraryRepo      // 用户披风关联仓储
-	txn         *repotxn.GameProfileTxnRepo          // 游戏档案事务协调仓储
+	profile           *repository.GameProfileRepo           // 游戏档案仓储
+	quota             *repository.GameProfileQuotaRepo       // 游戏档案配额仓储
+	quotaLog          *repository.GameProfileQuotaLogRepo    // 游戏档案配额日志仓储
+	userSkinLib       *repository.UserSkinLibraryRepo        // 用户皮肤关联仓储
+	userCapeLib       *repository.UserCapeLibraryRepo        // 用户披风关联仓储
+	onlineProfileRepo *repository.GameOnlineProfileRepo      // 正版档案缓存仓储（Mojang 回退）
+	txn               *repotxn.GameProfileTxnRepo           // 游戏档案事务协调仓储
 }
 
 // GameProfileLogic 游戏档案业务逻辑处理者。
@@ -74,6 +76,7 @@ func NewGameProfileLogic(ctx context.Context, libraryLogic *LibraryLogic) *GameP
 	quotaLogRepo := repository.NewGameProfileQuotaLogRepo(db)
 	userSkinLibRepo := repository.NewUserSkinLibraryRepo(db)
 	userCapeLibRepo := repository.NewUserCapeLibraryRepo(db)
+	onlineProfileRepo := repository.NewGameOnlineProfileRepo(db)
 
 	return &GameProfileLogic{
 		logic: logic{
@@ -81,12 +84,13 @@ func NewGameProfileLogic(ctx context.Context, libraryLogic *LibraryLogic) *GameP
 			log: xLog.WithName(xLog.NamedLOGC, "GameProfileLogic"),
 		},
 		repo: gameProfileRepo{
-			profile:     profileRepo,
-			quota:       quotaRepo,
-			quotaLog:    quotaLogRepo,
-			userSkinLib: userSkinLibRepo,
-			userCapeLib: userCapeLibRepo,
-			txn:         repotxn.NewGameProfileTxnRepo(db, profileRepo, quotaRepo, quotaLogRepo),
+			profile:           profileRepo,
+			quota:             quotaRepo,
+			quotaLog:          quotaLogRepo,
+			userSkinLib:       userSkinLibRepo,
+			userCapeLib:       userCapeLibRepo,
+			onlineProfileRepo: onlineProfileRepo,
+			txn:               repotxn.NewGameProfileTxnRepo(db, profileRepo, quotaRepo, quotaLogRepo),
 		},
 		libraryLogic: libraryLogic,
 	}
@@ -273,8 +277,8 @@ func (l *GameProfileLogic) ListGameProfiles(ctx context.Context, userID xSnowfla
 		return nil, xErr
 	}
 
-	// 列表视图不填充 Skin/Cape 详情（避免 N+1 查询）
 	responses := make([]models.GameProfileDTO, len(profiles))
+	profileIDs := make([]xSnowflake.SnowflakeID, len(profiles))
 	for i, p := range profiles {
 		responses[i] = models.GameProfileDTO{
 			ID:            p.ID,
@@ -285,7 +289,37 @@ func (l *GameProfileLogic) ListGameProfiles(ctx context.Context, userID xSnowfla
 			CapeLibraryID: p.CapeLibraryID,
 			UpdatedAt:     p.UpdatedAt,
 		}
+		profileIDs[i] = p.ID
 	}
+
+	onlineMap, xErr := l.repo.onlineProfileRepo.GetValidByGameProfileIDs(ctx, nil, profileIDs)
+	if xErr != nil {
+		l.log.Warn(ctx, fmt.Sprintf("批量查询正版档案缓存失败(可忽略): %v", xErr.ErrorMessage))
+		return responses, nil
+	}
+
+	for i := range responses {
+		onlineProfile, ok := onlineMap[profiles[i].ID]
+		if !ok || onlineProfile == nil || !onlineProfile.IsOnline {
+			continue
+		}
+		if responses[i].SkinLibraryID == nil && onlineProfile.SkinURL != nil && *onlineProfile.SkinURL != "" {
+			skinModel := entity.ModelTypeClassic
+			if onlineProfile.SkinModel != nil {
+				skinModel = *onlineProfile.SkinModel
+			}
+			responses[i].Skin = &models.SkinDTO{
+				TextureURL: *onlineProfile.SkinURL,
+				Model:      skinModel,
+			}
+		}
+		if responses[i].CapeLibraryID == nil && onlineProfile.CapeURL != nil && *onlineProfile.CapeURL != "" {
+			responses[i].Cape = &models.CapeDTO{
+				TextureURL: *onlineProfile.CapeURL,
+			}
+		}
+	}
+
 	return responses, nil
 }
 
@@ -523,6 +557,7 @@ func (l *GameProfileLogic) SetCape(ctx context.Context, userID xSnowflake.Snowfl
 //
 // 若 profile 关联了 SkinLibrary 或 CapeLibrary（GORM Preload），则调用
 // LibraryLogic 的构建方法解析纹理链接。
+// 若本平台未设置皮肤/披风，尝试从正版档案缓存（Mojang 回退）填充。
 func (l *GameProfileLogic) buildProfileDTO(ctx context.Context, profile *entity.GameProfile) (*models.GameProfileDTO, *xError.Error) {
 	resp := &models.GameProfileDTO{
 		ID:            profile.ID,
@@ -550,7 +585,44 @@ func (l *GameProfileLogic) buildProfileDTO(ctx context.Context, profile *entity.
 		resp.Cape = capeResp
 	}
 
+	l.fillOnlineFallback(ctx, resp, profile)
+
 	return resp, nil
+}
+
+// fillOnlineFallback 当平台未设置皮肤或披风时，从正版档案缓存中回退填充。
+//
+// 查询 game_online_profile 表获取 Mojang 正版缓存数据，
+// 仅在 resp.Skin / resp.Cape 为 nil 且缓存记录存在且为正版用户时填充。
+// 填充失败时静默降级（不阻断主流程）。
+func (l *GameProfileLogic) fillOnlineFallback(ctx context.Context, resp *models.GameProfileDTO, profile *entity.GameProfile) {
+	needSkin := resp.Skin == nil
+	needCape := resp.Cape == nil
+	if !needSkin && !needCape {
+		return
+	}
+
+	onlineProfile, found, xErr := l.repo.onlineProfileRepo.GetValidByGameProfileID(ctx, nil, profile.ID)
+	if xErr != nil || !found || onlineProfile == nil || !onlineProfile.IsOnline {
+		return
+	}
+
+	if needSkin && onlineProfile.SkinURL != nil && *onlineProfile.SkinURL != "" {
+		skinModel := entity.ModelTypeClassic
+		if onlineProfile.SkinModel != nil {
+			skinModel = *onlineProfile.SkinModel
+		}
+		resp.Skin = &models.SkinDTO{
+			TextureURL: *onlineProfile.SkinURL,
+			Model:      skinModel,
+		}
+	}
+
+	if needCape && onlineProfile.CapeURL != nil && *onlineProfile.CapeURL != "" {
+		resp.Cape = &models.CapeDTO{
+			TextureURL: *onlineProfile.CapeURL,
+		}
+	}
 }
 
 // validateGameProfileName 校验并规范化游戏档案用户名。

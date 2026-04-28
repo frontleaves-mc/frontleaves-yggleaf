@@ -64,6 +64,32 @@ func (r *GameOnlineProfileRepo) Upsert(ctx context.Context, tx *gorm.DB, onlineP
 	return onlineProfile, nil
 }
 
+// GetValidByGameProfileIDs 根据多个游戏档案 ID 批量获取未过期的在线档案缓存。
+//
+// 查询条件：game_profile_id IN (ids) 且 expires_at > NOW()。
+// 返回以 game_profile_id 为键的映射，方便调用方按档案 ID 快速查找。
+func (r *GameOnlineProfileRepo) GetValidByGameProfileIDs(ctx context.Context, tx *gorm.DB, profileIDs []xSnowflake.SnowflakeID) (map[xSnowflake.SnowflakeID]*entity.GameOnlineProfile, *xError.Error) {
+	r.log.Info(ctx, "GetValidByGameProfileIDs - 批量获取未过期的在线档案缓存")
+
+	if len(profileIDs) == 0 {
+		return make(map[xSnowflake.SnowflakeID]*entity.GameOnlineProfile), nil
+	}
+
+	var onlineProfiles []entity.GameOnlineProfile
+	err := r.pickDB(ctx, tx).
+		Where("game_profile_id IN ? AND expires_at > ?", profileIDs, time.Now()).
+		Find(&onlineProfiles).Error
+	if err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "批量查询在线档案缓存失败", true, err)
+	}
+
+	result := make(map[xSnowflake.SnowflakeID]*entity.GameOnlineProfile, len(onlineProfiles))
+	for i := range onlineProfiles {
+		result[onlineProfiles[i].GameProfileID] = &onlineProfiles[i]
+	}
+	return result, nil
+}
+
 func (r *GameOnlineProfileRepo) pickDB(ctx context.Context, tx *gorm.DB) *gorm.DB {
 	if tx != nil {
 		return tx.WithContext(ctx)
