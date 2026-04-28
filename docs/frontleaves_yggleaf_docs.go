@@ -4616,9 +4616,6 @@ const docTemplatefrontleaves_yggleaf = `{
                 "content": {
                     "type": "string"
                 },
-                "created_at": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "integer"
                 },

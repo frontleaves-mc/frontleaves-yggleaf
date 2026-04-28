@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
@@ -93,7 +94,7 @@ func NewIssueLogic(ctx context.Context) *IssueLogic {
 			attachmentRepo: attachmentRepo,
 			issueTypeRepo:  issueTypeRepo,
 			userRepo:       userRepo,
-			cache:          repocache.NewIssueCache(rdb),
+			cache:          &repocache.IssueCache{RDB: rdb, TTL: 15 * time.Minute},
 			txn: repotxn.NewIssueTxnRepo(
 				db, issueRepoInst, replyRepo, attachmentRepo,
 			),

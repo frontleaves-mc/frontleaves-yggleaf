@@ -54,12 +54,14 @@ func (s IssueStatus) IsValidTransition(target IssueStatus) bool {
 			IssueStatusClosed:   true, // G2 → G3
 		},
 		IssueStatusResolved: {
-			IssueStatusClosed: true, // G3 → G3
+			// 终态，不允许任何转出
 		},
 		IssueStatusUnplanned: {
-			IssueStatusClosed: true, // G3 → G3
+			// 终态，不允许任何转出
 		},
-		IssueStatusClosed: {}, // 终态，不允许任何转出
+		IssueStatusClosed: {
+			// 终态，不允许任何转出
+		},
 	}
 	if targets, ok := transitions[s]; ok {
 		return targets[target]
@@ -75,10 +77,10 @@ func (s IssueStatus) IsValidTransition(target IssueStatus) bool {
 type IssuePriority string
 
 const (
-	PriorityLow    IssuePriority = "low"     // 低
-	PriorityMedium IssuePriority = "medium"  // 中
-	PriorityHigh   IssuePriority = "high"    // 高
-	PriorityUrgent IssuePriority = "urgent"  // 紧急
+	PriorityLow    IssuePriority = "low"    // 低
+	PriorityMedium IssuePriority = "medium" // 中
+	PriorityHigh   IssuePriority = "high"   // 高
+	PriorityUrgent IssuePriority = "urgent" // 紧急
 )
 
 // ValidPriorities 所有合法优先级值

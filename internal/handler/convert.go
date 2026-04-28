@@ -138,7 +138,6 @@ func issueDTOToListItem(dto *models.IssueDTO) apiIssue.IssueListItem {
 			Priority:    string(dto.Priority),
 			AdminNote:   dto.AdminNote,
 			ClosedAt:    dto.ClosedAt,
-			CreatedAt:   dto.CreatedAt,
 			UpdatedAt:   dto.UpdatedAt,
 		},
 		IssueTypeName: dto.IssueTypeName,
@@ -175,6 +174,7 @@ func issueDetailDTOToResponse(dto *models.IssueDetailDTO) apiIssue.IssueDetailRe
 		Issue: apiIssue.IssueEntityWrapper{
 			ID:          dto.Issue.ID,
 			UserID:      dto.Issue.UserID,
+			Username:    dto.Issue.Username,
 			IssueTypeID: dto.Issue.IssueTypeID,
 			Title:       dto.Issue.Title,
 			Content:     dto.Issue.Content,
@@ -182,7 +182,6 @@ func issueDetailDTOToResponse(dto *models.IssueDetailDTO) apiIssue.IssueDetailRe
 			Priority:    string(dto.Issue.Priority),
 			AdminNote:   dto.Issue.AdminNote,
 			ClosedAt:    dto.Issue.ClosedAt,
-			CreatedAt:   dto.Issue.CreatedAt,
 			UpdatedAt:   dto.Issue.UpdatedAt,
 		},
 		IssueType: apiIssue.IssueTypeEntityWrapper{
