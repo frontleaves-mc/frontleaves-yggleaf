@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
@@ -50,6 +51,28 @@ func (r *IssueReplyRepo) ListByIssueID(ctx context.Context, issueID xSnowflake.S
 		return nil, 0, xError.NewError(ctx, xError.DatabaseError, "查询回复列表失败", true, err)
 	}
 	return list, total, nil
+}
+
+// GetLatestAdminReply 获取指定 Issue 中最近一条管理员回复。
+func (r *IssueReplyRepo) GetLatestAdminReply(ctx context.Context, issueID xSnowflake.SnowflakeID) (*entity.IssueReply, bool, *xError.Error) {
+	r.log.Info(ctx, "GetLatestAdminReply - 获取最近管理员回复")
+
+	var reply entity.IssueReply
+	err := r.db.WithContext(ctx).
+		Where("issue_id = ?", issueID).
+		Where("is_admin_reply = ?", true).
+		Preload("User").
+		Order("created_at DESC").
+		Limit(1).
+		First(&reply).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, false, nil
+		}
+		return nil, false, xError.NewError(ctx, xError.DatabaseError, "获取管理员回复失败", true, err)
+	}
+
+	return &reply, true, nil
 }
 
 // CountByIssueID 统计某问题的回复数量。

@@ -5,6 +5,7 @@ import (
 
 	xCtx "github.com/bamboo-services/bamboo-base-go/defined/context"
 	xRegNode "github.com/bamboo-services/bamboo-base-go/major/register/node"
+	xEmail "github.com/bamboo-services/bamboo-base-go/plugins/email"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
 	bSdkStartup "github.com/phalanx-labs/beacon-sso-sdk/startup"
 )
@@ -31,6 +32,7 @@ func Init() (context.Context, []xRegNode.RegNodeList) {
 	regNode = append(regNode, xRegNode.RegNodeList{Key: bConst.CtxBucketKey, Node: businessReg.bucketInit})
 	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.Exec, Node: businessReg.businessDataPrepare})
 	regNode = append(regNode, xRegNode.RegNodeList{Key: bConst.CtxYggdrasilRSAKeyPair, Node: businessReg.yggdrasilRSAKeyInit})
+	regNode = append(regNode, xRegNode.RegNodeList{Key: xCtx.EmailClientKey, Node: xEmail.InitClient})
 
 	// 初始化 OAuth2
 	regNode = append(regNode, bSdkStartup.NewStartupConfig()...)

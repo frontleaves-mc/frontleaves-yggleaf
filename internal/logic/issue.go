@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	xAsync "github.com/bamboo-services/bamboo-base-go/plugins/async"
+	xEmail "github.com/bamboo-services/bamboo-base-go/plugins/email"
 	xError "github.com/bamboo-services/bamboo-base-go/common/error"
 	xLog "github.com/bamboo-services/bamboo-base-go/common/log"
 	xEnv "github.com/bamboo-services/bamboo-base-go/defined/env"
@@ -339,6 +341,8 @@ func (l *IssueLogic) CreateIssue(
 	if setErr := l.repo.cache.Set(ctx, created.ID, issue); setErr != nil {
 		l.log.Warn(ctx, fmt.Sprintf("创建 Issue 后写缓存失败(id=%d): %v", created.ID, setErr))
 	}
+	// 异步通知管理员
+	l.notifyIssueCreate(ctx, created)
 	return l.buildIssueDTO(ctx, created, 0, 0, false)
 }
 
@@ -556,17 +560,27 @@ func (l *IssueLogic) ReplyIssue(
 	created, xErr := l.repo.txn.CreateReplyAndUpdateTimestamp(ctx, reply, issueID)
 	if xErr != nil {
 		return nil, xErr
-		}
+	}
 
-		// 清除缓存（回复更新了 issue.updated_at）
-		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
-			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
-		}
+	// 清除缓存（回复更新了 issue.updated_at）
+	if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
+		l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
+	}
 
 
-username := ""
+	var replyUser *entity.User
 	if u, found, _ := l.repo.userRepo.Get(ctx, userID.String()); found {
-		username = u.Username
+		replyUser = u
+	}
+
+	username := ""
+	if replyUser != nil {
+		username = replyUser.Username
+	}
+
+	// 异步通知回复
+	if replyUser != nil {
+		l.notifyIssueReply(ctx, issueID, replyUser, content, isAdmin)
 	}
 
 	return &models.IssueReplyDTO{
@@ -598,6 +612,9 @@ func (l *IssueLogic) UpdateStatus(
 		return xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
 	}
 
+	// 记录原状态
+	oldStatus := issue.Status
+
 	if !issue.Status.IsValidTransition(targetStatus) {
 		return xError.NewError(ctx, xError.ParameterError,
 			xError.ErrMessage(fmt.Sprintf("不允许从 [%s] 转换到 [%s]", issue.Status, targetStatus)), true)
@@ -609,6 +626,8 @@ func (l *IssueLogic) UpdateStatus(
 		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
 			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
 		}
+		// 异步通知状态变更
+		l.notifyIssueStatus(ctx, issue, oldStatus, targetStatus)
 	}
 	return result
 }
@@ -917,4 +936,162 @@ func (l *IssueLogic) DeleteIssueType(ctx context.Context, id xSnowflake.Snowflak
 	l.log.Info(ctx, "DeleteIssueType - 删除问题类型")
 
 	return l.repo.issueTypeRepo.DeleteByID(ctx, nil, id)
+}
+
+// ==================== Notification Helper Methods ====================
+
+// notifyIssueCreate 异步通知管理员有新问题创建。
+func (l *IssueLogic) notifyIssueCreate(ctx context.Context, issue *entity.Issue) {
+	xAsync.Async(ctx, func(asyncCtx context.Context) {
+		// 获取管理员邮箱列表
+		db := xCtxUtil.MustGetDB(asyncCtx)
+		rdb := xCtxUtil.MustGetRDB(asyncCtx)
+		userRepo := repository.NewUserRepo(db, rdb)
+
+		emails, xErr := userRepo.ListAdminEmails(asyncCtx)
+		if xErr != nil || len(emails) == 0 {
+			return
+		}
+
+		// 获取创建者信息
+		issueRepo := repository.NewIssueRepo(db)
+		_, found, _ := issueRepo.GetByID(asyncCtx, nil, issue.ID)
+
+		username := ""
+		issueTypeName := ""
+		if found {
+			// 需要单独查询 User 和 IssueType（GetByID 没有 Preload）
+			user, userFound, _ := userRepo.Get(asyncCtx, issue.UserID.String())
+			if userFound {
+				username = user.Username
+			}
+			issueTypeRepo := repository.NewIssueTypeRepo(db)
+			it, itFound, _ := issueTypeRepo.GetByID(asyncCtx, nil, issue.IssueTypeID)
+			if itFound {
+				issueTypeName = it.Name
+			}
+		}
+
+		// 构建前端 URL
+		frontendURL := xEnv.GetEnvString(bConst.EnvFrontendURL, "")
+		issueURL := frontendURL + "/issue/" + issue.ID.String()
+
+		// 发送邮件
+		emailClient := xCtxUtil.MustGetEmailClient(asyncCtx)
+		err := emailClient.SendTemplate(asyncCtx, &xEmail.Message{
+			To:       emails,
+			Subject:  "新问题反馈: " + issue.Title,
+			Template: "issue_create",
+			TemplateData: map[string]string{
+				"Title":     issue.Title,
+				"Username":  username,
+				"IssueType": issueTypeName,
+				"Priority":  string(issue.Priority),
+				"IssueURL":  issueURL,
+			},
+		})
+		if err != nil {
+			l.log.Warn(asyncCtx, fmt.Sprintf("通知管理员新问题失败(id=%d): %v", issue.ID, err))
+		}
+	})
+}
+
+// notifyIssueReply 异步通知相关方有新回复。
+func (l *IssueLogic) notifyIssueReply(ctx context.Context, issueID xSnowflake.SnowflakeID, replyUser *entity.User, content string, isAdminReply bool) {
+	xAsync.Async(ctx, func(asyncCtx context.Context) {
+		db := xCtxUtil.MustGetDB(asyncCtx)
+		rdb := xCtxUtil.MustGetRDB(asyncCtx)
+
+		// 获取 Issue 信息
+		issueRepo := repository.NewIssueRepo(db)
+		issue, found, xErr := issueRepo.GetByID(asyncCtx, nil, issueID)
+		if xErr != nil || !found {
+			return
+		}
+
+		var targetEmail string
+
+		if isAdminReply {
+			// 管理员回复 → 通知 Issue 作者（玩家）
+			userRepo := repository.NewUserRepo(db, rdb)
+			user, userFound, _ := userRepo.Get(asyncCtx, issue.UserID.String())
+			if !userFound || user.Email == nil {
+				return
+			}
+			targetEmail = *user.Email
+		} else {
+			// 玩家回复 → 通知最后回复的管理员
+			replyRepo := repository.NewIssueReplyRepo(db)
+			adminReply, adminFound, _ := replyRepo.GetLatestAdminReply(asyncCtx, issueID)
+			if !adminFound || adminReply.User == nil || adminReply.User.Email == nil {
+				return
+			}
+			targetEmail = *adminReply.User.Email
+		}
+
+		// 构建前端 URL
+		frontendURL := xEnv.GetEnvString(bConst.EnvFrontendURL, "")
+		issueURL := frontendURL + "/issue/" + issueID.String()
+
+		// 截断回复内容（200 字符）
+		displayContent := content
+		runes := []rune(content)
+		if len(runes) > 200 {
+			displayContent = string(runes[:200]) + "..."
+		}
+
+		// 发送邮件
+		emailClient := xCtxUtil.MustGetEmailClient(asyncCtx)
+		err := emailClient.SendTemplate(asyncCtx, &xEmail.Message{
+			To:       []string{targetEmail},
+			Subject:  "问题回复通知: " + issue.Title,
+			Template: "issue_reply",
+			TemplateData: map[string]string{
+				"Title":        issue.Title,
+				"ReplyUser":    replyUser.Username,
+				"Content":      displayContent,
+				"IsAdminReply": strconv.FormatBool(isAdminReply),
+				"IssueURL":     issueURL,
+			},
+		})
+		if err != nil {
+			l.log.Warn(asyncCtx, fmt.Sprintf("通知回复失败(issueID=%d): %v", issueID, err))
+		}
+	})
+}
+
+// notifyIssueStatus 异步通知 Issue 作者状态变更。
+func (l *IssueLogic) notifyIssueStatus(ctx context.Context, issue *entity.Issue, oldStatus, newStatus bConst.IssueStatus) {
+	xAsync.Async(ctx, func(asyncCtx context.Context) {
+		db := xCtxUtil.MustGetDB(asyncCtx)
+		rdb := xCtxUtil.MustGetRDB(asyncCtx)
+
+		// 获取 Issue 作者的邮箱
+		userRepo := repository.NewUserRepo(db, rdb)
+		user, found, _ := userRepo.Get(asyncCtx, issue.UserID.String())
+		if !found || user.Email == nil {
+			return
+		}
+
+		// 构建前端 URL
+		frontendURL := xEnv.GetEnvString(bConst.EnvFrontendURL, "")
+		issueURL := frontendURL + "/issue/" + issue.ID.String()
+
+		// 发送邮件
+		emailClient := xCtxUtil.MustGetEmailClient(asyncCtx)
+		err := emailClient.SendTemplate(asyncCtx, &xEmail.Message{
+			To:       []string{*user.Email},
+			Subject:  "问题状态变更: " + issue.Title,
+			Template: "issue_status",
+			TemplateData: map[string]string{
+				"Title":     issue.Title,
+				"OldStatus": string(oldStatus),
+				"NewStatus": string(newStatus),
+				"IssueURL":  issueURL,
+			},
+		})
+		if err != nil {
+			l.log.Warn(asyncCtx, fmt.Sprintf("通知状态变更失败(issueID=%d): %v", issue.ID, err))
+		}
+	})
 }

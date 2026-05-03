@@ -1,0 +1,44 @@
+{{define "content"}}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+        <td style="padding-bottom: 24px;">
+            <h2 style="margin: 0 0 16px; font-size: 20px; font-weight: 600; color: #1a1a1a;">
+                问题回复通知
+            </h2>
+            {{if .IsAdminReply}}
+            <p style="margin: 0 0 24px; font-size: 15px; color: #555555; line-height: 1.6;">
+                管理员 <strong>{{.ReplyUser}}</strong> 回复了您的问题 <strong>{{.Title}}</strong>：
+            </p>
+            {{else}}
+            <p style="margin: 0 0 24px; font-size: 15px; color: #555555; line-height: 1.6;">
+                用户 <strong>{{.ReplyUser}}</strong> 回复了问题 <strong>{{.Title}}</strong>：
+            </p>
+            {{end}}
+        </td>
+    </tr>
+    <tr>
+        <td style="padding-bottom: 24px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9f9f9; border-radius: 8px; padding: 16px;">
+                <tr>
+                    <td style="padding: 16px; font-size: 14px; color: #555555; line-height: 1.6; word-break: break-word;">
+                        {{.Content}}
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding-bottom: 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td style="border-radius: 6px; background-color: #4f46e5;">
+                        <a href="{{.IssueURL}}" target="_blank" style="display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: 500; color: #ffffff; text-decoration: none;">
+                            查看详情
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+{{end}}

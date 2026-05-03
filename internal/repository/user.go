@@ -324,3 +324,32 @@ func (r *UserRepo) GetAdminDetailAggregates(ctx context.Context, userID string) 
 
 	return result, nil
 }
+
+// ListAdminEmails 获取所有未封禁管理员的邮箱列表。
+//
+// 查询角色为 SUPER_ADMIN 或 ADMIN、邮箱非空且未被封禁的用户邮箱，
+// 使用 Pluck 直接提取 email 字段值，避免扫描整个实体。
+//
+// 参数:
+//   - ctx: 上下文对象
+//
+// 返回值:
+//   - []string: 管理员邮箱列表（无匹配时返回空切片）
+//   - *xError.Error: 查询过程中的错误
+func (r *UserRepo) ListAdminEmails(ctx context.Context) ([]string, *xError.Error) {
+	r.log.Info(ctx, "ListAdminEmails - 获取管理员邮箱列表")
+
+	var emails []string
+	err := r.db.WithContext(ctx).
+		Model(&entity.User{}).
+		Where("role_name IN ?", []string{"SUPER_ADMIN", "ADMIN"}).
+		Where("email IS NOT NULL").
+		Where("has_ban = ?", false).
+		Pluck("email", &emails).
+		Error
+	if err != nil {
+		return nil, xError.NewError(ctx, xError.DatabaseError, "ListAdminEmails - 获取管理员邮箱列表失败", true, err)
+	}
+
+	return emails, nil
+}

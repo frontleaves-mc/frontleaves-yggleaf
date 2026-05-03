@@ -19,4 +19,6 @@ const (
 	EnvYggdrasilSkinDomainsExtra xEnv.EnvKey = "YGGDRASIL_SKIN_DOMAINS_EXTRA" // 额外皮肤域名（逗号分隔，追加到 skinDomains 白名单）
 
 	EnvGrpcSecretKey xEnv.EnvKey = "GRPC_SECRET_KEY" // gRPC 服务间调用的共享密钥
+
+	EnvFrontendURL xEnv.EnvKey = "FRONTEND_URL" // 前端站点 URL（用于邮件中的链接）
 )
