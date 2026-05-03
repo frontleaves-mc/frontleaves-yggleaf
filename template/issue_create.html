@@ -1,39 +1,39 @@
 {{define "issue_create"}}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
-        <td style="padding-bottom: 24px;">
-            <h2 style="margin: 0 0 16px; font-size: 20px; font-weight: 600; color: #1a1a1a;">
+        <td style="padding-bottom: 20px;">
+            <h2 style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #1A1E26; letter-spacing: -0.3px;">
                 新问题提交通知
             </h2>
-            <p style="margin: 0 0 24px; font-size: 15px; color: #555555; line-height: 1.6;">
-                用户 <strong>{{.Username}}</strong> 提交了一个新问题，详细信息如下：
+            <p style="margin: 0; font-size: 14px; color: #6B7F96; line-height: 1.6;">
+                用户 <strong style="color: #1A1E26;">{{.Username}}</strong> 提交了一个新问题
             </p>
         </td>
     </tr>
     <tr>
         <td style="padding-bottom: 24px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9f9f9; border-radius: 8px; padding: 16px; width: 100%;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color: #F2F4F7; border-radius: 8px; width: 100%;">
                 <tr>
-                    <td style="padding: 8px 16px; font-size: 14px; color: #888888; width: 80px;">
+                    <td style="padding: 12px 16px; font-size: 13px; color: #6B7F96; width: 72px; vertical-align: top;">
                         标题
                     </td>
-                    <td style="padding: 8px 16px; font-size: 14px; color: #333333; font-weight: 500;">
+                    <td style="padding: 12px 16px; font-size: 14px; color: #1A1E26; font-weight: 500;">
                         {{.Title}}
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding: 8px 16px; font-size: 14px; color: #888888; width: 80px;">
+                    <td style="padding: 12px 16px; font-size: 13px; color: #6B7F96; width: 72px; vertical-align: top;">
                         类型
                     </td>
-                    <td style="padding: 8px 16px; font-size: 14px; color: #333333;">
+                    <td style="padding: 12px 16px; font-size: 14px; color: #1A1E26;">
                         {{.IssueType}}
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding: 8px 16px; font-size: 14px; color: #888888; width: 80px;">
+                    <td style="padding: 12px 16px; font-size: 13px; color: #6B7F96; width: 72px; vertical-align: top;">
                         优先级
                     </td>
-                    <td style="padding: 8px 16px; font-size: 14px; color: #333333;">
+                    <td style="padding: 12px 16px; font-size: 14px; color: #1A1E26;">
                         {{.Priority}}
                     </td>
                 </tr>
@@ -41,11 +41,11 @@
         </td>
     </tr>
     <tr>
-        <td style="padding-bottom: 32px;">
+        <td>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                    <td style="border-radius: 6px; background-color: #4f46e5;">
-                        <a href="{{.IssueURL}}" target="_blank" style="display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: 500; color: #ffffff; text-decoration: none;">
+                    <td style="border-radius: 8px; background-color: #3B76D8;">
+                        <a href="{{.IssueURL}}" target="_blank" style="display: inline-block; padding: 10px 24px; font-size: 13px; font-weight: 500; color: #F0F6FD; text-decoration: none; letter-spacing: -0.1px;">
                             查看详情
                         </a>
                     </td>
