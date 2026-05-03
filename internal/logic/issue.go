@@ -363,9 +363,22 @@ func (l *IssueLogic) GetIssueList(
 		return nil, 0, xErr
 	}
 
+	issueIDs := make([]xSnowflake.SnowflakeID, len(issues))
+	for i, issue := range issues {
+		issueIDs[i] = issue.ID
+	}
+	replyCountMap, xErr := l.repo.replyRepo.CountBatchByIssueIDs(ctx, issueIDs)
+	if xErr != nil {
+		return nil, 0, xErr
+	}
+
 	dtos := make([]models.IssueDTO, len(issues))
 	for i, issue := range issues {
-		dto, buildErr := l.buildIssueDTO(ctx, &issue, 0, 0, false)
+		replyCount := 0
+		if c, ok := replyCountMap[issue.ID]; ok {
+			replyCount = int(c)
+		}
+		dto, buildErr := l.buildIssueDTO(ctx, &issue, replyCount, 0, false)
 		if buildErr != nil {
 			return nil, 0, buildErr
 		}
