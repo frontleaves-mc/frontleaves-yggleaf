@@ -16,6 +16,24 @@ const (
 	IssueStatusClosed     IssueStatus = "closed"     // 已关闭
 )
 
+// statusChineseMap 状态英文 → 中文映射
+var statusChineseMap = map[IssueStatus]string{
+	IssueStatusRegistered: "已登记",
+	IssueStatusPending:    "待处理",
+	IssueStatusProcessing: "处理中",
+	IssueStatusResolved:   "已处理",
+	IssueStatusUnplanned:  "未计划",
+	IssueStatusClosed:     "已关闭",
+}
+
+// ChineseName 返回状态的中文显示名，未知状态返回原值。
+func (s IssueStatus) ChineseName() string {
+	if name, ok := statusChineseMap[s]; ok {
+		return name
+	}
+	return string(s)
+}
+
 // ValidStatuses 所有合法状态值（用于 binding:oneof 校验）
 var ValidStatuses = []string{
 	string(IssueStatusRegistered),

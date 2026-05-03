@@ -10,8 +10,8 @@ github.com/bamboo-services/bamboo-base-go/major v1.0.0-202604270610 h1:Y+tQoJIlW
 github.com/bamboo-services/bamboo-base-go/major v1.0.0-202604270610/go.mod h1:hlFhs1KPAsh0MvXOwaYNexoBQIDfisU788w9InkScKM=
 github.com/bamboo-services/bamboo-base-go/plugins/async v1.0.0-202604270654 h1:vccKwLljp2skhITd5wLx6+Xm1q36rosGYBy6wxxuVUE=
 github.com/bamboo-services/bamboo-base-go/plugins/async v1.0.0-202604270654/go.mod h1:R30NiQncZQCk3UkhiXEri1n8V2o+muGUBSyXTprwvnQ=
-github.com/bamboo-services/bamboo-base-go/plugins/email v1.0.0-202605031030 h1:l3FTfjM9eg74q63vuSI34viRDftV7fpfBwhf5b5IWm8=
-github.com/bamboo-services/bamboo-base-go/plugins/email v1.0.0-202605031030/go.mod h1:zNPVeJHcSV535MxEd6McQBropy78UvXos2fEF4JbHH8=
+github.com/bamboo-services/bamboo-base-go/plugins/email v1.0.0-202605032001 h1:L/IRbQQu+NkkYZ0hofRGoSRUQ/bF9Q2KfBo9Kamb1eM=
+github.com/bamboo-services/bamboo-base-go/plugins/email v1.0.0-202605032001/go.mod h1:b3nDKsdB36VhWmrdMWzEl47dCKy4x6PdqRoQfHONFms=
 github.com/bamboo-services/bamboo-base-go/plugins/grpc v1.0.0-202605031602 h1:sKzjeBAJlDk23IvvB0JHzg6Rn/TiMDQFw0wCciCbG/A=
 github.com/bamboo-services/bamboo-base-go/plugins/grpc v1.0.0-202605031602/go.mod h1:tU5U0OODn6bbmYL5X0Yk8SHrbF/62bocJw5teenoKjI=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=

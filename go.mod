@@ -8,7 +8,7 @@ require (
 	github.com/bamboo-services/bamboo-base-go/defined v1.0.0-202605031602
 	github.com/bamboo-services/bamboo-base-go/major v1.0.0-202604270610
 	github.com/bamboo-services/bamboo-base-go/plugins/async v1.0.0-202604270654
-	github.com/bamboo-services/bamboo-base-go/plugins/email v1.0.0-202605031030
+	github.com/bamboo-services/bamboo-base-go/plugins/email v1.0.0-202605032001
 	github.com/bamboo-services/bamboo-base-go/plugins/grpc v1.0.0-202605031602
 	github.com/frontleaves-mc/frontleaves-yggleaf/proto v0.0.0
 	github.com/gin-gonic/gin v1.12.0

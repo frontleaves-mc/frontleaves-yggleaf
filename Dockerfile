@@ -44,6 +44,7 @@ WORKDIR /app
 
 COPY --from=builder /build/frontleaves-yggleaf .
 COPY --from=builder /build/.env.example .env.example
+COPY --from=builder /build/template/ ./template/
 
 RUN mkdir -p /app/.logs && chown -R yggleaf:yggleaf /app
 

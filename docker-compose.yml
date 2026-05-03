@@ -15,6 +15,7 @@ services:
       - .logs:/app/.logs
       - ./keys:/app/keys
       - ./minecraft_client:/app/minecraft_client
+      - ./template:/app/template
     networks:
       - default
       - 1panel-network

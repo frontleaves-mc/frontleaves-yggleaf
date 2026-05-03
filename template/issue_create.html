@@ -1,12 +1,12 @@
-{{define "content"}}
+{{define "issue_create"}}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
         <td style="padding-bottom: 24px;">
             <h2 style="margin: 0 0 16px; font-size: 20px; font-weight: 600; color: #1a1a1a;">
-                问题状态变更通知
+                新问题提交通知
             </h2>
             <p style="margin: 0 0 24px; font-size: 15px; color: #555555; line-height: 1.6;">
-                您的问题 <strong>{{.Title}}</strong> 的状态已发生变更。
+                用户 <strong>{{.Username}}</strong> 提交了一个新问题，详细信息如下：
             </p>
         </td>
     </tr>
@@ -15,18 +15,26 @@
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9f9f9; border-radius: 8px; padding: 16px; width: 100%;">
                 <tr>
                     <td style="padding: 8px 16px; font-size: 14px; color: #888888; width: 80px;">
-                        原状态
+                        标题
                     </td>
-                    <td style="padding: 8px 16px; font-size: 14px; color: #333333;">
-                        {{.OldStatus}}
+                    <td style="padding: 8px 16px; font-size: 14px; color: #333333; font-weight: 500;">
+                        {{.Title}}
                     </td>
                 </tr>
                 <tr>
                     <td style="padding: 8px 16px; font-size: 14px; color: #888888; width: 80px;">
-                        新状态
+                        类型
                     </td>
-                    <td style="padding: 8px 16px; font-size: 14px; color: #4f46e5; font-weight: 500;">
-                        {{.NewStatus}}
+                    <td style="padding: 8px 16px; font-size: 14px; color: #333333;">
+                        {{.IssueType}}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 16px; font-size: 14px; color: #888888; width: 80px;">
+                        优先级
+                    </td>
+                    <td style="padding: 8px 16px; font-size: 14px; color: #333333;">
+                        {{.Priority}}
                     </td>
                 </tr>
             </table>

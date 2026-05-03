@@ -974,7 +974,7 @@ func (l *IssueLogic) notifyIssueCreate(ctx context.Context, issue *entity.Issue)
 
 		// 构建前端 URL
 		frontendURL := xEnv.GetEnvString(bConst.EnvFrontendURL, "")
-		issueURL := frontendURL + "/issue/" + issue.ID.String()
+		issueURL := frontendURL + "/user/issues/" + issue.ID.String()
 
 		// 发送邮件
 		emailClient := xCtxUtil.MustGetEmailClient(asyncCtx)
@@ -1031,7 +1031,7 @@ func (l *IssueLogic) notifyIssueReply(ctx context.Context, issueID xSnowflake.Sn
 
 		// 构建前端 URL
 		frontendURL := xEnv.GetEnvString(bConst.EnvFrontendURL, "")
-		issueURL := frontendURL + "/issue/" + issueID.String()
+		issueURL := frontendURL + "/user/issues/" + issueID.String()
 
 		// 截断回复内容（200 字符）
 		displayContent := content
@@ -1075,7 +1075,7 @@ func (l *IssueLogic) notifyIssueStatus(ctx context.Context, issue *entity.Issue,
 
 		// 构建前端 URL
 		frontendURL := xEnv.GetEnvString(bConst.EnvFrontendURL, "")
-		issueURL := frontendURL + "/issue/" + issue.ID.String()
+		issueURL := frontendURL + "/user/issues/" + issue.ID.String()
 
 		// 发送邮件
 		emailClient := xCtxUtil.MustGetEmailClient(asyncCtx)
@@ -1085,8 +1085,8 @@ func (l *IssueLogic) notifyIssueStatus(ctx context.Context, issue *entity.Issue,
 			Template: "issue_status",
 			TemplateData: map[string]string{
 				"Title":     issue.Title,
-				"OldStatus": string(oldStatus),
-				"NewStatus": string(newStatus),
+				"OldStatus": oldStatus.ChineseName(),
+				"NewStatus": newStatus.ChineseName(),
 				"IssueURL":  issueURL,
 			},
 		})
