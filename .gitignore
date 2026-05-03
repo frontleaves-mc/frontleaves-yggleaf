@@ -45,6 +45,7 @@ mono_crash.*.json
 
 ### AI ###
 .mcp.json
+.sisyphus/
 
 ### Logger ###
 .logs/

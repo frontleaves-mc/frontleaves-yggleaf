@@ -1,25 +1,40 @@
-# 变量定义，方便后续维护
+# ============================================================
+# 基础变量
+# ============================================================
+
 MAIN_FILE = main.go
 SWAG_CMD = swag
 SWAG_FLAGS = --parseDependency
 BUILD_SCRIPT = script/build-docker.sh
 SCRIPT_DIR = script
 
+# 根版本号（去除 v 前缀，如 v1 → 1）
+ROOT_VERSION := $(shell cat version | sed 's/^v//')
+
+# 时间戳（格式：YYYYMMDDHHMM）
+TIMESTAMP := $(shell date +"%Y%m%d%H%M")
+
+# Proto 子模块
+PROTO_MODULE := proto
+
 .DEFAULT_GOAL := help
 
-.PHONY: help swag run dev tidy docker docker-build upload proto proto-init
+.PHONY: help swag run dev tidy docker docker-build upload proto proto-init release-proto vet
 
-# 显示帮助信息
+# ============================================================
+# 帮助信息
+# ============================================================
+
 help:
 	@echo "锋楪YggLeaf - 可用命令"
 	@echo ""
 	@echo "开发命令:"
-	@echo "  make swag       - 生成 Swagger 文档"
-	@echo "  make run        - 运行程序"
-	@echo "  make dev        - 生成文档并运行 (推荐)"
-	@echo "  make tidy       - 整理依赖"
-	@echo "  make proto-init - 初始化 proto 符号链接"
-	@echo "  make proto      - 生成 protobuf Go 代码"
+	@echo "  make swag                     - 生成 Swagger 文档"
+	@echo "  make run                      - 运行程序"
+	@echo "  make dev                      - 生成文档并运行 (推荐)"
+	@echo "  make tidy                     - 整理依赖"
+	@echo "  make proto-init               - 初始化 proto 符号链接"
+	@echo "  make proto                    - 生成 protobuf Go 代码"
 	@echo ""
 	@echo "Docker 构建:"
 	@echo "  make docker USER=<user> PASS=<pass> [VERSION=<ver>] - 构建 Docker 镜像"
@@ -28,10 +43,17 @@ help:
 	@echo "服务器部署:"
 	@echo "  make upload DEPLOY_SERVER=<server> [DEPLOY_USER=<user>] [DEPLOY_PATH=<path>] - 上传到服务器"
 	@echo ""
+	@echo "发布命令:"
+	@echo "  make release-proto            - 发布 proto 子模块"
+	@echo ""
+	@echo "版本格式: v{ROOT_VERSION}.{SUB_VERSION}-{TIMESTAMP}"
+	@echo "  根版本号:   $(ROOT_VERSION)  (来自 ./version)"
+	@echo "  时间戳:     $(TIMESTAMP)"
+	@echo ""
 	@echo "示例:"
 	@echo "  make dev"
 	@echo "  make docker USER=100032613538 PASS=password"
-	@echo ""
+	@echo "  make release-proto            → proto/v$(ROOT_VERSION).x.x-$(TIMESTAMP)"
 
 # 提取出的 Swagger 生成目标
 swag:
@@ -95,3 +117,24 @@ proto:
 	@cd proto && buf generate
 	@rm -f proto/link/base.pb.go
 	@echo "protobuf 代码生成完成"
+
+# ============================================================
+# 发布命令
+# ============================================================
+
+# 构建 tag 名称的函数
+# $(1): 模块目录路径 (如 proto)
+# 返回: <path>/v<ROOT_VERSION>.<SUB_VERSION>-<TIMESTAMP>
+define build_tag
+$(strip $(1))/v$(ROOT_VERSION).$(shell cat $(1)/version)-$(TIMESTAMP)
+endef
+
+# --- make release-proto ---
+# 发布 proto 子模块
+release-proto:
+	@$(eval TAG := $(call build_tag,$(PROTO_MODULE)))
+	@echo "📦 发布模块: $(PROTO_MODULE)"
+	@echo "   tag: $(TAG)"
+	@git tag -a "$(TAG)" -m "Release $(TAG)"
+	@git push origin "$(TAG)"
+	@echo "✅ $(PROTO_MODULE) 发布完成: $(TAG)"
