@@ -269,19 +269,19 @@ if [ "$USE_GUM" = true ]; then
         "$(gum style --foreground "$BRAND_SECONDARY" "文件已成功上传到服务器")" \
         "" \
         "$(gum style --foreground "$MUTED" "服务器: ${DEPLOY_SERVER}")" \
-        "$(gum style--foreground "$MUTED" "路径:   ${DEPLOY_PATH}")" \
+        "$(gum style --foreground "$MUTED" "路径:   ${DEPLOY_PATH}")" \
         "" \
         "$(gum style --bold --foreground "$BRAND_PRIMARY" "后续步骤:")" \
-        "$(gum style--foreground "$MUTED" "1. SSH 登录服务器:")" \
+        "$(gum style --foreground "$MUTED" "1. SSH 登录服务器:")" \
         "$(gum style --foreground 240 "   ssh ${DEPLOY_USER}@${DEPLOY_SERVER}")" \
         "" \
-        "$(gum style--foreground "$MUTED" "2. 进入部署目录:")" \
+        "$(gum style --foreground "$MUTED" "2. 进入部署目录:")" \
         "$(gum style --foreground 240 "   cd ${DEPLOY_PATH}")" \
         "" \
         "$(gum style--foreground "$MUTED" "3. 启动服务:")" \
         "$(gum style --foreground 240 "   make run")" \
         "" \
-        "$(gum style--foreground "$MUTED" "4. 查看日志:")" \
+        "$(gum style --foreground "$MUTED" "4. 查看日志:")" \
         "$(gum style --foreground 240 "   make logs")"
 else
     echo "╔════════════════════════════════════════════════════╗"

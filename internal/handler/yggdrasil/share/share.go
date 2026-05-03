@@ -10,12 +10,12 @@ import (
 	"net/http"
 	"strings"
 
+	xEnv "github.com/bamboo-services/bamboo-base-go/defined/env"
 	apiYgg "github.com/frontleaves-mc/frontleaves-yggleaf/api/yggdrasil"
 	bConst "github.com/frontleaves-mc/frontleaves-yggleaf/internal/constant"
-	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/logic/yggdrasil"
 	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/entity"
 	ygghandler "github.com/frontleaves-mc/frontleaves-yggleaf/internal/handler/yggdrasil"
-	xEnv "github.com/bamboo-services/bamboo-base-go/defined/env"
+	"github.com/frontleaves-mc/frontleaves-yggleaf/internal/logic/yggdrasil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,7 +54,7 @@ func (h *ShareHandler) APIMetadata(ctx *gin.Context) {
 			},
 			FeatureNonEmailLogin: true,
 		},
-		SkinDomains: buildSkinDomains(),
+		SkinDomains:        buildSkinDomains(),
 		SignaturePublickey: h.Service.Logic().GetPubKeyPEM(),
 	}
 
@@ -202,7 +202,6 @@ func (h *ShareHandler) verifyOwnership(ctx *gin.Context, gameToken *entity.GameT
 // 解决 Minecraft 游戏客户端严格校验 skinDomains 导致皮肤不显示的问题。
 func buildSkinDomains() []string {
 	domains := []string{
-		bConst.YggdrasilSkinDomainMain,
 		bConst.YggdrasilSkinDomainSuffix,
 		"textures.minecraft.net", // Mojang 正版纹理域名（在线档案回退使用）
 	}
