@@ -181,12 +181,20 @@ fi
 log_success "ssh 已安装"
 
 FILES_TO_UPLOAD=("docker-compose.yml" "Makefile.run" ".env.prod")
+DIRS_TO_UPLOAD=("template")
 for file in "${FILES_TO_UPLOAD[@]}"; do
     if [ ! -f "$file" ]; then
         log_error "文件不存在: $file"
         exit 1
     fi
     log_success "找到文件: $file"
+done
+for dir in "${DIRS_TO_UPLOAD[@]}"; do
+    if [ ! -d "$dir" ]; then
+        log_error "目录不存在: $dir"
+        exit 1
+    fi
+    log_success "找到目录: $dir"
 done
 
 echo ""
@@ -232,7 +240,7 @@ if [ -n "$DEPLOY_SSH_KEY" ]; then
     RSYNC_CMD="$RSYNC_CMD -i $DEPLOY_SSH_KEY"
 fi
 
-eval "$RSYNC_CMD docker-compose.yml Makefile.run .env.prod ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/"
+eval "$RSYNC_CMD docker-compose.yml Makefile.run .env.prod template ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/"
 
 echo ""
 log_success "文件上传完成"
