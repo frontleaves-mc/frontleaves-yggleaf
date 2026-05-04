@@ -62,14 +62,16 @@ func NewRoute(reg *xReg.Reg) {
 	{
 		apiRouter := r.engine.Group("/api/v1")
 
+		r.healthRouter(apiRouter)
+
 		oauthRoute.OAuthRouter(apiRouter)
 
 		r.userRouter(apiRouter)
 		r.gameProfileRouter(apiRouter)
 		r.libraryRouter(apiRouter)
-			r.issueRouter(apiRouter)
-			r.adminRouter(apiRouter)
-			r.syncRouter(apiRouter)
+		r.issueRouter(apiRouter)
+		r.adminRouter(apiRouter)
+		r.syncRouter(apiRouter)
 	}
 
 	// Yggdrasil 外置登录协议路由
