@@ -410,6 +410,74 @@ func (h *IssueHandler) UpdateIssueNote(ctx *gin.Context) {
 	xResult.SuccessHasData(ctx, "备注更新成功", nil)
 }
 
+// UpdateIssueContent 修改问题描述
+//
+// @Summary     [管理] 修改描述
+// @Description 管理员修改问题的描述内容，长度不超过 10000 字符
+// @Tags        管理员问题接口
+// @Accept      json
+// @Produce     json
+// @Param       id path int true "问题 ID"
+// @Param       request body apiAdmin.UpdateIssueContentRequest true "修改描述请求"
+// @Success     200   {object}  xBase.BaseResponse "描述更新成功"
+// @Failure     400   {object}  xBase.BaseResponse "请求参数错误或描述超长"
+// @Failure     401   {object}  xBase.BaseResponse "未授权"
+// @Failure     403   {object}  xBase.BaseResponse "需要管理员权限"
+// @Failure     404   {object}  xBase.BaseResponse "问题不存在"
+// @Security    BearerAuth
+// @Router      /admin/issue/{id}/content [PUT]
+func (h *IssueHandler) UpdateIssueContent(ctx *gin.Context) {
+	h.log.Info(ctx, "UpdateIssueContent - 修改问题描述")
+	issueID, err := xSnowflake.ParseSnowflakeID(ctx.Param("id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "无效的问题 ID", true, err))
+		return
+	}
+	req := xUtil.Bind(ctx, &apiAdmin.UpdateIssueContentRequest{}).Data()
+	if req == nil {
+		return
+	}
+	if xErr := h.service.issueLogic.UpdateContent(ctx.Request.Context(), issueID, req.Content); xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+	xResult.SuccessHasData(ctx, "描述更新成功", nil)
+}
+
+// UpdateIssueInfo 修改问题标题和分类
+//
+// @Summary     [管理] 修改标题/分类
+// @Description 管理员修改问题的标题和/或分类，两个字段均为可选；传空请求体为无操作
+// @Tags        管理员问题接口
+// @Accept      json
+// @Produce     json
+// @Param       id path int true "问题 ID"
+// @Param       request body apiAdmin.UpdateIssueInfoRequest true "修改标题/分类请求"
+// @Success     200   {object}  xBase.BaseResponse "信息更新成功"
+// @Failure     400   {object}  xBase.BaseResponse "请求参数错误"
+// @Failure     401   {object}  xBase.BaseResponse "未授权"
+// @Failure     403   {object}  xBase.BaseResponse "需要管理员权限"
+// @Failure     404   {object}  xBase.BaseResponse "问题不存在或问题类型不存在"
+// @Security    BearerAuth
+// @Router      /admin/issue/{id}/info [PUT]
+func (h *IssueHandler) UpdateIssueInfo(ctx *gin.Context) {
+	h.log.Info(ctx, "UpdateIssueInfo - 修改标题/分类")
+	issueID, err := xSnowflake.ParseSnowflakeID(ctx.Param("id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "无效的问题 ID", true, err))
+		return
+	}
+	req := xUtil.Bind(ctx, &apiAdmin.UpdateIssueInfoRequest{}).Data()
+	if req == nil {
+		return
+	}
+	if xErr := h.service.issueLogic.UpdateIssueInfo(ctx.Request.Context(), issueID, req.Title, req.IssueTypeID); xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+	xResult.SuccessHasData(ctx, "信息更新成功", nil)
+}
+
 // ==================== 类型管理接口 ====================
 
 // ListIssueTypes 获取启用的类型列表

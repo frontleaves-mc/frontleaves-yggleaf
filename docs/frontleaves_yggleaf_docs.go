@@ -414,6 +414,146 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "/admin/issue/{id}/content": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员修改问题的描述内容，长度不超过 10000 字符",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 修改描述",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "问题 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "修改描述请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.UpdateIssueContentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "描述更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误或描述超长",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/issue/{id}/info": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员修改问题的标题和/或分类，两个字段均为可选；传空请求体为无操作",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员问题接口"
+                ],
+                "summary": "[管理] 修改标题/分类",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "问题 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "修改标题/分类请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.UpdateIssueInfoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "信息更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "问题不存在或问题类型不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/issue/{id}/note": {
             "put": {
                 "security": [
@@ -1667,6 +1807,26 @@ const docTemplatefrontleaves_yggleaf = `{
                     },
                     "409": {
                         "description": "资源冲突",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/ping": {
+            "get": {
+                "description": "用于 Docker / Kubernetes 健康检查，无需认证",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "健康检查"
+                ],
+                "summary": "[公开] 存活探针",
+                "responses": {
+                    "200": {
+                        "description": "服务正常",
                         "schema": {
                             "$ref": "#/definitions/xBase.BaseResponse"
                         }
@@ -3986,6 +4146,32 @@ const docTemplatefrontleaves_yggleaf = `{
                 },
                 "skins_public_used": {
                     "type": "integer"
+                }
+            }
+        },
+        "admin.UpdateIssueContentRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10000,
+                    "minLength": 1
+                }
+            }
+        },
+        "admin.UpdateIssueInfoRequest": {
+            "type": "object",
+            "properties": {
+                "issue_type_id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
                 }
             }
         },

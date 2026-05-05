@@ -41,7 +41,7 @@ func (r *IssueRepo) GetByID(ctx context.Context, tx *gorm.DB, id xSnowflake.Snow
 	r.log.Info(ctx, "GetByID - 根据ID查询问题")
 
 	var issue entity.Issue
-	err := r.pickDB(ctx, tx).Model(&entity.Issue{}).Where("id = ?", id).First(&issue).Error
+	err := r.pickDB(ctx, tx).Model(&entity.Issue{}).Preload("User").Where("id = ?", id).First(&issue).Error
 	if err == nil {
 		return &issue, true, nil
 	}
@@ -90,7 +90,7 @@ func (r *IssueRepo) ListByUserID(ctx context.Context, userID xSnowflake.Snowflak
 
 	var list []entity.Issue
 	offset := (page - 1) * pageSize
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&list).Error; err != nil {
+	if err := query.Preload("User").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&list).Error; err != nil {
 		return nil, 0, xError.NewError(ctx, xError.DatabaseError, "查询问题列表失败", true, err)
 	}
 	return list, total, nil
@@ -184,6 +184,24 @@ func (r *IssueRepo) UpdateAdminNote(ctx context.Context, tx *gorm.DB, id xSnowfl
 
 	if err := r.pickDB(ctx, tx).Model(&entity.Issue{}).Where("id = ?", id).Update("admin_note", note).Error; err != nil {
 		return xError.NewError(ctx, xError.DatabaseError, "更新内部备注失败", true, err)
+	}
+	return nil
+}
+
+// UpdateContent 更新问题描述。
+func (r *IssueRepo) UpdateContent(ctx context.Context, tx *gorm.DB, id xSnowflake.SnowflakeID, content string) *xError.Error {
+	r.log.Info(ctx, "UpdateContent - 更新问题描述")
+	if err := r.pickDB(ctx, tx).Model(&entity.Issue{}).Where("id = ?", id).Update("content", content).Error; err != nil {
+		return xError.NewError(ctx, xError.DatabaseError, "更新问题描述失败", true, err)
+	}
+	return nil
+}
+
+// UpdateIssueInfo 更新问题标题和/或分类。
+func (r *IssueRepo) UpdateIssueInfo(ctx context.Context, tx *gorm.DB, id xSnowflake.SnowflakeID, updates map[string]interface{}) *xError.Error {
+	r.log.Info(ctx, "UpdateIssueInfo - 更新问题标题/分类")
+	if err := r.pickDB(ctx, tx).Model(&entity.Issue{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		return xError.NewError(ctx, xError.DatabaseError, "更新问题信息失败", true, err)
 	}
 	return nil
 }

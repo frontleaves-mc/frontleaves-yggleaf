@@ -31,6 +31,7 @@ const (
 	maxReplyLength     = 5000
 	maxAdminNoteLength = 2000
 	maxAttachments     = 9
+	maxContentLength   = 10000
 )
 
 // issueRepo 问题数据访问适配器。
@@ -472,6 +473,14 @@ func (l *IssueLogic) GetIssueDetail(
 		}
 	}
 
+	// 补充 User 关联（缓存路径不携带 User 数据）
+	if issue.User == nil && issue.UserID != 0 {
+		u, found, xErr := l.repo.userRepo.Get(ctx, issue.UserID.String())
+		if xErr == nil && found {
+			issue.User = u
+		}
+	}
+
 	// 权限校验：非管理员只能查看自己的问题
 	if !isAdmin && issue.UserID != userID {
 		return nil, xError.NewError(ctx, xError.PermissionDenied, "无权查看该问题", true)
@@ -694,6 +703,86 @@ func (l *IssueLogic) UpdateNote(
 
 	result := l.repo.issueRepo.UpdateAdminNote(ctx, nil, issueID, note)
 	// 清除缓存（备注变更）
+	if result == nil {
+		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
+			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
+		}
+	}
+	return result
+}
+
+// UpdateContent 更新问题描述。
+func (l *IssueLogic) UpdateContent(ctx context.Context, issueID xSnowflake.SnowflakeID, content string) *xError.Error {
+	l.log.Info(ctx, "UpdateContent - 更新问题描述")
+
+	if len(content) > maxContentLength {
+		return xError.NewError(ctx, xError.ParameterError,
+			xError.ErrMessage(fmt.Sprintf("描述长度不能超过 %d 字符", maxContentLength)), true)
+	}
+
+	_, found, xErr := l.repo.issueRepo.GetByID(ctx, nil, issueID)
+	if xErr != nil {
+		return xErr
+	}
+	if !found {
+		return xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
+	}
+
+	result := l.repo.issueRepo.UpdateContent(ctx, nil, issueID, content)
+	if result == nil {
+		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
+			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))
+		}
+	}
+	return result
+}
+
+// UpdateIssueInfo 更新问题标题和/或分类。
+func (l *IssueLogic) UpdateIssueInfo(
+	ctx context.Context,
+	issueID xSnowflake.SnowflakeID,
+	title *string,
+	issueTypeID *int64,
+) *xError.Error {
+	l.log.Info(ctx, "UpdateIssueInfo - 更新问题标题/分类")
+
+	_, found, xErr := l.repo.issueRepo.GetByID(ctx, nil, issueID)
+	if xErr != nil {
+		return xErr
+	}
+	if !found {
+		return xError.NewError(ctx, xError.ParameterError, "问题不存在", true)
+	}
+
+	// 两个字段都未传 → 无操作
+	if title == nil && issueTypeID == nil {
+		return nil
+	}
+
+	updates := make(map[string]interface{})
+
+	if title != nil {
+		if len(*title) < 1 || len(*title) > 128 {
+			return xError.NewError(ctx, xError.ParameterError, "标题长度必须在 1~128 字符之间", true)
+		}
+		updates["title"] = *title
+	}
+
+	if issueTypeID != nil {
+		it, found, xErr := l.repo.issueTypeRepo.GetByID(ctx, nil, xSnowflake.SnowflakeID(*issueTypeID))
+		if xErr != nil {
+			return xErr
+		}
+		if !found {
+			return xError.NewError(ctx, xError.ParameterError, "问题类型不存在", true)
+		}
+		if !it.IsEnabled {
+			return xError.NewError(ctx, xError.ParameterError, "该问题类型已禁用", true)
+		}
+		updates["issue_type_id"] = *issueTypeID
+	}
+
+	result := l.repo.issueRepo.UpdateIssueInfo(ctx, nil, issueID, updates)
 	if result == nil {
 		if delErr := l.repo.cache.Del(ctx, issueID); delErr != nil {
 			l.log.Warn(ctx, fmt.Sprintf("删除 Issue 缓存失败(id=%d): %v", issueID, delErr))

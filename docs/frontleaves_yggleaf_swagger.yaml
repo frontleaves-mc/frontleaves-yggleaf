@@ -133,6 +133,24 @@ definitions:
       skins_public_used:
         type: integer
     type: object
+  admin.UpdateIssueContentRequest:
+    properties:
+      content:
+        maxLength: 10000
+        minLength: 1
+        type: string
+    required:
+    - content
+    type: object
+  admin.UpdateIssueInfoRequest:
+    properties:
+      issue_type_id:
+        type: integer
+      title:
+        maxLength: 128
+        minLength: 1
+        type: string
+    type: object
   admin.UpdateIssueNoteRequest:
     properties:
       admin_note:
@@ -1495,6 +1513,96 @@ paths:
       summary: '[超管] 编辑类型'
       tags:
       - 管理员问题接口
+  /admin/issue/{id}/content:
+    put:
+      consumes:
+      - application/json
+      description: 管理员修改问题的描述内容，长度不超过 10000 字符
+      parameters:
+      - description: 问题 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 修改描述请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateIssueContentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 描述更新成功
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "400":
+          description: 请求参数错误或描述超长
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 需要管理员权限
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 问题不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: '[管理] 修改描述'
+      tags:
+      - 管理员问题接口
+  /admin/issue/{id}/info:
+    put:
+      consumes:
+      - application/json
+      description: 管理员修改问题的标题和/或分类，两个字段均为可选；传空请求体为无操作
+      parameters:
+      - description: 问题 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 修改标题/分类请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateIssueInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 信息更新成功
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 需要管理员权限
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 问题不存在或问题类型不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: '[管理] 修改标题/分类'
+      tags:
+      - 管理员问题接口
   /admin/issue/{id}/note:
     put:
       consumes:
@@ -2353,6 +2461,19 @@ paths:
       summary: '[玩家] 获取游戏档案配额'
       tags:
       - 游戏档案接口
+  /health/ping:
+    get:
+      description: 用于 Docker / Kubernetes 健康检查，无需认证
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 服务正常
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[公开] 存活探针'
+      tags:
+      - 健康检查
   /issue:
     post:
       consumes:

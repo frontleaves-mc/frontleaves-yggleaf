@@ -39,3 +39,14 @@ type UpdateIssueTypeRequest struct {
 	SortOrder   *int    `json:"sort_order,omitempty"`
 	IsEnabled   *bool   `json:"is_enabled,omitempty"`
 }
+
+// UpdateIssueContentRequest 修改问题描述请求。
+type UpdateIssueContentRequest struct {
+	Content string `json:"content" binding:"required,min=1,max=10000"`
+}
+
+// UpdateIssueInfoRequest 修改问题标题和分类请求。
+type UpdateIssueInfoRequest struct {
+	Title       *string `json:"title,omitempty" binding:"omitempty,min=1,max=128"`
+	IssueTypeID *int64  `json:"issue_type_id,omitempty"`
+}

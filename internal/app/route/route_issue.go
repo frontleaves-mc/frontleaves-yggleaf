@@ -35,6 +35,8 @@ func (r *route) issueRouter(route gin.IRouter) {
 		adminGroup.PUT("/:id/status", issueHandler.UpdateIssueStatus)
 		adminGroup.PUT("/:id/priority", issueHandler.UpdateIssuePriority)
 		adminGroup.PUT("/:id/note", issueHandler.UpdateIssueNote)
+		adminGroup.PUT("/:id/content", issueHandler.UpdateIssueContent)
+		adminGroup.PUT("/:id/info", issueHandler.UpdateIssueInfo)
 	}
 
 	// ---- 类型路由组 ----
