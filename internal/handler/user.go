@@ -226,6 +226,53 @@ func (h *UserHandler) GetAdminUserDetail(ctx *gin.Context) {
 	xResult.SuccessHasData(ctx, "获取用户详情成功", resp)
 }
 
+// GetAdminUserGameProfiles 管理员获取用户游戏档案列表
+//
+// @Summary 	[超管] 用户游戏档案
+// @Description 管理员获取指定用户的所有游戏档案列表，包含皮肤和披风纹理信息
+// @Tags        管理员-用户接口
+// @Accept      json
+// @Produce     json
+// @Param       user_id path string true "目标用户 ID"
+// @Success     200   {object}  xBase.BaseResponse{data=admin.AdminUserGameProfilesResponse}	"查询成功"
+// @Failure     400   {object}  xBase.BaseResponse          			"请求参数错误"
+// @Failure     401   {object}  xBase.BaseResponse         				"未授权"
+// @Failure     403   {object}  xBase.BaseResponse          			"需要超级管理员权限"
+// @Failure     404   {object}  xBase.BaseResponse          			"用户不存在"
+// @Security    BearerAuth
+// @Router       /admin/users/{user_id}/game-profiles [GET]
+func (h *UserHandler) GetAdminUserGameProfiles(ctx *gin.Context) {
+	h.log.Info(ctx, "GetAdminUserGameProfiles - 管理员获取用户游戏档案列表")
+
+	targetUserID, err := xSnowflake.ParseSnowflakeID(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(xError.NewError(ctx, xError.ParameterError, "无效的用户 ID", true, err))
+		return
+	}
+
+	_, found, xErr := h.service.userLogic.GetByID(ctx.Request.Context(), targetUserID.String())
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+	if !found {
+		_ = ctx.Error(xError.NewError(ctx, xError.NotFound, "用户不存在", true))
+		return
+	}
+
+	profiles, xErr := h.service.gameProfileLogic.ListGameProfiles(ctx.Request.Context(), targetUserID)
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	response := apiAdmin.AdminUserGameProfilesResponse{
+		Items: gameProfileDTOsToResponses(profiles),
+	}
+
+	xResult.SuccessHasData(ctx, "获取用户游戏档案列表成功", response)
+}
+
 // adminModelTypeToString 将 entity.ModelType 转为可读字符串。
 func adminModelTypeToString(mt uint8) string {
 	switch mt {
