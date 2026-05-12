@@ -66,10 +66,16 @@ definitions:
       user:
         $ref: '#/definitions/admin.AdminUserBasic'
     type: object
+  admin.AdminUserGameProfilesResponse:
+    properties:
+      items:
+        description: 游戏档案列表
+        items:
+          $ref: '#/definitions/user.GameProfileResponse'
+        type: array
+    type: object
   admin.AdminUserItem:
     properties:
-      created_at:
-        type: string
       email:
         type: string
       has_ban:
@@ -77,6 +83,8 @@ definitions:
       id:
         type: string
       role_name:
+        type: string
+      updated_at:
         type: string
       username:
         type: string
@@ -1896,6 +1904,50 @@ paths:
       security:
       - BearerAuth: []
       summary: '[超管] 用户详情'
+      tags:
+      - 管理员-用户接口
+  /admin/users/{user_id}/game-profiles:
+    get:
+      consumes:
+      - application/json
+      description: 管理员获取指定用户的所有游戏档案列表，包含皮肤和披风纹理信息
+      parameters:
+      - description: 目标用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/admin.AdminUserGameProfilesResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "403":
+          description: 需要超级管理员权限
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      security:
+      - BearerAuth: []
+      summary: '[超管] 用户游戏档案'
       tags:
       - 管理员-用户接口
   /api/profiles/minecraft:

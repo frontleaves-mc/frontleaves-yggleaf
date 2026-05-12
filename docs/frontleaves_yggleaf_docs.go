@@ -935,6 +935,79 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "/admin/users/{user_id}/game-profiles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员获取指定用户的所有游戏档案列表，包含皮肤和披风纹理信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员-用户接口"
+                ],
+                "summary": "[超管] 用户游戏档案",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/admin.AdminUserGameProfilesResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "需要超级管理员权限",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/profiles/minecraft": {
             "post": {
                 "description": "由 Minecraft 服务端调用，根据角色名称列表批量查询角色信息。仅返回无符号 UUID 和名称，不包含角色属性。不存在的角色不包含在响应中，单次最多查询 10 个。",
@@ -4047,12 +4120,21 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "admin.AdminUserGameProfilesResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "游戏档案列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user.GameProfileResponse"
+                    }
+                }
+            }
+        },
         "admin.AdminUserItem": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
                 "email": {
                     "type": "string"
                 },
@@ -4063,6 +4145,9 @@ const docTemplatefrontleaves_yggleaf = `{
                     "type": "string"
                 },
                 "role_name": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "username": {

@@ -220,8 +220,8 @@ func (r *UserRepo) List(ctx context.Context, page, pageSize int, filter AdminUse
 
 	var users []entity.User
 	offset := (page - 1) * pageSize
-	if err := query.Select("id, username, email, role_name, has_ban, created_at").
-		Order("created_at DESC").
+	if err := query.Select("id, username, email, role_name, has_ban, updated_at").
+		Order("updated_at DESC").
 		Offset(offset).
 		Limit(pageSize).
 		Find(&users).Error; err != nil {

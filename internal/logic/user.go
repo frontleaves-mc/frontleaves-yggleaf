@@ -274,7 +274,7 @@ func (l *UserLogic) ListAdminUsers(ctx context.Context, req *apiAdmin.AdminUserL
 			Email:     u.Email,
 			RoleName:  u.RoleName,
 			HasBan:    u.HasBan,
-			CreatedAt: u.CreatedAt,
+			UpdatedAt: u.UpdatedAt,
 		}
 	}
 
