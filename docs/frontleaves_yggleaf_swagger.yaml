@@ -3760,6 +3760,28 @@ paths:
       summary: '[公开] Scripts 元数据'
       tags:
       - 同步接口
+  /sync/shaderpacks/metadata:
+    get:
+      description: 递归扫描服务端 shaderpacks 目录下所有文件，返回文件列表及 SHA-256 哈希
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/xBase.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/sync.SyncMetadataResponse'
+              type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/xBase.BaseResponse'
+      summary: '[公开] Shaderpacks 元数据'
+      tags:
+      - 同步接口
   /user/game-password:
     put:
       consumes:

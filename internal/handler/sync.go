@@ -129,6 +129,33 @@ func (h *SyncHandler) ResourcepacksMetadata(ctx *gin.Context) {
 	})
 }
 
+// ==================== Shaderpacks Metadata ====================
+
+// ShaderpacksMetadata 获取 shaderpacks 目录文件元数据
+//
+// @Summary     [公开] Shaderpacks 元数据
+// @Description 递归扫描服务端 shaderpacks 目录下所有文件，返回文件列表及 SHA-256 哈希
+// @Tags        同步接口
+// @Produce     json
+// @Success     200 {object} xBase.BaseResponse{data=apiSync.SyncMetadataResponse} "获取成功"
+// @Failure     500 {object} xBase.BaseResponse "服务器内部错误"
+// @Router      /sync/shaderpacks/metadata [GET]
+func (h *SyncHandler) ShaderpacksMetadata(ctx *gin.Context) {
+	h.log.Info(ctx, "ShaderpacksMetadata - 获取 shaderpacks 元数据")
+
+	files, xErr := h.service.syncLogic.ScanShaderpacks()
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "获取成功", apiSync.SyncMetadataResponse{
+		Files:     files,
+		Total:     len(files),
+		ScannedAt: time.Now(),
+	})
+}
+
 // ==================== Extends Metadata ====================
 
 // ExtendsMetadata 获取 extends 目录文件元数据

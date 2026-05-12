@@ -21,6 +21,7 @@ const (
 	configSubDir        = "config"
 	scriptsSubDir       = "scripts"
 	resourcepacksSubDir = "resourcepacks"
+	shaderpacksSubDir  = "shaderpacks"
 	extendsSubDir       = "extends"
 )
 
@@ -98,6 +99,12 @@ func (l *SyncLogic) ScanScripts() ([]apiSync.FileMetadata, error) {
 func (l *SyncLogic) ScanResourcepacks() ([]apiSync.FileMetadata, error) {
 	rpPath := filepath.Join(l.basePath, resourcepacksSubDir)
 	return l.scanDirectory(rpPath, resourcepacksSubDir, true)
+}
+
+// ScanShaderpacks 递归扫描 shaderpacks 目录下所有文件。
+func (l *SyncLogic) ScanShaderpacks() ([]apiSync.FileMetadata, error) {
+	spPath := filepath.Join(l.basePath, shaderpacksSubDir)
+	return l.scanDirectory(spPath, shaderpacksSubDir, true)
 }
 
 // ScanExtends 递归扫描 extends 目录下所有文件。
@@ -183,8 +190,9 @@ func (l *SyncLogic) DownloadFile(relPath string) (*os.File, int64, error) {
 		!strings.HasPrefix(cleaned, configSubDir+string(filepath.Separator)) &&
 		!strings.HasPrefix(cleaned, scriptsSubDir+string(filepath.Separator)) &&
 		!strings.HasPrefix(cleaned, resourcepacksSubDir+string(filepath.Separator)) &&
+		!strings.HasPrefix(cleaned, shaderpacksSubDir+string(filepath.Separator)) &&
 		!strings.HasPrefix(cleaned, extendsSubDir+string(filepath.Separator)) {
-		return nil, 0, xError.NewError(l.ctx, xError.ParameterError, "路径必须以 mods/、config/、scripts/、resourcepacks/ 或 extends/ 开头", true, nil)
+		return nil, 0, xError.NewError(l.ctx, xError.ParameterError, "路径必须以 mods/、config/、scripts/、resourcepacks/、shaderpacks/ 或 extends/ 开头", true, nil)
 	}
 
 	fullPath := filepath.Join(l.basePath, cleaned)

@@ -14,6 +14,7 @@ func (r *route) syncRouter(route gin.IRouter) {
 		syncGroup.GET("/config/metadata", syncHandler.ConfigMetadata)
 		syncGroup.GET("/scripts/metadata", syncHandler.ScriptsMetadata)
 		syncGroup.GET("/resourcepacks/metadata", syncHandler.ResourcepacksMetadata)
+		syncGroup.GET("/shaderpacks/metadata", syncHandler.ShaderpacksMetadata)
 		syncGroup.GET("/extends/metadata", syncHandler.ExtendsMetadata)
 		syncGroup.GET("/download", syncHandler.Download)
 	}

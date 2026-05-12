@@ -3893,6 +3893,44 @@ const docTemplatefrontleaves_yggleaf = `{
                 }
             }
         },
+        "/sync/shaderpacks/metadata": {
+            "get": {
+                "description": "递归扫描服务端 shaderpacks 目录下所有文件，返回文件列表及 SHA-256 哈希",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "同步接口"
+                ],
+                "summary": "[公开] Shaderpacks 元数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/xBase.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/sync.SyncMetadataResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/xBase.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/game-password": {
             "put": {
                 "description": "已通过 OAuth2 认证的用户可直接设置/重置游戏密码，无需旧密码",
