@@ -156,6 +156,33 @@ func (h *SyncHandler) ShaderpacksMetadata(ctx *gin.Context) {
 	})
 }
 
+// ==================== Tacz Metadata ====================
+
+// TaczMetadata 获取 tacz 目录文件元数据
+//
+// @Summary     [公开] Tacz 元数据
+// @Description 扫描服务端 tacz 目录下所有 .zip 文件（不递归子目录），返回文件列表及 SHA-256 哈希
+// @Tags        同步接口
+// @Produce     json
+// @Success     200 {object} xBase.BaseResponse{data=apiSync.SyncMetadataResponse} "获取成功"
+// @Failure     500 {object} xBase.BaseResponse "服务器内部错误"
+// @Router      /sync/tacz/metadata [GET]
+func (h *SyncHandler) TaczMetadata(ctx *gin.Context) {
+	h.log.Info(ctx, "TaczMetadata - 获取 tacz 元数据")
+
+	files, xErr := h.service.syncLogic.ScanTacz()
+	if xErr != nil {
+		_ = ctx.Error(xErr)
+		return
+	}
+
+	xResult.SuccessHasData(ctx, "获取成功", apiSync.SyncMetadataResponse{
+		Files:     files,
+		Total:     len(files),
+		ScannedAt: time.Now(),
+	})
+}
+
 // ==================== Extends Metadata ====================
 
 // ExtendsMetadata 获取 extends 目录文件元数据

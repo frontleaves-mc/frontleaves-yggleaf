@@ -22,6 +22,7 @@ const (
 	scriptsSubDir       = "scripts"
 	resourcepacksSubDir = "resourcepacks"
 	shaderpacksSubDir  = "shaderpacks"
+	taczSubDir          = "tacz"
 	extendsSubDir       = "extends"
 )
 
@@ -107,6 +108,12 @@ func (l *SyncLogic) ScanShaderpacks() ([]apiSync.FileMetadata, error) {
 	return l.scanDirectory(spPath, shaderpacksSubDir, true)
 }
 
+// ScanTacz 扫描 tacz 目录下所有 .zip 文件（不递归子目录）。
+func (l *SyncLogic) ScanTacz() ([]apiSync.FileMetadata, error) {
+	taczPath := filepath.Join(l.basePath, taczSubDir)
+	return l.scanDirectory(taczPath, taczSubDir, false)
+}
+
 // ScanExtends 递归扫描 extends 目录下所有文件。
 func (l *SyncLogic) ScanExtends() ([]apiSync.FileMetadata, error) {
 	extPath := filepath.Join(l.basePath, extendsSubDir)
@@ -139,6 +146,11 @@ func (l *SyncLogic) scanDirectory(dirPath, prefix string, recursive bool) ([]api
 
 		// mods 目录及其子目录只处理 .jar 文件
 		if strings.HasPrefix(prefix, modsSubDir) && !strings.HasSuffix(strings.ToLower(entry.Name()), ".jar") {
+			continue
+		}
+
+		// tacz 目录只处理 .zip 文件
+		if strings.HasPrefix(prefix, taczSubDir) && !strings.HasSuffix(strings.ToLower(entry.Name()), ".zip") {
 			continue
 		}
 
@@ -191,8 +203,9 @@ func (l *SyncLogic) DownloadFile(relPath string) (*os.File, int64, error) {
 		!strings.HasPrefix(cleaned, scriptsSubDir+string(filepath.Separator)) &&
 		!strings.HasPrefix(cleaned, resourcepacksSubDir+string(filepath.Separator)) &&
 		!strings.HasPrefix(cleaned, shaderpacksSubDir+string(filepath.Separator)) &&
+		!strings.HasPrefix(cleaned, taczSubDir+string(filepath.Separator)) &&
 		!strings.HasPrefix(cleaned, extendsSubDir+string(filepath.Separator)) {
-		return nil, 0, xError.NewError(l.ctx, xError.ParameterError, "路径必须以 mods/、config/、scripts/、resourcepacks/、shaderpacks/ 或 extends/ 开头", true, nil)
+		return nil, 0, xError.NewError(l.ctx, xError.ParameterError, "路径必须以 mods/、config/、scripts/、resourcepacks/、shaderpacks/、tacz/ 或 extends/ 开头", true, nil)
 	}
 
 	fullPath := filepath.Join(l.basePath, cleaned)
